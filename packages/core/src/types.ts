@@ -3,30 +3,34 @@ import { type FlexTree } from "./tree"
 
 
 
-export type IFlexTreeNode<Extra extends Record<string,any>=Record<string,any>> = {
-    treeId?    : string
-    pk?        : string
-    title?     : string
+
+// 节点相对位置
+export enum FlexNodeRelPosition{
+    LastChild   = 0,
+    FirstChild  = 1,
+    NextSibling = 2,
+    PreviousSibling=3
+}
+export type IFlexTreeNode<Data extends Record<string,any>={},IdType=string,TreeIdType=number> = {
+    treeId?    : TreeIdType
+    id?        : IdType
+    name?      : string
     level?     : number
     leftValue? : number
-    rightValue?: number
-    order?     : string
-} & Extra
+    rightValue?: number 
+} & Data
 
-export interface FlexTreeOptions{
-    sort?: string,                  // 同级节点内的排序字段
-    // 指定表字段名称
-    fields?:{
-        treeId?    : string,
-        title?     : string,
-        level?     : string,
-        leftValue? : string,
-        rightValue?: string,
-        order?     : string,
-        status?    : string
-    }
-}
+
+export type IJsonTree<Data extends Record<string,any>=Record<string,any>,IdType=string,TreeIdType=number> = {
+    treeId?    : TreeIdType
+    id?        : IdType    
+    name?      : string
+    level?     : number
+    leftValue? : number
+    rightValue?: number 
+    children?: IJsonTree[]
+} & Data
 
 
 
-export type FlexTreeUpdater<Node extends IFlexTreeNode=IFlexTreeNode> = (tree:FlexTree<Node>)=>Promise<void>
+export type FlexTreeUpdater<Node> = (tree:FlexTree<Node>)=>Promise<void>

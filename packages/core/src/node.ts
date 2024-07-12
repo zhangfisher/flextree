@@ -2,29 +2,36 @@
 import { IFlexTreeNode } from "./types";
 import { Dict } from "flex-tools/type/dict"
 
-export class FlexTreeNode<T extends Record<string,any>= IFlexTreeNode>{
-    _data:IFlexTreeNode<T>
+export class FlexTreeNode<T extends Record<string,any>={},IdType=string,TreeIdType=number> implements IFlexTreeNode{
+    _data:Required<IFlexTreeNode<T,IdType,TreeIdType>>
     constructor(data:Dict<string>){
-        this._data = data  as IFlexTreeNode<T>    
+        this._data = data  as Required<IFlexTreeNode<T,IdType,TreeIdType>>
+
     }
-    get treeId(){ return this._data.treeId }
-    get title(){ return this._data.title  }
+    get id(){ return this._data.id  }
+    get name(){ return this._data.name }
     get level(){  return this._data.level }
     get leftValue(){ return this._data.leftValue }
-    get rightalue(){ return this._data.rightValue }
-    get order(){ return this._data.order }
+    get rightalue(){ return this._data.rightValue } 
+    get data(){ return this._data } 
 
     get isRoot(){
-        return this.level == 0
+        return this.level == 0 && this.leftValue==1
+    }
+    /**
+     * 返回子节点
+     */
+    get children(){
+        
     }
 
+    private _parseChildren(){
+
+    }
 
     get parent(){
 
-    }
-    get children(){
-
-    }
+    } 
 
     get previous(){
 

@@ -1,3 +1,4 @@
+import "flex-tools/string/params"
 export * from "./tree"
 export * from "./node"
 export * from "./consts"

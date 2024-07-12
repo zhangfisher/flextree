@@ -4,6 +4,7 @@ import { deepMerge } from "flex-tools/object/deepMerge"
 import { Dict } from "flex-tools/types"
 
 import mitt from 'mitt'
+import { FlexTreeManager } from "./manager";
 
 export type DeepRequired<T extends Dict = Dict> = {
     [P in keyof T]-?: T[P] extends Dict
@@ -24,12 +25,13 @@ export class FlexTree<T extends Record<string,any>=IFlexTreeNode> {
     private _treeId:string
     private _nodes:Map<string,IFlexTreeNode<T>> = new Map()
     private _status: FlexTreeStatus = 'initial'
+    private _manager?:FlexTreeManager
     constructor(id:string,options?:FlexTreeOptions){
         this._treeId = id
         this._options = deepMerge({
             fields:{
                 id        : 'id',
-                title     : 'title',
+                name      : 'title',
                 level     : 'level',
                 leftValue : 'leftValue',
                 rightValue: 'rightValue',
@@ -42,6 +44,9 @@ export class FlexTree<T extends Record<string,any>=IFlexTreeNode> {
     get on(){ return this._emitter.on.bind(this) }
     get off(){ return this._emitter.off.bind(this) }
     get emit(){ return this._emitter.emit.bind(this) }
+    get manager(){ return this._manager!}
+    [Symbol.iterator](){return this._nodes[Symbol.iterator]}
+     
 
     /**
      * 返回根节点
@@ -80,7 +85,7 @@ export class FlexTree<T extends Record<string,any>=IFlexTreeNode> {
      * 
      * 
      */
-    load(options?:{level?:number}){
+    load(nodes:IFlexTreeNode[],options?:{level?:number}){
 
     }
     /**
