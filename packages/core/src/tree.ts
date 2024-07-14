@@ -1,4 +1,4 @@
-import { FlexTreeOptions, FlexTreeUpdater, IFlexTreeNode } from "./types"
+import {   IFlexTreeNode } from "./types"
 // import { DeepRequired } from "flex-tools/types"
 import { deepMerge } from "flex-tools/object/deepMerge"
 import { Dict } from "flex-tools/types"
@@ -14,6 +14,9 @@ export type DeepRequired<T extends Dict = Dict> = {
 
 export type FlexTreeEvents = {
     update:string
+}
+export type FlexTreeOptions = {
+    
 }
 
 export type FlexTreeStatus = 'initial' | 'loading' | 'loaded' | 'error'
@@ -64,15 +67,15 @@ export class FlexTree<T extends Record<string,any>=IFlexTreeNode> {
      * 
      * @param callback 
      */
-    update(updater:FlexTreeUpdater<IFlexTreeNode<T>>){
-        if(this._isUpdating) throw new Error('FlexTree is updating')
-        updater(this)
-            .then(()=>{
-            })            
-            .finally(()=>{
-                this._isUpdating = false
-            })
-    }
+    // update(updater:FlexTreeUpdater<IFlexTreeNode<T>>){
+    //     if(this._isUpdating) throw new Error('FlexTree is updating')
+    //     updater(this)
+    //         .then(()=>{
+    //         })            
+    //         .finally(()=>{
+    //             this._isUpdating = false
+    //         })
+    // }
     /**
      * 加载树
      * 

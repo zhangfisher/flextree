@@ -18,34 +18,34 @@ export class FlexTreeNode<T extends Record<string,any>={},IdType=string,TreeIdTy
     get isRoot(){
         return this.level == 0 && this.leftValue==1
     }
-    /**
-     * 返回子节点
-     */
-    get children(){
+    // /**
+    //  * 返回子节点
+    //  */
+    // get children(){
         
-    }
+    // }
 
-    private _parseChildren(){
+    // private _parseChildren(){
 
-    }
+    // }
 
-    get parent(){
+    // get parent(){
 
-    } 
+    // } 
 
-    get previous(){
+    // get previous(){
 
-    }
-    get next(){
+    // }
+    // get next(){
 
-    }
+    // }
 
-    get firstChild(){
+    // get firstChild(){
 
-    }
-    get lastChild(){
+    // }
+    // get lastChild(){
 
-    }
+    // }
 
     addChild(){
         

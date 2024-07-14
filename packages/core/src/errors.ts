@@ -2,6 +2,7 @@
 
 
 export class FlexTreeError extends Error{}
+export class FlexTreeNotExists extends FlexTreeError{}
 
 export class FlexNodeError extends FlexTreeError{}
 

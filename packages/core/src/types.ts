@@ -1,5 +1,6 @@
 import { type FlexTree } from "./tree"
 
+export type NonUndefined<T> = T extends undefined ? never : T;
 
 
 
@@ -33,4 +34,4 @@ export type IJsonTree<Data extends Record<string,any>=Record<string,any>,IdType=
 
 
 
-export type FlexTreeUpdater<Node> = (tree:FlexTree<Node>)=>Promise<void>
+// export type FlexTreeUpdater<Node> = (tree:FlexTree<Node>)=>Promise<void>
