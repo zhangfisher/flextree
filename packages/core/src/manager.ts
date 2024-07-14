@@ -462,10 +462,10 @@ export class FlexTreeManager<Node extends Record<string,any>={},IdType=string,Tr
                 fieldNames: this._options.fields,
                 treeId: this._treeId,
                 upsert,
-                conflict: this._treeId ? [this._treeId,this._idField] : [this._idField]
+                conflict: this._treeId ? [this._treeId,this._leftValueField] : [this._leftValueField]
             })            
         ]
-        await this._options.onWrite(sqls)
+        return await this._options.onWrite(sqls)
     }
 
     /**

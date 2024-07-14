@@ -47,9 +47,11 @@ export function buildInsertSql(tableName:string,record:Record<string,any>,option
     }).join(',')
 
     if(treeId){
-        keys.push(treeId)
-        values.push(record[treeId])
-        setValues += `,${sqlString.escapeId(treeId)}=${sqlString.escape(treeId)}`
+        const treeKey = sqlString.escapeId(fieldNames.treeId)
+        const treeValue = sqlString.escape(treeId)
+        keys.push(treeKey)
+        values.push(treeValue)
+        setValues += `,${treeKey}=${treeValue}`
     }
     const sql = `INSERT INTO ${tableName} (${keys.join(',')})
         VALUES (${values.join(',')})
