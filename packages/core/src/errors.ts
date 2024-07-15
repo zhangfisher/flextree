@@ -6,8 +6,9 @@ export class FlexTreeNotExists extends FlexTreeError{}
 
 export class FlexNodeError extends FlexTreeError{}
 
-export class FlexNodeNotFound extends FlexNodeError{}
+export class FlexNodeNotFoundError extends FlexNodeError{}
 
-export class FlexNodeInvalidOperation extends  FlexNodeError{}
+export class FlexNodeInvalidOperationError extends  FlexNodeError{}
 
-export class FlexTreeNotFound extends FlexTreeError{}
+export class FlexTreeNotFoundError  extends FlexTreeError{}
+export class FlexTreeDriverError extends FlexTreeError{}

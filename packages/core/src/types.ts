@@ -13,8 +13,8 @@ export enum FlexNodeRelPosition{
     PreviousSibling=3
 }
 export type IFlexTreeNode<Data extends Record<string,any>={},IdType=string,TreeIdType=number> = {
-    treeId?    : TreeIdType
     id?        : IdType
+    treeId?    : TreeIdType
     name?      : string
     level?     : number
     leftValue? : number
@@ -23,8 +23,8 @@ export type IFlexTreeNode<Data extends Record<string,any>={},IdType=string,TreeI
 
 
 export type IJsonTree<Data extends Record<string,any>=Record<string,any>,IdType=string,TreeIdType=number> = {
-    treeId?    : TreeIdType
     id?        : IdType    
+    treeId?    : TreeIdType    
     name?      : string
     level?     : number
     leftValue? : number

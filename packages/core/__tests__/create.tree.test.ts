@@ -2,10 +2,9 @@ import { test,describe,beforeAll,beforeEach, expect } from "vitest"
 import sqlite3 from "sqlite3"
 import {open,Database} from "sqlite"
 import { FlexTreeManager } from "../src/index";
+import SqliteDriver  from "../../sqlite/src/index"
 
-
-async function createTreeDb(){
-    let db = await open({ filename: ":memory:", driver: sqlite3.Database });
+async function createTreeTable(db:Database){
     await db.exec(`
         CREATE TABLE tree (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -15,23 +14,35 @@ async function createTreeDb(){
             rightValue INTEGER
         );
     `)
-    return db
 }
-async function createMultiTreeDb(){
-    let db = await open({ filename: ":memory:", driver: sqlite3.Database });
+async function createMultiTreeTable(db:Database){
     await db.exec(`
         CREATE TABLE tree (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name VARCHAR(60), 
-            tree INTEGER, 
+            treeId INTEGER, 
             level INTEGER,  
             leftValue INTEGER, 
             rightValue INTEGER,
-            UNIQUE(tree, leftValue)
+            UNIQUE(treeId, leftValue)
         );
-    `)
-    return db
+    `) 
 }
+
+async function createTreeManager(treeId?:any){
+    const sqliteDriver = new SqliteDriver()
+    await sqliteDriver.open()
+    if(treeId){
+        await createMultiTreeTable(sqliteDriver.db!)
+    }else{
+        await createTreeTable(sqliteDriver.db!)
+    } 
+    return new FlexTreeManager("tree",{
+        treeId,
+        driver: sqliteDriver
+    })    
+}
+
 
 async function insertData(db:Database){
     const sql =`INSERT INTO tree (id, tree_id, tree_left, tree_right, tree_level, name ) VALUES
@@ -52,20 +63,13 @@ async function insertData(db:Database){
 
 describe("创建单树表根节点", () => {
 
-    let db:Database
+    let tree:FlexTreeManager 
     beforeEach(async () => {
-        db = await createTreeDb()  
+        tree = await createTreeManager()
+        
     })
 
-    test('单树表中创建根节点', async () => {
-        const tree = new FlexTreeManager("tree",{
-            async onRead(sql:string){
-                return await db.all(sql)
-            },
-            async onWrite(sqls:string[]){
-                return await db.run(sqls.join(';'))
-            }
-        })
+    test('单树表中创建根节点', async () => { 
         let r = await tree.createRoot({name:"root"})
         const root = await tree.getRoot()
         expect(root).not.toBeNull()
@@ -75,14 +79,6 @@ describe("创建单树表根节点", () => {
         expect(root?.rightValue).toBe(2)
     })
     test('单树表中创建根节点时如果已存在，则触发错误', async () => {
-        const tree = new FlexTreeManager("tree",{
-            async onRead(sql:string){
-                return await db.all(sql)
-            },
-            async onWrite(sqls:string[]){
-                await db.exec(sqls.join(';'))
-            }
-        })
         await tree.createRoot({name:"root"})
         try{
             await tree.createRoot({name:"root"})
@@ -91,15 +87,7 @@ describe("创建单树表根节点", () => {
         }
     })
 
-    test('单树表中创建根节点时如果已存在则更新，不存在则创建', async () => {
-        const tree = new FlexTreeManager("tree",{
-            async onRead(sql:string){
-                return await db.all(sql)
-            },
-            async onWrite(sqls:string[]){
-                await db.exec(sqls.join(';'))
-            }
-        })
+    test('单树表中创建根节点时如果已存在则更新，不存在则创建', async () => { 
         await tree.createRoot({name:"root"}) 
         await tree.createRoot({name:"root2"},{upsert:true})
         let root = await tree.getRoot()        
@@ -112,21 +100,13 @@ describe("创建单树表根节点", () => {
  
 describe("创建多树表根节点", () => {
 
-    let db:Database
+    let tree:FlexTreeManager  
     beforeEach(async () => {
-        db = await createTreeDb()  
+        tree = await createTreeManager(10)
+        
     })
 
-    test('多树表中创建根节点', async () => {
-        const tree = new FlexTreeManager("tree",{
-            treeId:10,
-            async onRead(sql:string){
-                return await db.all(sql)
-            },
-            async onWrite(sqls:string[]){
-                await db.exec(sqls.join(';'))
-            }
-        })
+    test('多树表中创建根节点', async () => { 
         await tree.createRoot({name:"root"})
         const root = await tree.getRoot()
         expect(root).not.toBeNull()
@@ -136,16 +116,7 @@ describe("创建多树表根节点", () => {
         expect(root?.leftValue).toBe(1)
         expect(root?.rightValue).toBe(2)
     })
-    test('多树表中创建根节点时如果已存在，则触发错误', async () => {
-        const tree = new FlexTreeManager("tree",{
-            treeId:10,
-            async onRead(sql:string){
-                return await db.all(sql)
-            },
-            async onWrite(sqls:string[]){
-                await db.exec(sqls.join(';'))
-            }
-        })
+    test('多树表中创建根节点时如果已存在，则触发错误', async () => { 
         await tree.createRoot({name:"root"})
         try{
             await tree.createRoot({name:"root"})
@@ -154,16 +125,7 @@ describe("创建多树表根节点", () => {
         }
     })
 
-    test('多树表中创建根节点时如果已存在则更新，不存在则创建', async () => {
-        const tree = new FlexTreeManager("tree",{
-            treeId:10,
-            async onRead(sql:string){
-                return await db.all(sql)
-            },
-            async onWrite(sqls:string[]){
-                await db.exec(sqls.join(';'))
-            }
-        })
+    test('多树表中创建根节点时如果已存在则更新，不存在则创建', async () => { 
         await tree.createRoot({name:"root"}) 
         await tree.createRoot({name:"root2"},{upsert:true})
         let root = await tree.getRoot()        

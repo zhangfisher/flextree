@@ -1,9 +1,8 @@
 {
-  "name": "flextree",
+  "name": "flextree-workspace",
   "version": "0.0.1",
-  "description": "A quick tree database access tool library based on Left Right Value Algorithm",
-  "main": "package/core/index.js",
-  "access": "public",
+  "description": "A quick tree database access tool library based on Left Right Value Algorithm",  
+  "private":true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
