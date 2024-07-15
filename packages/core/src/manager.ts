@@ -88,6 +88,7 @@ export class FlexTreeManager<Node extends Record<string,any>={},IdType=string,Tr
     get emit(){ return this._emitter.emit.bind(this) }
     get driver(){ return this._options.driver!}
     get treeId(){ return this._treeId}
+    get isMultiTree(){ return this._treeId !== undefined}
 
     async ready(){
         if(this._driver && this._ready) return true
@@ -150,6 +151,11 @@ export class FlexTreeManager<Node extends Record<string,any>={},IdType=string,Tr
     /***************************** SQL 写操作 *****************************/
     onBeforeWrite(sqls:string[]){             
         return sqls
+    }
+
+    async getNodes():Promise<IFlexTreeNode<Node,IdType,TreeIdType>[]>{
+        const sql =this.onBeforeRead(`SELECT * FROM ${this._tableName} ${this.isMultiTree ? `WHERE {__TREE_ID__} AND TRUE` : ''} ORDER BY ${this._fields.leftValue}`)
+        return await this.onExecuteReadSql(sql) 
     }
 
         /**
@@ -464,18 +470,29 @@ export class FlexTreeManager<Node extends Record<string,any>={},IdType=string,Tr
      * 
      * 增加多个节点
      * 
-     * addNode([{},{}],'nodeId',FlexNodeRelPosition.LastChild)
+     * addNode([
+     *  {...},
+     *  {...}
+     * ],'nodeId',FlexNodeRelPosition.LastChild)
+     * 
+     * 
+     * 1. 批量插入时，需要保证节点数据的字段名称是一样的，比如
+     *    addNode([{id:1,name:'test'},{id:2,xname:'test2'}])  // ❌错误
+     * 2. 所有关键字段中，如果id是自增的，则可以不必指定，是可选的
+     * 3. 如果是单树表，可以不必指定treeId,如果是多树表，则必须指定
+     * 
      * 
      * @param nodes
      * @param targetNode     添加到的目标节点的指定位置，默认根节点
      * @param pos            添加的位置，默认为最后一个子节点
      * 
      */
-    async addNodes(nodes:IFlexTreeNode<Node,IdType,TreeIdType>[],targetNode:IdType | IFlexTreeNode<Node,IdType,TreeIdType>,pos:FlexNodeRelPosition = FlexNodeRelPosition.LastChild){
+    async addNodes(nodes:IFlexTreeNode<Node,IdType,TreeIdType>[],targetNode?:IdType | IFlexTreeNode<Node,IdType,TreeIdType>,pos:FlexNodeRelPosition = FlexNodeRelPosition.LastChild){
         
+        if(nodes.length == 0) return
+
         // 1. 先获取要添加的目标节点的信息，得到目标节点的leftValue,rightValue,level等
-        let relNode:IFlexTreeNode<Node,IdType,TreeIdType>
-        
+        let relNode:IFlexTreeNode<Node,IdType,TreeIdType>        
         // 如果输入的是节点对象已经包含了节点信息，可以直接使用
         if(targetNode==undefined){// 未指定目标节点，则添加到根节点
             relNode = await this.getRoot() as IFlexTreeNode<Node,IdType,TreeIdType>
@@ -498,40 +515,42 @@ export class FlexTreeManager<Node extends Record<string,any>={},IdType=string,Tr
             }
         }
 
+        // 2. 处理节点数据:   单树表不需要增加treeId字段
+        const fields:string[] = [
+            this._fields.level,
+            this._fields.leftValue,
+            this._fields.rightValue
+        ]
+        if(this.isMultiTree) fields.push(this._fields.treeId)        
+        fields.push(...Object.keys(nodes[0]).filter(f=>!fields.includes(f)))// 添加其他字段
 
 
-
-
-           
-
-        
-        // 
-
-        // //2. 处理节点数据
-
-        // let sqls:string[] = []
+        let sqls:string[] = []
         // // 1. 处理节点数据
-        // nodes.forEach((node,index)=>{
-        //     return {
-        //         ...node,
-        //         [this._fields.treeId]: this._treeId,
-        //         [this._fields.level]: 0,
-        //         [this._fields.leftValue]: 0,
-        //         [this._fields.rightValue]: 0
-        //     }
-        // })
-        // if(pos== FlexNodeRelPosition.LastChild){
-        //     sqls.push(this.onBeforeRead(`
-        //         INSERT INFO ${this._tableName} VALUES 
-        //     `))
+        if(pos== FlexNodeRelPosition.LastChild){           
+            const values = nodes.map((node,i)=>{
+                let rows = [
+                    relNode[this._fields.level] + 1,
+                    relNode[this._fields.leftValue] + i*2,
+                    relNode[this._fields.rightValue] + i*2
+                ]
+                for(let i=3;i<fields.length;i++){
+                    rows.push(escapeSqlString(node[fields[i]]))
+                } 
+                return `(${rows.join(',')})`
+            }).join(',')
 
-        // }else if(pos==FlexNodeRelPosition.FirstChild){
+            sqls.push(this.onBeforeRead(`
+                INSERT INFO ${this._tableName} ( ${fields} ) 
+                VALUES ${values}
+            `))
+        }else if(pos==FlexNodeRelPosition.FirstChild){
 
-        // }else if(pos== FlexNodeRelPosition.NextSibling){
+        }else if(pos== FlexNodeRelPosition.NextSibling){
 
-        // }else if(pos == FlexNodeRelPosition.PreviousSibling){
+        }else if(pos == FlexNodeRelPosition.PreviousSibling){
 
-        // }
+        }
     }
 
 }

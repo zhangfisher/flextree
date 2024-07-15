@@ -1,6 +1,4 @@
-// import { test,describe,beforeAll,beforeEach } from "vitest"
-// import sqlite3 from "sqlite3"
-// import {open,Database} from "sqlite"
+import { test,describe,beforeAll,beforeEach } from "vitest"
 
 
 // async function createTreeDb(){
@@ -30,18 +28,11 @@
 //   })
 
 // })
-// describe("访问树", () => {
-
-//     let db:Database
-//     beforeAll(async () => {
-//         db = await createDb()
-//         await insertData(db) 
-
+describe("访问树", () => {
  
-//     })
 
-//   test("should be able to add a new user", () => {
-//     // test code here
-//   })
+  test("should be able to add a new user", () => {
+    // test code here
+  })
 
-// })
+})

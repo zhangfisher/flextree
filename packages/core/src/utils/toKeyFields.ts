@@ -32,25 +32,13 @@ import { type FlexTreeManagerOptions } from "../manager";
 import { IFlexTreeNode, NonUndefined } from "../types";
 
 export function toKeyFields<Node extends Record<string,any>={},IdType=string,TreeIdType=number>(record:Record<string,any>,fieldNames: Required<NonUndefined<FlexTreeManagerOptions['fields']>>):IFlexTreeNode<Node,IdType,TreeIdType>{
-    let result: IFlexTreeNode<Node,IdType,TreeIdType>  = record as IFlexTreeNode<Node,IdType,TreeIdType> 
-    
-    Object.entries(fieldNames).forEach(([key,name])=>{
-        if(!(key in record) && name in record){
-            record[key] = record[name]
-            Reflect.deleteProperty(record,name)
+    Object.entries(fieldNames).forEach(([key,fieldName])=>{
+        if(!(key in record) && fieldName in record){
+            record[key] = record[fieldName]
+            Reflect.deleteProperty(record,fieldName)
         }
     })
-
-    Object.entries(record).forEach(([key,value])=>{
-        if(key in fieldNames){
-            // @ts-ignore
-            result[fieldNames[key]] = value
-        }else{
-            // @ts-ignore
-            result[key] = value
-        }
-    })
-    return result as unknown as  IFlexTreeNode<Node,IdType,TreeIdType>
+    return record as unknown as  IFlexTreeNode<Node,IdType,TreeIdType>
 } 
 
 
