@@ -2,10 +2,8 @@
 /**
  * 判定 Node 节点是否有效
  * 
- */
-import { IFlexTreeNode } from "../types" 
-
-export function isValidNode(node:IFlexTreeNode | undefined):boolean{
+ */ 
+export function isValidNode(node:any):boolean{
       if(!node) return false
       if(!node.id) return false 
       if(!node.leftValue || node.leftValue!<=0) return false 

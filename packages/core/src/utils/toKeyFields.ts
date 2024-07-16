@@ -29,16 +29,16 @@
  */
 
 import { type FlexTreeManagerOptions } from "../manager";
-import { IFlexTreeNode, NonUndefined } from "../types";
+import { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNode, NonUndefined } from "../types";
 
-export function toKeyFields<Node extends Record<string,any>={},IdType=string,TreeIdType=number>(record:Record<string,any>,fieldNames: Required<NonUndefined<FlexTreeManagerOptions['fields']>>):IFlexTreeNode<Node,IdType,TreeIdType>{
+export function toKeyFields<Fields extends Record<string,any>={},KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields>(record:Record<string,any>,fieldNames: Required<NonUndefined<FlexTreeManagerOptions['fields']>>):IFlexTreeNode<Fields,KeyFields>{
     Object.entries(fieldNames).forEach(([key,fieldName])=>{
         if(!(key in record) && fieldName in record){
             record[key] = record[fieldName]
             Reflect.deleteProperty(record,fieldName)
         }
     })
-    return record as unknown as  IFlexTreeNode<Node,IdType,TreeIdType>
+    return record as unknown as  IFlexTreeNode<Fields,KeyFields>
 } 
 
 

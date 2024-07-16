@@ -11,11 +11,13 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
     "flextree": "workspace:^",
     "tsup": "^8.1.0",
     "typescript": "^5.4.5"
   },
   "dependencies": {
+    "better-sqlite3": "^11.1.2",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7"
   }

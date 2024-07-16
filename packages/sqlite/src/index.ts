@@ -1,44 +1,56 @@
 
 import { IDatabaseDriver } from "flextree"
-import sqlite3 from "sqlite3"
-import {open,Database, ISqlite} from "sqlite"
+import Database from "better-sqlite3" 
 
 
 export default class SqliteDriver implements IDatabaseDriver{
-    db?:Database
-    config:ISqlite.Config
+    _db?:Database.Database
+    _options:Database.Options
     _ready:boolean = false
-    constructor(config?:ISqlite.Config){
-        this.config = Object.assign({ 
-            filename: ":memory:",
-            driver: sqlite3.Database   
-        },config) 
+    _filename?:string
+    constructor(filename?: string , options?: Database.Options ){
+        this._options = Object.assign({},options) 
+        this._filename = filename || ":memory:"
     } 
     get ready(){return this._ready}
-    open(config?:ISqlite.Config){
+    get db(){return this._db!}
+    open(options?: Database.Options){
         return new Promise((resolve,reject)=>{
-            open(Object.assign({},this.config,config)).then((db:Database)=>{
-                this.db = db
+            try{
+                this._db = new Database(this._filename,Object.assign({},this._options,options))
                 this._ready = true
-                resolve(db)
-            }).catch(e=>{
+                resolve(this._db)
+            }catch(e:any){
                 this._ready = false
                 reject(e)
-            })
+            }
         })
     }
     assertDbIsOpen(){
         if(!this.db)  throw new Error('Sqlite database is not opened.')
     }
-    async onRead(sql: string): Promise<any[]> {
-        this.assertDbIsOpen()
-        return await this.db!.all(sql)
+
+    async getRows<T>(sql: string): Promise<T[]> {
+        this.assertDbIsOpen()        
+        return await this.db.prepare<unknown[],T>(sql).all()
     }
-    async onWrite(sqls: string[]): Promise<any> {
-        this.assertDbIsOpen()
-        return await this.db!.run(sqls.join(';'))
+
+    async update(sqls: string[]){
+        this.assertDbIsOpen()        
+        const stmts = sqls.map(sql => this.db.prepare(sql));
+        const trans = this.db.transaction(() => {
+            for (const stmt of stmts) {
+                stmt.run();
+            }
+        });
+        trans();
     }
-    
+    async exec(sql: string){
+        this.assertDbIsOpen()        
+        const result = this.db.prepare(sql).run()
+        return {lastId:result.lastInsertRowid,changes:result.changes}
+        
+    }
 }
 
 

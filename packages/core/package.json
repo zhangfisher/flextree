@@ -15,15 +15,19 @@
     "mitt": "^3.0.1",
     "sqlstring": "^2.3.3"
   },
-  "devDependencies": {    
+  "devDependencies": {
     "@flextree/sqlite": "workspace:^",
     "@types/sqlstring": "^2.3.2",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
     "ts-node": "^10.9.2",
+    "tsd": "^0.31.1",
     "tsup": "^8.1.0",
     "type-fest": "^4.21.0",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
+  },
+  "tsd": {
+    "directory": "__tests__"
   }
 }

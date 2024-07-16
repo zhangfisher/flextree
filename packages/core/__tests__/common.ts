@@ -2,8 +2,8 @@ import {Database} from "sqlite"
 import { FlexTreeManager } from "../src/index";
 import SqliteDriver  from "../../sqlite/src/index"
 
-export async function createTreeTable(db:Database){
-    await db.exec(`
+export async function createTreeTable(driver:SqliteDriver){
+    await driver.exec(`
         CREATE TABLE tree (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name VARCHAR(60),  
@@ -13,8 +13,8 @@ export async function createTreeTable(db:Database){
         );
     `)
 }
-export async function createMultiTreeTable(db:Database){
-    await db.exec(`
+export async function createMultiTreeTable(driver:SqliteDriver){
+    await driver.exec(`
         CREATE TABLE tree (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name VARCHAR(60), 
@@ -31,9 +31,9 @@ export async function createTreeManager(treeId?:any){
     const sqliteDriver = new SqliteDriver()
     await sqliteDriver.open()
     if(treeId){
-        await createMultiTreeTable(sqliteDriver.db!)
+        await createMultiTreeTable(sqliteDriver)
     }else{
-        await createTreeTable(sqliteDriver.db!)
+        await createTreeTable(sqliteDriver)
     } 
     return new FlexTreeManager("tree",{
         treeId,
