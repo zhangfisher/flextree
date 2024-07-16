@@ -581,6 +581,7 @@ export class FlexTreeManager<
         }else if(pos == FlexNodeRelPosition.PreviousSibling){
 
         }
+        await this.onExecuteWriteSql(sqls)
     }
     /***************************** 工具函数 *****************************/ 
 }
