@@ -154,7 +154,7 @@ export class FlexTreeManager<
      *
      * @param sql 
      */
-    onBeforeRead(sql:string){
+    onHandleSql(sql:string){
         // 在一表多树时,需要增加额外的树判定
         if(this._treeId){
             const treeId = typeof(this._treeId)=='string' ? `'${this._treeId}'` : this._treeId  
@@ -177,7 +177,7 @@ export class FlexTreeManager<
      * @returns 
      */
     async getNodes():Promise<TreeNode[]>{
-        const sql =this.onBeforeRead(`SELECT * FROM ${this._tableName} ${this.isMultiTree ? `WHERE {__TREE_ID__} 1` : ''} ORDER BY ${this._fields.leftValue}`)
+        const sql =this.onHandleSql(`SELECT * FROM ${this._tableName} ${this.isMultiTree ? `WHERE {__TREE_ID__} 1` : ''} ORDER BY ${this._fields.leftValue}`)
         return await this.onExecuteReadSql(sql) 
     }
 
@@ -188,16 +188,16 @@ export class FlexTreeManager<
      */
     async onExecuteWriteSql(sqls:string[]):Promise<any>{
         await this.assertDriverReady()        
-        return await this._driver.update(sqls) 
+        return await this._driver.insert(sqls) 
     } 
     /***************************** 获取树节点 *****************************/
     /**
      * 获取指定的id节点
-     * 
+     * "\n                INSERT INFO tree ( level,leftValue,rightValue,name ) \n                VALUES (1,1,2,'A'),(1,3,4,'B'),(1,5,6,'C')\n            "
      * @param id 
      */
     async getNode(nodeId:NodeId):Promise<TreeNode | undefined>{ 
-        const sql = this.onBeforeRead(`SELECT * FROM ${this._tableName} 
+        const sql = this.onHandleSql(`SELECT * FROM ${this._tableName} 
             WHERE {__TREE_ID__} (${this._fields.id}=${escapeSqlString(nodeId)})`)
         const result = await this.onExecuteReadSql(sql)
         if(result.length === 0) throw new FlexNodeNotFoundError()
@@ -216,7 +216,7 @@ export class FlexTreeManager<
         const { level,includeSelf} =Object.assign({includeSelf:false,level:0},options)
         let sql:string =''
         if(level==0){  //不限定层级
-            sql=this.onBeforeRead(`SELECT Node.* FROM ${this._tableName} Node
+            sql=this.onHandleSql(`SELECT Node.* FROM ${this._tableName} Node
                 JOIN ${this._tableName} RelNode ON RelNode.${this._fields.id} = ${escapeSqlString(nodeId)}
                 WHERE 
                   {__TREE_ID__} 
@@ -226,7 +226,7 @@ export class FlexTreeManager<
                 ORDER BY ${this._fields.leftValue}             
                 `)
         }else{ //限定层级
-            sql=this.onBeforeRead(`SELECT Node.* FROM ${this._tableName} Node
+            sql=this.onHandleSql(`SELECT Node.* FROM ${this._tableName} Node
                 JOIN ${this._tableName} RelNode ON RelNode.${this._fields.id} = ${escapeSqlString(nodeId)}
                 WHERE 
                 {__TREE_ID__} 
@@ -246,7 +246,7 @@ export class FlexTreeManager<
      * 获取后代节点数量
      */
     async getDescendantCount(nodeId:NodeId){ 
-        const sql = this.onBeforeRead(`SELECT COUNT(*) FROM ${this._tableName} Node
+        const sql = this.onHandleSql(`SELECT COUNT(*) FROM ${this._tableName} Node
             JOIN ${this._tableName} RelNode ON RelNode.${this._fields.id} = ${escapeSqlString(nodeId)}
             WHERE {__TREE_ID__} 
                 (   
@@ -287,7 +287,7 @@ export class FlexTreeManager<
      */
     async getAncestors(nodeId:NodeId,options?:{includeSelf?:boolean}){
         const { includeSelf } = Object.assign({includeSelf:false},options)
-        const sql = this.onBeforeRead(`SELECT Node.* FROM ${this._tableName} Node
+        const sql = this.onHandleSql(`SELECT Node.* FROM ${this._tableName} Node
             JOIN ${this._tableName} RelNode ON RelNode.${this._fields.id} = ${escapeSqlString(nodeId)}
             WHERE {__TREE_ID__} 
             (
@@ -306,7 +306,7 @@ export class FlexTreeManager<
      * @param nodeId
      */
     async getAncestorsCount(nodeId:NodeId){
-        const sql = this.onBeforeRead(`SELECT COUNT(*) FROM ${this._tableName} Node
+        const sql = this.onHandleSql(`SELECT COUNT(*) FROM ${this._tableName} Node
             JOIN ${this._tableName} RelNode ON RelNode.${this._fields.id} = ${escapeSqlString(nodeId)}
             WHERE {__TREE_ID__} 
                 (   
@@ -323,7 +323,7 @@ export class FlexTreeManager<
      * @returns 
      */
     async getParent(nodeId:NodeId):Promise<TreeNode>{ 
-        const sql = this.onBeforeRead(`SELECT Node.* FROM ${this._tableName} Node
+        const sql = this.onHandleSql(`SELECT Node.* FROM ${this._tableName} Node
             JOIN ${this._tableName} RelNode ON RelNode.${this._fields.id} = ${escapeSqlString(nodeId)}
             WHERE {__TREE_ID__}  
             (   
@@ -361,7 +361,7 @@ export class FlexTreeManager<
      */
     async getSiblings(nodeId:NodeId,options?:{includeSelf?:boolean}){
         const { includeSelf } = Object.assign({includeSelf:false},options)
-        const sql = this.onBeforeRead(`SELECT Node.* FROM ${this._tableName} Node
+        const sql = this.onHandleSql(`SELECT Node.* FROM ${this._tableName} Node
             JOIN (
                 SELECT Node.* FROM ${this._tableName} Node
                 JOIN ${this._tableName} RelNode ON RelNode.${this._fields.id} = ${escapeSqlString(nodeId)}
@@ -401,7 +401,7 @@ export class FlexTreeManager<
      * @param options 
      */
     async getNextSiblings(nodeId:NodeId){
-        const sql = this.onBeforeRead(`SELECT Node.* FROM ${this._tableName} Node
+        const sql = this.onHandleSql(`SELECT Node.* FROM ${this._tableName} Node
             JOIN ${this._tableName} RelNode ON RelNode.id = ${escapeSqlString(nodeId)}             
             WHERE {__TREE_ID__}  
                 (
@@ -417,7 +417,7 @@ export class FlexTreeManager<
      * @param options 
      */
     async getPreviousSibling(nodeId:NodeId){
-        const sql = this.onBeforeRead(`SELECT Node.* FROM ${this._tableName} Node
+        const sql = this.onHandleSql(`SELECT Node.* FROM ${this._tableName} Node
             JOIN ${this._tableName} RelNode ON RelNode.id = ${escapeSqlString(nodeId)}             
             WHERE {__TREE_ID__}  
                 (
@@ -436,7 +436,7 @@ export class FlexTreeManager<
      * 
      */
     async getRoot(){
-        const sql = this.onBeforeRead(`SELECT * FROM ${this._tableName} 
+        const sql = this.onHandleSql(`SELECT * FROM ${this._tableName} 
                         WHERE {__TREE_ID__} ${this._fields.leftValue}=1`)
         return await this.getOneNode(sql)   
     }
@@ -458,7 +458,6 @@ export class FlexTreeManager<
     }
 
     isRoot(node:TreeNode){
-        node.level = ""
         return node.level == 0 && node.leftValue == 1
     }
 
@@ -560,18 +559,26 @@ export class FlexTreeManager<
         
         if(pos== FlexNodeRelPosition.LastChild){           
             const values = nodes.map((node,i)=>{
-                let rows = [
+                let row = [
                     relNode[this._fields.level] + 1,
-                    relNode[this._fields.leftValue] + i*2,
-                    relNode[this._fields.rightValue] + i*2
+                    relNode[this._fields.rightValue] + i*2,
+                    relNode[this._fields.rightValue] + i*2 +1
                 ]
                 for(let i=3;i<fields.length;i++){
-                    rows.push(escapeSqlString(node[fields[i]]))
+                    row.push(escapeSqlString(node[fields[i]]))
                 } 
-                return `(${rows.join(',')})`
+                return `(${row.join(',')})`
             }).join(',')
-            sqls.push(this.onBeforeRead(`
-                INSERT INFO ${this._tableName} ( ${fields} ) 
+            sqls.push(this.onHandleSql(`
+                UPDATE ${this._tableName} SET ${this._fields.rightValue} = ${this._fields.rightValue} + ${nodes.length*2} 
+                WHERE {__TREE_ID__} ${this._fields.rightValue} >= ${relNode[this._fields.rightValue]}
+            `))
+            sqls.push(this.onHandleSql(`
+                UPDATE ${this._tableName} SET ${this._fields.leftValue} = ${this._fields.leftValue} + ${nodes.length*2} 
+                WHERE {__TREE_ID__} ${this._fields.leftValue} >= ${relNode[this._fields.rightValue]}
+            `))            
+            sqls.push(this.onHandleSql(`
+                INSERT INTO ${this._tableName} ( ${fields.map(f=>escapeSqlString(f)).join(",")} ) 
                 VALUES ${values}
             `))
         }else if(pos==FlexNodeRelPosition.FirstChild){
@@ -583,6 +590,11 @@ export class FlexTreeManager<
         }
         await this.onExecuteWriteSql(sqls)
     }
+    /**
+     * INSERT INTO tree ( level,leftValue,rightValue,name ) \n                
+     * VALUES (1,1,2,'A'),
+     * (1,3,4,'B'),(1,5,6,'C')\n            "
+     */
     /***************************** 工具函数 *****************************/ 
 }
 

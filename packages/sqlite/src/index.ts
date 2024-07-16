@@ -35,7 +35,7 @@ export default class SqliteDriver implements IDatabaseDriver{
         return await this.db.prepare<unknown[],T>(sql).all()
     }
 
-    async update(sqls: string[]){
+    async insert(sqls: string[]){
         this.assertDbIsOpen()        
         const stmts = sqls.map(sql => this.db.prepare(sql));
         const trans = this.db.transaction(() => {
@@ -45,6 +45,14 @@ export default class SqliteDriver implements IDatabaseDriver{
         });
         trans();
     }
+    async update(sqls: string[]){
+
+    }
+    
+    async delete(sql: string){
+
+    }
+
     async exec(sql: string){
         this.assertDbIsOpen()        
         const result = this.db.prepare(sql).run()

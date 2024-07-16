@@ -78,10 +78,10 @@ describe("创建多树表根节点", () => {
 
 
 })
-describe("单树表节点编辑", () => {
+describe("单树表创建节点", () => {
     let tree:FlexTreeManager  
     beforeEach(async () => {
-        tree = await createTreeManager(10)
+        tree = await createTreeManager()
         await tree.createRoot({name:"root"})
     })
     test("在根节点下创建最后的子节点", async () => {
@@ -91,7 +91,57 @@ describe("单树表节点编辑", () => {
             {name:"C"},
         ])
         let nodes = await tree.getNodes()
-        expect(nodes).toHaveLength(4)
+        expect(nodes).toHaveLength(4) 
+        expect(nodes[1].name).toBe("A")
+        expect(nodes[2].name).toBe("B")
+        expect(nodes[3].name).toBe("C")
+
+        expect(nodes[0].leftValue).toBe(1)
+        expect(nodes[0].rightValue).toBe(8)
+        expect(nodes[1].leftValue).toBe(2)
+        expect(nodes[1].rightValue).toBe(3)
+        expect(nodes[2].leftValue).toBe(4)
+        expect(nodes[2].rightValue).toBe(5)
+        expect(nodes[3].leftValue).toBe(6)
+        expect(nodes[3].rightValue).toBe(7)
+
+        expect(nodes[0].level).toBe(0)
+        expect(nodes[1].level).toBe(1)
+        expect(nodes[2].level).toBe(1)
+        expect(nodes[3].level).toBe(1)
     })
+    test("多次在根节点下创建最后的子节点", async () => {
+        await tree.addNodes([
+            {name:"A"}
+        ])
+        await tree.addNodes([
+            {name:"B"}
+        ])
+        await tree.addNodes([
+            {name:"C"}
+        ])
+        let nodes = await tree.getNodes()
+        expect(nodes).toHaveLength(4) 
+        expect(nodes[1].name).toBe("A")
+        expect(nodes[2].name).toBe("B")
+        expect(nodes[3].name).toBe("C")
+
+        expect(nodes[0].leftValue).toBe(1)
+        expect(nodes[0].rightValue).toBe(8)
+        expect(nodes[1].leftValue).toBe(2)
+        expect(nodes[1].rightValue).toBe(3)
+        expect(nodes[2].leftValue).toBe(4)
+        expect(nodes[2].rightValue).toBe(5)
+        expect(nodes[3].leftValue).toBe(6)
+        expect(nodes[3].rightValue).toBe(7)
+
+        expect(nodes[0].level).toBe(0)
+        expect(nodes[1].level).toBe(1)
+        expect(nodes[2].level).toBe(1)
+        expect(nodes[3].level).toBe(1)
+    })
+
+
+    
 
 })
