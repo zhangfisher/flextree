@@ -1,20 +1,22 @@
 import {Database} from "sqlite"
 import { FlexTreeManager } from "../src/index";
-import SqliteDriver  from "../../sqlite/src/index"
+import SqliteDriver  from "../../sqlite/src/index" 
+
+ 
 
 export async function createTreeTable(driver:SqliteDriver){
-    await driver.exec(`
+    await driver.exec([`
         CREATE TABLE tree (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name VARCHAR(60),  
             level INTEGER,  
-            leftValue INTEGER UNIQUE, 
+            leftValue INTEGER, 
             rightValue INTEGER
         );
-    `)
+    `])
 }
 export async function createMultiTreeTable(driver:SqliteDriver){
-    await driver.exec(`
+    await driver.exec([`
         CREATE TABLE tree (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name VARCHAR(60), 
@@ -24,35 +26,72 @@ export async function createMultiTreeTable(driver:SqliteDriver){
             rightValue INTEGER,
             UNIQUE(treeId, leftValue)
         );
-    `) 
+    `]) 
+}
+async function clearAllTables(driver: SqliteDriver) {   
+    await driver.exec([`DELETE FROM tree`]); 
+}
+
+async function isTableExists(driver: SqliteDriver,table:string){
+    try{
+        await driver.exec([`SELECT * FROM ${table}`])
+        return true
+    }catch(e){
+        return false
+    }
 }
 
 export async function createTreeManager(treeId?:any){
-    const sqliteDriver = new SqliteDriver()
-    await sqliteDriver.open()
-    if(treeId){
-        await createMultiTreeTable(sqliteDriver)
-    }else{
-        await createTreeTable(sqliteDriver)
-    } 
+    const sqliteDriver = new SqliteDriver("tree.db")
+    await sqliteDriver.open()    
+    if(!(await isTableExists(sqliteDriver,'tree'))){
+        if(treeId){
+            await createMultiTreeTable(sqliteDriver)
+        }else{
+            await createTreeTable(sqliteDriver)
+        } 
+    }
+    await clearAllTables(sqliteDriver)
     return new FlexTreeManager("tree",{
         treeId,
         driver: sqliteDriver
     })    
 }
-async function insertData(db:Database){
-    const sql =`INSERT INTO tree (id, tree_id, tree_left, tree_right, tree_level, name ) VALUES
-    (1, 0, 1, 16, 1, 'root1'),
-    (2, 0, 2, 3, 2, 'A'),
-    (3, 0, 4, 13, 2, 'B'),
-    (4, 0, 5, 12, 3, 'B1'),
-    (5, 0, 14, 15, 2, 'C'),
-    (6, 0, 6, 7, 4, 'B1_1'),
-    (7, 0, 8, 9, 4, 'B1_2'),
-    (8, 0, 10, 11, 4, 'B1_3'),
-    (9, 1, 1, 8, 1, 'root2'),
-    (10, 1, 2, 3, 2, '2-A'),
-    (11, 1, 4, 5, 2, '2-B'),
-    (12, 1, 6, 7, 2, '2-C');`
-    await db.exec(sql)
+
+
+export async function createDemoTree(tree:FlexTreeManager,level:number=3){
+    await tree.update(async ()=>{
+        await tree.createRoot({id:1,name:"root"})
+        const nodes=["A","B","C","D","E","F","G"]
+        await tree.addNodes(nodes.map((name,index)=>{
+            return {name,id:index+2}
+        }))       
+        for(let [index,name] of Object.entries(nodes)){
+            await tree.addNodes([
+                {name:`${name}1`},
+                {name:`${name}2`},
+                {name:`${name}3`},
+                {name:`${name}4`},
+                {name:`${name}5`}
+            ],Number(index)+2)
+        }
+    })
+     
+}
+/**
+ * 随机生成树
+ * 
+ * - level
+ * - 每个节点具有随机数量的子节点
+ * 
+ */
+async function createRandomTree(tree:FlexTreeManager,level:number=3){
+    await tree.update(async ()=>{
+        await tree.createRoot({id:1,name:"root"})
+        const nodes=["A","B","C","D","E","F","G"]
+        await tree.addNodes(nodes.map((name,index)=>{
+            return {name,id:index+2}
+        }))        
+    })
+     
 }

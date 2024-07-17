@@ -1,5 +1,4 @@
-import { ValueOf } from "type-fest";
-import { type FlexTree } from "./tree"
+import type { FlexTreeManager } from "./manager";
 
 export type NonUndefined<T> = T extends undefined ? never : T;
 
@@ -19,6 +18,20 @@ export enum FlexNodeRelPosition{
     NextSibling = 2,
     PreviousSibling=3
 }
+
+export enum FlexTreeNodeRelation{
+    Self=0,
+    Parent=1,
+    Child=2,
+    Siblings=3,
+    Descendants=4,
+    Ancestors=5,
+    Diff_tree=6,
+    Same_tree=7,
+    Same_level=8,
+    Unknow=9
+}
+
 
 // 用来声明自定义的树关键字段
 export type CustomTreeKeyFields = {                                                 // 自定义关键字段名称和类型
@@ -98,3 +111,6 @@ export type IJsonTree<Data extends Record<string,any>=Record<string,any>,IdType=
 //     [K in ((DefaultTreeKeyFields & KeyFields)['rightValue'] & 'rightValue')]: number
 // } & Fields
  
+
+
+export type FlexTreeUpdater = (tree:FlexTreeManager)=>Promise<void>

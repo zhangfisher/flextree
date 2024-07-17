@@ -1,6 +1,7 @@
 
-import { IDatabaseDriver } from "flextree"
+import type { IDatabaseDriver,FlexTreeManager } from "flextree"
 import Database from "better-sqlite3" 
+import { buildInsertSql } from "./utils"
 
 
 export default class SqliteDriver implements IDatabaseDriver{
@@ -8,12 +9,18 @@ export default class SqliteDriver implements IDatabaseDriver{
     _options:Database.Options
     _ready:boolean = false
     _filename?:string
+    _treeManager?:FlexTreeManager
     constructor(filename?: string , options?: Database.Options ){
         this._options = Object.assign({},options) 
         this._filename = filename || ":memory:"
     } 
     get ready(){return this._ready}
     get db(){return this._db!}
+    get treeManager(){return this._treeManager!}
+    get tableName(){return this.treeManager.tableName}
+    bind(treeManager: FlexTreeManager){
+        this._treeManager = treeManager
+    }
     open(options?: Database.Options){
         return new Promise((resolve,reject)=>{
             try{
@@ -35,9 +42,16 @@ export default class SqliteDriver implements IDatabaseDriver{
         return await this.db.prepare<unknown[],T>(sql).all()
     }
 
-    async insert(sqls: string[]){
+    async getScalar<T>(sql:string):Promise<T>{
         this.assertDbIsOpen()        
-        const stmts = sqls.map(sql => this.db.prepare(sql));
+        return await this.db.prepare(sql).pluck().get() as T
+    }
+
+
+    async insert(rows: any[],options?:{upsert?:boolean}){
+        const { upsert } = Object.assign({upsert:false},options)
+        this.assertDbIsOpen()         
+        const stmts = rows.map(row => this.db.prepare(buildInsertSql(this.tableName,row,upsert)));
         const trans = this.db.transaction(() => {
             for (const stmt of stmts) {
                 stmt.run();
@@ -45,6 +59,7 @@ export default class SqliteDriver implements IDatabaseDriver{
         });
         trans();
     }
+
     async update(sqls: string[]){
 
     }
@@ -53,11 +68,16 @@ export default class SqliteDriver implements IDatabaseDriver{
 
     }
 
-    async exec(sql: string){
-        this.assertDbIsOpen()        
-        const result = this.db.prepare(sql).run()
-        return {lastId:result.lastInsertRowid,changes:result.changes}
-        
+    async exec(sqls: string | string[]){
+        this.assertDbIsOpen() 
+        if(typeof sqls === "string") sqls = [sqls]     
+        const stmts = sqls.map(sql=>this.db.prepare(sql));  
+        const trans = this.db.transaction(() => {
+            for (const stmt of stmts) {
+                stmt.run();
+            }
+        });
+        trans();        
     }
 }
 
