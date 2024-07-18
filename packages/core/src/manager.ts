@@ -20,7 +20,7 @@
  * 
  * 
  */
-import {  CustomTreeKeyFields, DefaultTreeKeyFields, FlexNodeRelPosition, FlexTreeUpdater, IFlexTreeNode, NonUndefined } from "./types" 
+import {  CustomTreeKeyFields, DefaultTreeKeyFields, FlexNodeRelPosition, FlexTreeNodeRelation, FlexTreeUpdater, IFlexTreeNode, NonUndefined } from "./types" 
 import { deepMerge } from "flex-tools/object/deepMerge"
 import mitt from 'mitt' 
 import {RequiredDeep } from "type-fest"
@@ -152,7 +152,10 @@ export class FlexTreeManager<
         await this.assertDriverReady()        
         return await this._driver.exec(sqls) 
     } 
-
+    async onGetScalar(sql:string):Promise<any>{        
+        await this.assertDriverReady()        
+        return await this._driver.getScalar(sql) 
+    } 
     /**
      * 构建sql时调用，进行一些额外的处理
      * 
@@ -495,7 +498,48 @@ export class FlexTreeManager<
             where {__TREE_ID__} ${this._fields.leftValue}=1 and ${this._fields.level}=0`)
         return await this.getScalar(sql) == 1 
     }
+    /**
+     * 返回满足条件的节点
+     * 
+     * 只返回第一个满足条件的节点
+     * 
+     * findNode(1)                   根据ID查找节点
+     * findNode({name:"A"})          根据name查找节点 
+     * findNode({name:"A",level:1})  根据组合AND条件查找节点
+     * 
+     */
+    async findNode(node:NodeId | Partial<TreeNode>):Promise<TreeNode>{
+        let nodes:TreeNode[]=[]
+        if(typeof(node) == 'object'){
+            nodes = await this.findNodes(node as Partial<TreeNode>)
+        }else{
+            nodes = await this.findNodes({[this._fields.id]:node} as Partial<TreeNode>)
+        }
+        
+        if(nodes.length == 0) throw new FlexTreeNodeNotFoundError()
+        return nodes[0] as TreeNode
+    }
+    /**
+     * 
+     * 返回满足条件的节点
+     
+       只提供简单的条件查询语法，更复杂的查询请使用数据库查询
 
+     * findNodes({name:"A"})          根据name查找节点 
+     * findNodes({name:"A",level:1})  根据组合AND条件查找节点
+     * 
+     */
+    async findNodes(condition: Partial<TreeNode>):Promise<TreeNode[]>{
+        const keys = Object.keys(condition)
+        if(keys.length == 0) throw new FlexTreeError('Invalid condition')
+        const sql = this._sql(`select * from ${this._tableName}
+            where  {__TREE_ID__} ${keys.map(key=>{ 
+                return `${sqlString.escapeId(key)}=${escapeSqlString(condition[key])}`
+            }).join(' AND ')}
+        `)
+        return await this.onExecuteReadSql(sql)
+
+    }
     /***************************** 添加节点 *****************************/
 
     /**
@@ -528,7 +572,7 @@ export class FlexTreeManager<
         const keys = Object.keys(record).map(key=>sqlString.escapeId(key)).join(",")
         const values = Object.values(record).map(v=>escapeSqlString(v)).join(",")
         const sql = `INSERT INTO ${this._tableName} (${keys}) VALUES (${values})`
-        await this.onExecuteWriteSql([sql]) 
+        await this.onExecuteWriteSql([sql])  
     }
 
     private _assertUpdating(){
@@ -751,7 +795,7 @@ export class FlexTreeManager<
     } 
     /***************************** 移动节点 *****************************/ 
     private async _moveToLastChild(node:NodeId | TreeNode,atNode:TreeNode){
-        
+        return []
     }
     private async _moveToFirstChild(node:NodeId | TreeNode,atNode?:NodeId | TreeNode){
         return []  
@@ -762,21 +806,62 @@ export class FlexTreeManager<
     private async _moveToPreviousSibling(node:NodeId | TreeNode,atNode?:NodeId | TreeNode){
         return []  
     }
+
+    /**
+     * 
+     * 返回node是否允许移动到atNode的指定的位置
+     * 
+     * 
+     * 当满足以下条件时不允许移动
+     * 
+     *  - 两个节点是一样的
+     * - toNode是node的后代
+     *
+     * @example
+     * 
+     *   canMoveNode(node1,node2)       node1能否移动到node2的后面，即下一个兄弟节点
+     *   canMoveNode(node1,node2,FlexNodeRelPosition.LastChild)  node1能否移动为node2的最后一个子节点
+     * 
+     */
+    async canMoveNode(node:NodeId | TreeNode,toNode?:NodeId | TreeNode, pos:FlexNodeRelPosition = FlexNodeRelPosition.NextSibling){
+        const fromNode = this._getRelNode(node) as unknown as TreeNode
+        toNode = this._getRelNode(toNode) as unknown as TreeNode
+        
+        let isAllow:boolean = true
+        
+        if(!this.isMultiTree || (this.isMultiTree && toNode[this._fields.treeId]==fromNode[this._fields.treeId])){        
+            if(toNode[this._fields.id]==fromNode[this._fields.id]){
+                isAllow=false
+            }else{
+                const r = await this.getNodeRelation(toNode,node)
+                if(r == FlexTreeNodeRelation.Descendants){
+                    isAllow =false
+                }
+            }
+        }
+
+        return isAllow
+    }
     /**
      * 
      * 移动node到atNode节点lastChild,firstChild,NextSibling,PreviousSibling
      * 
      */
-    async moveNode(node:NodeId | TreeNode,atNode?:NodeId | TreeNode,  pos:FlexNodeRelPosition = FlexNodeRelPosition.NextSibling){
+    async moveNode(node:NodeId | TreeNode,toNode?:NodeId | TreeNode, pos:FlexNodeRelPosition = FlexNodeRelPosition.NextSibling){
         this._assertUpdating()
-        if(!node || !atNode) throw new Error('invalid param')
+        if(!node || !toNode) throw new Error('invalid param')
         
-        let relNode = this._getRelNode(atNode) as unknown as TreeNode
+        let relNode = this._getRelNode(toNode) as unknown as TreeNode
         if(this.isRoot(relNode)){ 
             if(pos == FlexNodeRelPosition.NextSibling || pos == FlexNodeRelPosition.PreviousSibling){
                 throw new FlexTreeError('Root node can not have next and previous sibling node')
             }
         }
+
+
+
+
+
         let sqls:string[] = []
         if(pos== FlexNodeRelPosition.LastChild){           
             sqls = await  this._moveToLastChild(node,relNode) 
@@ -797,22 +882,115 @@ export class FlexTreeManager<
     moveDownNode(node:NodeId | TreeNode){
         
     }
-
+    /**
+     * 返回两个节点是否在同一棵树中
+     */
+    isSameTree(srcNode:TreeNode,targetNode:TreeNode){
+        if(this.isMultiTree){
+            return srcNode[this._fields.treeId] == targetNode[this._fields.treeId]
+        }else{
+            return true        
+        }
+    }
+    isSameNode(node1:TreeNode,node2:TreeNode){
+        return node1[this._fields.id] == node2[this._fields.id]
+    }
 
     /**
-     * 返回节点之间的关系
-     * 
-     * getNodeRelation(node,relNode) == Child w
-     * 
-     * 
-     */
-    async getNodeRelation(srcNode:NodeId | TreeNode,targetNode:NodeId | TreeNode):FlexTreeNodeRelation{
-        const srcNodeData = this.isValidNode(node) ? node : await this.getNode(node)
-        const targetNodeData = this.isValidNode(relNode) ? relNode : await this.getNode(relNode)
+    * 判断给定的节点是否有效
+    * @description
+    * 用于检查传入的节点参数是否符合预期，确保节点存在且类型正确。这通常在处理与节点相关的操作之前进行，以避免潜在的错误。
+    * @param {any} node - 需要判断的节点
+    * @returns {boolean} - 如果节点有效，返回true；否则返回false
+    * @example
+    * isValidNode('123'); // 返回false，因为'123'不是一个有效的节点ID或TreeNode对象
+    * isValidNode({ id: 123, label: '节点' }); // 返回true，因为这是一个有效的TreeNode对象
+    */
+    isValidNode(node:any):boolean{
+        if(!node) return false
+        if(typeof(node)!=='object') return false
+        if(Object.keys(node).some(k=>!(k in this._fields))) return false
+        if(!node[this._fields.id]) return false 
+        if(!(typeof(node[this._fields.leftValue])=='number' && node[this._fields.leftValue]>=1)) return false 
+        if(!(typeof(node[this._fields.rightValue])=='number' && node[this._fields.rightValue]>=1)) return false
+        if(node[this._fields.leftValue]>=node[this._fields.rightValue]) return false
+        if(!(typeof(node.level)=='number' || node.level>=0)) return false
+        return true
+    }
 
-        if(srcNodeData[this._fields.treeId] && srcNodeData[this._fields.treeId]){
-            
+    /**
+     * 获取两个节点之间的关系。
+     * 
+     * @param {Node} srcNode - 第一个节点。
+     * @param {Node} targetNode - 第二个节点。
+     * @returns {string} 返回两个节点之间的关系。可能的值包括 "Parent"、"Child"、"Sibling"、"Ancestor"、"Descendant" 或 "Unrelated"。
+     * 
+     * @example
+     * const relation = getNodeRelation(node1, node2);
+     * console.log(relation);  // 输出: FlexTreeNodeRelation.Child
+     */
+    async getNodeRelation(srcNode:NodeId | TreeNode,targetNode:NodeId | TreeNode):Promise<FlexTreeNodeRelation>{
+        const node = this.isValidNode(srcNode) ? srcNode as TreeNode: (await this.getNode(srcNode as NodeId)) as TreeNode
+        const relNode = this.isValidNode(targetNode) ? targetNode as TreeNode : (await this.getNode(targetNode as NodeId)) as TreeNode
+
+
+        let result: FlexTreeNodeRelation = FlexTreeNodeRelation.Unknow
+
+        const nodeId = node[this._fields.id]
+        const relNodeId = relNode[this._fields.id]
+        
+        const leftValue = node[this._fields.leftValue]
+        const rightValue = node[this._fields.rightValue]
+        const level = node[this._fields.level]
+
+        const relLeftValue = relNode[this._fields.leftValue]
+        const relRightValue = relNode[this._fields.rightValue]
+        const relLevel = relNode[this._fields.level]
+
+        if(this.isSameTree(node,relNode)){
+            if(this.isSameNode(node ,relNode)){ 
+                result = FlexTreeNodeRelation.Self          // 两个节点相等
+            }else if (leftValue > relLeftValue && rightValue < relRightValue && level == relLevel +1 ) {
+                result = FlexTreeNodeRelation.Child;        // 一个节点是另一个节点的子节点
+            } else if (leftValue > relLeftValue && rightValue < relRightValue) {
+                result = FlexTreeNodeRelation.Descendants;  // 一个节点是另一个节点的后代
+            } else if (leftValue < relLeftValue && rightValue > relRightValue && level == relLevel - 1) {
+                result = FlexTreeNodeRelation.Parent;       // 一个节点是另一个节点的父节点
+            } else if (leftValue < relLeftValue && rightValue > relRightValue) {
+                result = FlexTreeNodeRelation.Ancestors;   // 一个节点是另一个节点的祖先
+            }else{                  
+                const sql = this._sql(`SELECT 
+                CASE 
+                    WHEN t1.${this._fields.id}  = t2.${this._fields.id}  THEN 1 ELSE 0
+                END as isSiblings
+                FROM 
+                    ( SELECT Node.* FROM  ${this._tableName} Node
+                        JOIN ${this._tableName} RelNode ON RelNode.${this._fields.id} = ${nodeId}
+                        WHERE ( {__TREE_ID__}
+                        Node.${this._fields.leftValue} < RelNode.${this._fields.leftValue}
+                        AND Node.${this._fields.rightValue} > RelNode.${this._fields.rightValue}
+                        ) ORDER BY ${this._fields.leftValue} DESC LIMIT 1
+                    ) AS t1,
+                    ( SELECT Node.* FROM  ${this._tableName} Node
+                        JOIN ${this._tableName} RelNode ON RelNode.${this._fields.id}  = ${relNodeId}
+                        WHERE ( {__TREE_ID__}
+                        Node.${this._fields.leftValue} < RelNode.${this._fields.leftValue}
+                        AND Node.${this._fields.rightValue} > RelNode.${this._fields.rightValue}
+                        ) ORDER BY ${this._fields.leftValue} DESC LIMIT 1
+                    ) AS t2`)
+                const r = await this.onGetScalar(sql)   // 两个节点在同一棵树中
+                if(r == 1){
+                    result = FlexTreeNodeRelation.Siblings;     // 两个节点是兄弟节点
+                }else if(level == relLevel) {
+                    result = FlexTreeNodeRelation.SameLevel;    // 两个节点是同级节点            
+                }else{
+                    result = FlexTreeNodeRelation.SameTree;    // 
+                }
+            } 
+        }else{
+            result = FlexTreeNodeRelation.DiffTree          // 两个节点在不同的树中
         }
+        return result
     }
 
 }

@@ -45,20 +45,7 @@ export default class SqliteDriver implements IDatabaseDriver{
     async getScalar<T>(sql:string):Promise<T>{
         this.assertDbIsOpen()        
         return await this.db.prepare(sql).pluck().get() as T
-    }
-
-
-    async insert(rows: any[],options?:{upsert?:boolean}){
-        const { upsert } = Object.assign({upsert:false},options)
-        this.assertDbIsOpen()         
-        const stmts = rows.map(row => this.db.prepare(buildInsertSql(this.tableName,row,upsert)));
-        const trans = this.db.transaction(() => {
-            for (const stmt of stmts) {
-                stmt.run();
-            }
-        });
-        trans();
-    }
+    } 
 
     async update(sqls: string[]){
 
@@ -74,10 +61,10 @@ export default class SqliteDriver implements IDatabaseDriver{
         const stmts = sqls.map(sql=>this.db.prepare(sql));  
         const trans = this.db.transaction(() => {
             for (const stmt of stmts) {
-                stmt.run();
+                stmt.run(); 
             }
         });
-        trans();        
+        trans();     
     }
 }
 

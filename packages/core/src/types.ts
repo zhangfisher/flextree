@@ -20,16 +20,16 @@ export enum FlexNodeRelPosition{
 }
 
 export enum FlexTreeNodeRelation{
-    Self=0,
-    Parent=1,
-    Child=2,
-    Siblings=3,
-    Descendants=4,
-    Ancestors=5,
-    Diff_tree=6,
-    Same_tree=7,
-    Same_level=8,
-    Unknow=9
+    Self        = 0,
+    Parent      = 1,
+    Child       = 2,
+    Siblings    = 3,
+    Descendants = 4,
+    Ancestors   = 5,
+    DiffTree    = 6,
+    SameTree    = 7,
+    SameLevel   = 8,
+    Unknow      = 9
 }
 
 
