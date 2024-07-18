@@ -30,9 +30,7 @@ import { isValidNode } from './utils/isValidNode';
 import { escapeSqlString } from './utils/escapeSqlString';
 import { FlexTreeEvents } from "./tree"
 import { IDatabaseDriver } from "./driver"
-import sqlString from "sqlString"
-import { escapeSqlObject } from "./utils/escapeSqlObject"
-
+import sqlString from "sqlString" 
 
 export interface FlexTreeManagerOptions<TreeIdType=number>{
     treeId?     : TreeIdType                    // 使用支持单表多树时需要提供
@@ -60,11 +58,11 @@ export interface FlexTreeManagerOptions<TreeIdType=number>{
  * 
  */
 export class FlexTreeManager<
-    Data extends Record<string,any>={},
-    KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Data,KeyFields> = IFlexTreeNode<Data,KeyFields>,
-    NodeId = NonUndefined<KeyFields['id']>[1],
-    TreeId = NonUndefined<KeyFields['treeId']>[1]
+        Data extends Record<string,any>={},
+        KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
+        TreeNode extends IFlexTreeNode<Data,KeyFields> = IFlexTreeNode<Data,KeyFields>,
+        NodeId = NonUndefined<KeyFields['id']>[1],
+        TreeId = NonUndefined<KeyFields['treeId']>[1]
     >{
     private _options:RequiredDeep<FlexTreeManagerOptions<TreeId>>
     private _isUpdating = false
@@ -994,6 +992,5 @@ export class FlexTreeManager<
     }
 
 }
-
 
  

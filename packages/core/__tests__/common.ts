@@ -8,7 +8,8 @@ export async function createTreeTable(driver:SqliteDriver){
     await driver.exec([`
         CREATE TABLE IF NOT EXISTS  tree (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name VARCHAR(60),  
+            name VARCHAR(60),              
+            treeId INTEGER, 
             level INTEGER,  
             leftValue INTEGER, 
             rightValue INTEGER
