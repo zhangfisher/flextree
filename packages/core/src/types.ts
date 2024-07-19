@@ -13,10 +13,10 @@ export type FlexTreeKeyFields<T extends FlexTreeKeyFieldNames = FlexTreeKeyField
 
 // 节点相对位置
 export enum FlexNodeRelPosition{
-    LastChild   = 0,
-    FirstChild  = 1,
-    NextSibling = 2,
-    PreviousSibling=3
+    LastChild       = 0,
+    FirstChild      = 1,
+    NextSibling     = 2,
+    PreviousSibling = 3
 }
 
 export enum FlexTreeNodeRelation{
@@ -60,12 +60,20 @@ export type DefaultTreeKeyNameFields = {
     rightValue: 'rightValue'
 }
 
-export type PickKeyFieldType<KeyFields extends Record<string,string | [string,any]>,Name extends string,DefaultType = any> = 
-    KeyFields[Name] extends [infer K, infer V] ? 
-    { [P in K & string]: V } 
-    : (   
-        KeyFields[Name] extends string ? { [K in KeyFields[Name]]: DefaultType } :
-        { [K in Name]: DefaultType }
+export type PickKeyFieldType<
+    KeyFields extends Record<string,string | [string,any]>,
+    Name extends string,
+    DefaultType = any> = KeyFields[Name] extends [ infer K, infer V ] ? 
+    (
+        K extends string ? 
+            { [ P in K ] : V } 
+            : { [ P in Name ] : DefaultType }
+    )
+    : 
+    (   
+        KeyFields[Name] extends string ? 
+            { [ P in KeyFields[Name] ]: DefaultType } 
+            : { [K in Name]: DefaultType }
     )
 
 export type IFlexTreeNode<

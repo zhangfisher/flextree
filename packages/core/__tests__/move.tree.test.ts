@@ -2,33 +2,161 @@
  * 更新树
  */
 import { test,describe,beforeEach, expect, beforeAll, afterEach } from "vitest" 
-import { FlexNodeRelPosition, FlexTreeManager, FlexTreeNodeError, NextSibling, PreviousSibling } from "../src/index"; 
+import { FlexNodeRelPosition, FlexTreeManager, FlexTreeNodeError, IFlexTreeNode, NextSibling, PreviousSibling } from "../src/index"; 
 import { createDemoTree, createTreeManager, dumpTree } from "./common";
  
 
 
 describe("移动树节点", () => {
     let tree:FlexTreeManager 
+    let nodes :IFlexTreeNode[]
+    let root: IFlexTreeNode
+    let a:IFlexTreeNode,a1:IFlexTreeNode,a2:IFlexTreeNode,a3:IFlexTreeNode,a11:IFlexTreeNode,a12:IFlexTreeNode,a13:IFlexTreeNode
+    let b:IFlexTreeNode,b1:IFlexTreeNode,b2:IFlexTreeNode,b3:IFlexTreeNode,b11:IFlexTreeNode,b12:IFlexTreeNode,b13:IFlexTreeNode
+    let c:IFlexTreeNode,c1:IFlexTreeNode,c2:IFlexTreeNode,c3:IFlexTreeNode,c11:IFlexTreeNode,c12:IFlexTreeNode,c13:IFlexTreeNode
     beforeEach(async () => {
         tree = await createTreeManager()      
         await createDemoTree(tree)
-    })
-    
+        nodes = await tree.getNodes()
+        root = nodes.find(n=>n.name=="root")!
+        a = nodes.find(n=>n.name=="A")!
+            a1 = nodes.find(n=>n.name=="A_1")!            
+                a11 = nodes.find(n=>n.name=="A_1_1")!
+                a12 = nodes.find(n=>n.name=="A_1_2")!
+                a13 = nodes.find(n=>n.name=="A_1_3")!
+            a2 = nodes.find(n=>n.name=="A_2")!
+            a3 = nodes.find(n=>n.name=="A_3")!
+        
+        b = nodes.find(n=>n.name=="B")!
+            b1 = nodes.find(n=>n.name=="B_1")!
+                b11 = nodes.find(n=>n.name=="B_1_1")!
+                b12 = nodes.find(n=>n.name=="B_1_2")!
+                b13 = nodes.find(n=>n.name=="B_1_3")!
+            b2 = nodes.find(n=>n.name=="B_2")!
+            b3 = nodes.find(n=>n.name=="B_3")!
+
+        c = nodes.find(n=>n.name=="C")!
+            c1 = nodes.find(n=>n.name=="C_1")!
+                c11 = nodes.find(n=>n.name=="C_1_1")!
+                c12 = nodes.find(n=>n.name=="C_1_2")!
+                c13 = nodes.find(n=>n.name=="C_1_3")!
+        c2 = nodes.find(n=>n.name=="C_2")!
+        c3 = nodes.find(n=>n.name=="C_3")!
+        
+    })    
     afterEach(async ()=>{ 
-        await dumpTree(tree.driver.db,"move.root.db")
-    })
-    
-    test("判定节点是否可以其他节点的指定位置", async () => {
-        const root = await tree.getNode({})
-        const a =await  tree.getNode(2)
-        // 允许移动
-        expect(await tree.canMoveTo(node, FlexNodeRelPosition.Child, target)).toBe(true)
-        expect(await tree.canMoveTo(node, FlexNodeRelPosition.PreviousSibling, target)).toBe(false)
-        expect(await tree.canMoveTo(node, FlexNodeRelPosition.NextSibling, target)).toBe(true)
-        // 不允许移动        
-        expect(await tree.canMoveTo(node, FlexNodeRelPosition.Child, target)).toBe(true)
-        expect(await tree.canMoveTo(node, FlexNodeRelPosition.PreviousSibling, target)).toBe(false)
-        expect(await tree.canMoveTo(node, FlexNodeRelPosition.NextSibling, target)).toBe(true)
+        await dumpTree(tree.driver.db,"move.db")
     })
 
+    describe("判断是否允许移动节点到指定位置", () => {
+
+        test("判定节点不允许移动到自身的任意位置", async () => {
+            for(let pos of [FlexNodeRelPosition.FirstChild,FlexNodeRelPosition.LastChild, FlexNodeRelPosition.NextSibling,FlexNodeRelPosition.PreviousSibling]){        
+                expect(await tree.canMoveTo(root, root,pos)).toBe(false) 
+                expect(await tree.canMoveTo(a, a,pos)).toBe(false) 
+                expect(await tree.canMoveTo(b, b,pos)).toBe(false) 
+                expect(await tree.canMoveTo(c, c,pos)).toBe(false) 
+            }
+        })
+
+        test("判定节点不允许移动其后代节点的任意位置", async () => {            
+            // 不允许移动其后代的前后: 即兄弟节点
+            for(let pos of [FlexNodeRelPosition.NextSibling,FlexNodeRelPosition.PreviousSibling]){        
+                expect(await tree.canMoveTo(root, a,pos)).toBe(false) 
+                    expect(await tree.canMoveTo(root, a1,pos)).toBe(false) 
+                        expect(await tree.canMoveTo(root, a11,pos)).toBe(false) 
+                        expect(await tree.canMoveTo(root, a12,pos)).toBe(false) 
+                        expect(await tree.canMoveTo(root, a13,pos)).toBe(false) 
+                    expect(await tree.canMoveTo(root, a2,pos)).toBe(false)                 
+                    expect(await tree.canMoveTo(root, a3,pos)).toBe(false)
+
+                expect(await tree.canMoveTo(root, b,pos)).toBe(false) 
+                    expect(await tree.canMoveTo(root, b1,pos)).toBe(false) 
+                        expect(await tree.canMoveTo(root, b11,pos)).toBe(false) 
+                        expect(await tree.canMoveTo(root, b12,pos)).toBe(false) 
+                        expect(await tree.canMoveTo(root, b13,pos)).toBe(false) 
+                    expect(await tree.canMoveTo(root, b2,pos)).toBe(false)
+                    expect(await tree.canMoveTo(root, b3,pos)).toBe(false)
+                
+                expect(await tree.canMoveTo(root, c,pos)).toBe(false)         
+                    expect(await tree.canMoveTo(root, c1,pos)).toBe(false) 
+                        expect(await tree.canMoveTo(root, c11,pos)).toBe(false)
+                        expect(await tree.canMoveTo(root, c12,pos)).toBe(false)
+                        expect(await tree.canMoveTo(root, c13,pos)).toBe(false)
+                    expect(await tree.canMoveTo(root, c2,pos)).toBe(false)
+                    expect(await tree.canMoveTo(root, c3,pos)).toBe(false)
+            }
+            // A
+            for(let pos of [FlexNodeRelPosition.NextSibling,FlexNodeRelPosition.PreviousSibling]){        
+                    expect(await tree.canMoveTo(a, a1,pos)).toBe(false) 
+                        expect(await tree.canMoveTo(a, a11,pos)).toBe(false) 
+                        expect(await tree.canMoveTo(a, a12,pos)).toBe(false) 
+                        expect(await tree.canMoveTo(a, a13,pos)).toBe(false) 
+                    expect(await tree.canMoveTo(a, a2,pos)).toBe(false)                 
+                    expect(await tree.canMoveTo(a, a3,pos)).toBe(false) 
+            } 
+        })
+        test("判定节点允许移动指定节点的前后", async () => {
+            for(let pos of [FlexNodeRelPosition.NextSibling,FlexNodeRelPosition.PreviousSibling]){        
+                expect(await tree.canMoveTo(a, b,pos)).toBe(true) 
+                    expect(await tree.canMoveTo(a1, a2,pos)).toBe(true) 
+                    expect(await tree.canMoveTo(a2, a3,pos)).toBe(true) 
+                    expect(await tree.canMoveTo(a3, a1,pos)).toBe(true)  
+
+                expect(await tree.canMoveTo(b, c,pos)).toBe(true) 
+                    expect(await tree.canMoveTo(b1, b2,pos)).toBe(true) 
+                    expect(await tree.canMoveTo(b2, b3,pos)).toBe(true) 
+                    expect(await tree.canMoveTo(b3, b1,pos)).toBe(true)                  
+                        expect(await tree.canMoveTo(b11,b12,pos)).toBe(true) 
+                        expect(await tree.canMoveTo(b12,b13,pos)).toBe(true)
+                        expect(await tree.canMoveTo(b13,b11,pos)).toBe(true)
+                expect(await tree.canMoveTo(c, a,pos)).toBe(true) 
+                    expect(await tree.canMoveTo(c1, c2,pos)).toBe(true) 
+                    expect(await tree.canMoveTo(c2, c3,pos)).toBe(true) 
+                    expect(await tree.canMoveTo(c3, c1,pos)).toBe(true)
+                        expect(await tree.canMoveTo(c11,c12,pos)).toBe(true) 
+                        expect(await tree.canMoveTo(c12,c13,pos)).toBe(true)
+                        expect(await tree.canMoveTo(c13,c11,pos)).toBe(true)
+            }
+        })
+        test("判定节点允许移动指定节点的子节点", async () => {
+            for(let pos of [FlexNodeRelPosition.FirstChild,FlexNodeRelPosition.LastChild]){        
+                expect(await tree.canMoveTo(a, b,pos)).toBe(true) 
+                    expect(await tree.canMoveTo(a1, a2,pos)).toBe(true) 
+                    expect(await tree.canMoveTo(a2, a3,pos)).toBe(true) 
+                    expect(await tree.canMoveTo(a3, a1,pos)).toBe(true)                                      
+                        expect(await tree.canMoveTo(a11,a12,pos)).toBe(true) 
+                        expect(await tree.canMoveTo(a12,a13,pos)).toBe(true)
+                        expect(await tree.canMoveTo(a13,a11,pos)).toBe(true)
+
+                expect(await tree.canMoveTo(b, c,pos)).toBe(true) 
+                    expect(await tree.canMoveTo(b1, b2,pos)).toBe(true) 
+                    expect(await tree.canMoveTo(b2, b3,pos)).toBe(true) 
+                    expect(await tree.canMoveTo(b3, b1,pos)).toBe(true)                  
+                        expect(await tree.canMoveTo(b11,b12,pos)).toBe(true) 
+                        expect(await tree.canMoveTo(b12,b13,pos)).toBe(true)
+                        expect(await tree.canMoveTo(b13,b11,pos)).toBe(true)
+                expect(await tree.canMoveTo(c, a,pos)).toBe(true) 
+                    expect(await tree.canMoveTo(c1, c2,pos)).toBe(true) 
+                    expect(await tree.canMoveTo(c2, c3,pos)).toBe(true) 
+                    expect(await tree.canMoveTo(c3, c1,pos)).toBe(true)
+                        expect(await tree.canMoveTo(c11,c12,pos)).toBe(true) 
+                        expect(await tree.canMoveTo(c12,c13,pos)).toBe(true)
+                        expect(await tree.canMoveTo(c13,c11,pos)).toBe(true)
+            }
+        })
+
+
+    })
+
+    describe("移动节点到目标节点的后面成为其下一个兄弟节点",async ()=>{
+        test("同级内移动到下一个兄弟节点",async ()=>{
+            const a1 =await tree.findNode({name:"A_1"})!
+            const a2 = await tree.findNode({name:"A_2"})!
+            await tree.update(async ()=>{
+                await tree.moveNode(a1.id,a2.id,NextSibling)
+            })
+        })
+        
+    })
 })

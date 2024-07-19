@@ -3,6 +3,8 @@
 
 export class FlexTreeError extends Error{}
 export class FlexTreeNotExists extends FlexTreeError{}
+export class FlexTreeVerifyError extends Error{}
+
 
 export class FlexTreeNotFoundError  extends FlexTreeError{}
 export class FlexTreeDriverError extends FlexTreeError{}

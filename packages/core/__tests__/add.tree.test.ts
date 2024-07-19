@@ -377,9 +377,6 @@ describe("添加树节点", () => {
             expect(nodes[4].rightValue).toBe(9)
             expect(nodes[4].level).toBe(1)
 
-
-
-
         })
         test("多次添加多个兄弟节点",async ()=>{
             
@@ -491,6 +488,18 @@ describe("添加树节点", () => {
                 expect(nodes[i].leftValue).toBe(i*2)
                 expect(nodes[i].rightValue).toBe(i*2+1)
             }
+        })
+        test("在多级树中添加兄弟节点",async ()=>{
+            await tree.update(async ()=>{
+                await tree.addNodes([{id:3,name:"A"}],2)
+                await tree.addNodes([{id:4,name:"AA"}],3)
+                await tree.addNodes([{id:5,name:"AAA"}],4)
+                await tree.addNodes([{id:6,name:"X1"}],5)
+                await tree.addNodes([{name:"X5"}],6,NextSibling)
+                await tree.addNodes([{name:"X4"}],6,NextSibling)
+                await tree.addNodes([{name:"X3"}],6,NextSibling)
+                await tree.addNodes([{name:"X2"}],6,NextSibling)
+            })
         })
 
     })

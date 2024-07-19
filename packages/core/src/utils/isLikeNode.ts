@@ -16,7 +16,7 @@ export function isLikeNode(node:any, fieldNames: Required<NonUndefined<FlexTreeM
       if(!node[fieldNames.id]) return false 
       if(node[fieldNames.leftValue]<=0) return false 
       if(node[fieldNames.rightValue]<=0) return false
-      if(node[fieldNames.leftValue]<=node[fieldNames.rightValue]) return false
-      if(node[fieldNames.level]<=0) return false
+      if(node[fieldNames.leftValue]>=node[fieldNames.rightValue]) return false
+      if(node[fieldNames.level]<0) return false
       return true
 }

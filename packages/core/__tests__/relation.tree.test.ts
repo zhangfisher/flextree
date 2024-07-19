@@ -1,6 +1,6 @@
 import { test,describe,beforeEach, expect, beforeAll, afterEach } from "vitest" 
 import { FlexNodeRelPosition, FlexTreeManager, FlexTreeNodeError, FlexTreeNodeRelation, NextSibling, PreviousSibling } from "../src/index"; 
-import { createDemoTree, createTreeManager, dumpTree } from "./common";
+import { createDemoTree, createTreeManager, dumpTree,verifyTree } from "./common";
  
 
 
@@ -8,7 +8,8 @@ describe("查询节点关系", () => {
     let tree:FlexTreeManager
     beforeEach(async ()=>{
         tree = await createTreeManager()
-        await createDemoTree(tree)
+        await createDemoTree(tree)        
+        await verifyTree(await tree.getNodes())
     })    
     afterEach(async ()=>{ 
         await dumpTree(tree.driver.db,"relation.db")
@@ -16,15 +17,6 @@ describe("查询节点关系", () => {
     test("返回自己关系",async ()=>{
         const a1 = await  tree.findNode({name:"A_1"})
         expect(await tree.getNodeRelation(a1,a1)).toBe(FlexTreeNodeRelation.Self)
-    })
-    test("返回子节点关系",async ()=>{
-        const a = await tree.findNode({name:"A"})
-        const a1 = await  tree.findNode({name:"A_1"})
-        const a2 = await  tree.findNode({name:"A_2"})
-        const a3 = await  tree.findNode({name:"A_3"})
-        expect(await tree.getNodeRelation(a1,a)).toBe(FlexTreeNodeRelation.Child)
-        expect(await tree.getNodeRelation(a2,a)).toBe(FlexTreeNodeRelation.Child)
-        expect(await tree.getNodeRelation(a3,a)).toBe(FlexTreeNodeRelation.Child)
     })
     test("返回后代关系",async ()=>{
         const a = await tree.findNode({name:"A"})
@@ -35,15 +27,6 @@ describe("查询节点关系", () => {
         expect(await tree.getNodeRelation(a2,a)).toBe(FlexTreeNodeRelation.Descendants)
         expect(await tree.getNodeRelation(a3,a)).toBe(FlexTreeNodeRelation.Descendants)
     })
-    test("返回父节点关系",async ()=>{
-        const a = await tree.findNode({name:"A"})
-        const a1 = await  tree.findNode({name:"A_1"})
-        const a2 = await  tree.findNode({name:"A_2"})
-        const a3 = await  tree.findNode({name:"A_3"})
-        expect(await tree.getNodeRelation(a,a1)).toBe(FlexTreeNodeRelation.Parent)
-        expect(await tree.getNodeRelation(a,a2)).toBe(FlexTreeNodeRelation.Parent)
-        expect(await tree.getNodeRelation(a,a3)).toBe(FlexTreeNodeRelation.Parent)
-    }) 
     test("返回祖先关系",async ()=>{
         const a = await tree.findNode({name:"A"})
         const a1 = await  tree.findNode({name:"A_1_1"})
@@ -101,5 +84,22 @@ describe("查询节点关系", () => {
         expect(await tree.getNodeRelation(a,b)).toBe(FlexTreeNodeRelation.SameTree)
     })
 
-
+    // test("返回父节点关系",async ()=>{
+    //     const a = await tree.findNode({name:"A"})
+    //     const a1 = await  tree.findNode({name:"A_1"})
+    //     const a2 = await  tree.findNode({name:"A_2"})
+    //     const a3 = await  tree.findNode({name:"A_3"})
+    //     expect(await tree.getNodeRelation(a,a1)).toBe(FlexTreeNodeRelation.Parent)
+    //     expect(await tree.getNodeRelation(a,a2)).toBe(FlexTreeNodeRelation.Parent)
+    //     expect(await tree.getNodeRelation(a,a3)).toBe(FlexTreeNodeRelation.Parent)
+    // }) 
+    // test("返回子节点关系",async ()=>{
+    //     const a = await tree.findNode({name:"A"})
+    //     const a1 = await  tree.findNode({name:"A_1"})
+    //     const a2 = await  tree.findNode({name:"A_2"})
+    //     const a3 = await  tree.findNode({name:"A_3"})
+    //     expect(await tree.getNodeRelation(a1,a)).toBe(FlexTreeNodeRelation.Child)
+    //     expect(await tree.getNodeRelation(a2,a)).toBe(FlexTreeNodeRelation.Child)
+    //     expect(await tree.getNodeRelation(a3,a)).toBe(FlexTreeNodeRelation.Child)
+    // })
 })

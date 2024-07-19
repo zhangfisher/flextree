@@ -31,6 +31,11 @@ import { escapeSqlString } from './utils/escapeSqlString';
 import { FlexTreeEvents } from "./tree"
 import { IDatabaseDriver } from "./driver"
 import sqlString from "sqlString" 
+import { mix } from "ts-mixer"
+import { MoveNodeMixin } from "./mixins/move.mixin"
+import { DeleteNodeMixin } from "./mixins/delete.mixin"
+import { AddNodeMixin } from "./mixins/add.mixin"
+
 
 export interface FlexTreeManagerOptions<TreeIdType=number>{
     treeId?     : TreeIdType                    // 使用支持单表多树时需要提供
@@ -45,6 +50,17 @@ export interface FlexTreeManagerOptions<TreeIdType=number>{
     driver: IDatabaseDriver 
 }
 
+export interface FlexTreeManager<
+    Data extends Record<string,any>={},
+    KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
+    TreeNode extends IFlexTreeNode<Data,KeyFields> = IFlexTreeNode<Data,KeyFields>,
+    NodeId = NonUndefined<KeyFields['id']>[1],
+    TreeId = NonUndefined<KeyFields['treeId']>[1]> 
+    extends 
+        MoveNodeMixin<Data,KeyFields,TreeNode,NodeId,TreeId>,
+        DeleteNodeMixin<Data,KeyFields,TreeNode,NodeId,TreeId>,
+        AddNodeMixin<Data,KeyFields,TreeNode,NodeId,TreeId>
+{}
 
 /**
  * 
@@ -57,6 +73,7 @@ export interface FlexTreeManagerOptions<TreeIdType=number>{
  *  - KeyFields: 当自定义的关键字段名称,需要提供该类型
  * 
  */
+@mix(MoveNodeMixin,DeleteNodeMixin,AddNodeMixin)
 export class FlexTreeManager<
         Data extends Record<string,any>={},
         KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
@@ -101,6 +118,7 @@ export class FlexTreeManager<
     get emit(){ return this._emitter.emit.bind(this) }
     get driver(){  return this._options.driver!}
     get treeId(){ return this._treeId}
+    get keyFields(){ return this._fields}
     get isMultiTree(){ return this._treeId !== undefined}
 
     async ready(){
@@ -160,7 +178,7 @@ export class FlexTreeManager<
      *
      * @param sql 
      */
-    private _sql(sql:string){
+    protected _sql(sql:string){
         // 在一表多树时,需要增加额外的树判定
         if(this._treeId){
             const treeId = typeof(this._treeId)=='string' ? `'${this._treeId}'` : this._treeId  
@@ -209,7 +227,10 @@ export class FlexTreeManager<
      * @returns 
      */
     async getNodes():Promise<TreeNode[]>{
-        const sql =this._sql(`SELECT * FROM ${this._tableName} ${this.isMultiTree ? `WHERE {__TREE_ID__} 1` : ''} ORDER BY ${this._fields.leftValue}`)
+        const sql =this._sql(`SELECT * FROM ${this._tableName} 
+            WHERE {__TREE_ID__} ${this._fields.leftValue}>0 AND ${this._fields.rightValue}>0
+            ORDER BY ${this._fields.leftValue}
+        `)
         return await this.onExecuteReadSql(sql) 
     }
 
@@ -573,313 +594,40 @@ export class FlexTreeManager<
         await this.onExecuteWriteSql([sql])  
     }
 
-    private _assertUpdating(){
+    protected _assertUpdating(){
         if(!this._isUpdating) throw new FlexTreeInvalidUpdateError()
     }
     
     /**
-     * 根据atNode参数返回目标节点的信息
-     * - 如果atNode==undefined 代表根据节点
-     * - 如果atNode是节点对象，则直接返回
-     * - 如果atNode是字符串或数字，则根据ID获取节点信息
+     * 
+     * 根据输入参数返回节点数据
+     * 
+     * - 如果node==undefined 返回根节点
+     * - 如果node是节点对象，则直接返回
+     * - 如果node是字符串或数字，则根据ID获取节点信息
+     * 
      */
-    private async _getRelNode(atNode:any){
-        let relNode:TreeNode        
+    async getNodeData(param:any){
+        let node:TreeNode        
         // 如果输入的是节点对象已经包含了节点信息，可以直接使用
-        if(atNode==undefined){// 未指定目标节点，则添加到根节点
-            relNode = await this.getRoot() as TreeNode
-            if(!relNode) throw new FlexTreeNotExists()
-        }else if(isLikeNode(atNode,this._options.fields)){
-            relNode = atNode as TreeNode
-        }else if(['string','number'].includes(typeof(atNode))){     // 否则需要根据ID获取节点信息
-            relNode = await this.getNode(atNode as any) as TreeNode
+        if(param==undefined){   // 未指定目标节点，则添加到根节点
+            node = await this.getRoot() as TreeNode            
+            if(!node) throw new FlexTreeNotExists()
+        }else if(isLikeNode(param,this._options.fields)){
+            node = param as TreeNode
+        }else if(['string','number'].includes(typeof(param))){ // 否则需要根据ID获取节点信息
+            node = await this.getNode(param as any) as TreeNode
         }else{
             throw new FlexTreeError('Invalid node parameter')
         }
-        if(isValidNode(relNode!)){
+        if(isValidNode(node!)){
             throw new FlexTreeNodeNotFoundError('Invalid node parameter')
         }
-        return relNode
+        return node
     }
-    /**
-     * 
-     * 将nodes添加到relNode的子节点集的最后面
-     * 
-     * @param relNode 
-     * @param nodes 
-     * @param fields 
-     * @returns 
-     */
-    private _addLastChilds(relNode:TreeNode,nodes:Partial<TreeNode>[],fields:string[]){ 
-        const values = nodes.map((node,i)=>{
-            let row = [
-                relNode[this._fields.level] + 1,
-                relNode[this._fields.rightValue] + i*2,
-                relNode[this._fields.rightValue] + i*2 +1
-            ]
-            for(let i=3;i<fields.length;i++){
-                row.push(escapeSqlString(node[fields[i]]))
-            } 
-            return `(${row.join(',')})`
-        }).join(',')
-        return [
-            this._sql(`
-                UPDATE ${this._tableName} SET ${this._fields.leftValue} = ${this._fields.leftValue} + ${nodes.length*2} 
-                WHERE {__TREE_ID__} ${this._fields.leftValue} >= ${relNode[this._fields.rightValue]}
-            `),
-            this._sql(`
-                UPDATE ${this._tableName} SET ${this._fields.rightValue} = ${this._fields.rightValue} + ${nodes.length*2} 
-                WHERE {__TREE_ID__} ${this._fields.rightValue} >= ${relNode[this._fields.rightValue]}
-            `),                     
-            this._sql(`
-                INSERT INTO ${this._tableName} ( ${fields.map(f=>escapeSqlString(f)).join(",")}) 
-                VALUES ${values}
-            `)
-        ]
-    }
-    /**
-     * 
-     * 将nodes添加到relNode的子节点集的最前面
-     * 
-     */
-    private _addFirstChilds(relNode:TreeNode,nodes:Partial<TreeNode>[],fields:string[]){ 
-        const values = nodes.map((node,i)=>{
-            let row = [
-                relNode[this._fields.level] + 1,
-                relNode[this._fields.leftValue] + i*2 +1,
-                relNode[this._fields.leftValue] + i*2 +2
-            ]
-            for(let i=3;i<fields.length;i++){
-                row.push(escapeSqlString(node[fields[i]]))
-            } 
-            return `(${row.join(',')})`
-        }).join(',')
-        return [
-            this._sql(`
-                UPDATE ${this._tableName} SET ${this._fields.leftValue} = ${this._fields.leftValue} + ${nodes.length*2} 
-                WHERE {__TREE_ID__} ${this._fields.leftValue} > ${relNode[this._fields.leftValue]}
-            `),
-            this._sql(`
-                UPDATE ${this._tableName} SET ${this._fields.rightValue} = ${this._fields.rightValue} + ${nodes.length*2} 
-                WHERE {__TREE_ID__} ${this._fields.rightValue} >= ${relNode[this._fields.leftValue]+1}
-            `),                     
-            this._sql(`
-                INSERT INTO ${this._tableName} ( ${fields.map(f=>escapeSqlString(f)).join(",")}) 
-                VALUES ${values}
-            `)
-        ]
-
-    }
-    private _addNextSiblings(relNode:TreeNode,nodes:Partial<TreeNode>[],fields:string[]){ 
-        const values = nodes.map((node,i)=>{
-            let row = [
-                relNode[this._fields.level],
-                relNode[this._fields.rightValue] + i*2 +1,
-                relNode[this._fields.rightValue] + i*2 +2
-            ]
-            for(let i=3;i<fields.length;i++){
-                row.push(escapeSqlString(node[fields[i]]))
-            } 
-            return `(${row.join(',')})`
-        }).join(',')
-        return [
-            this._sql(`
-                UPDATE ${this._tableName} SET ${this._fields.leftValue} = ${this._fields.leftValue} + ${nodes.length*2} 
-                WHERE {__TREE_ID__} ${this._fields.leftValue} > ${relNode[this._fields.rightValue]}
-            `),
-            this._sql(`
-                UPDATE ${this._tableName} SET ${this._fields.rightValue} = ${this._fields.rightValue} + ${nodes.length*2} 
-                WHERE {__TREE_ID__} ${this._fields.rightValue} > ${relNode[this._fields.rightValue]}
-            `),                     
-            this._sql(`
-                INSERT INTO ${this._tableName} ( ${fields.map(f=>escapeSqlString(f)).join(",")}) 
-                VALUES ${values}
-            `)
-        ]
-    }
-    private _addPreviousSiblings(relNode:TreeNode,nodes:Partial<TreeNode>[],fields:string[]){ 
-        const values = nodes.map((node,i)=>{
-            let row = [
-                relNode[this._fields.level],
-                relNode[this._fields.leftValue] + i*2,
-                relNode[this._fields.leftValue] + i*2 +1
-            ]
-            for(let i=3;i<fields.length;i++){
-                row.push(escapeSqlString(node[fields[i]]))
-            } 
-            return `(${row.join(',')})`
-        }).join(',')
-        return [
-            this._sql(`
-                UPDATE ${this._tableName} SET ${this._fields.leftValue} = ${this._fields.leftValue} + ${nodes.length*2} 
-                WHERE {__TREE_ID__} ${this._fields.leftValue} >= ${relNode[this._fields.leftValue]}
-            `),
-            this._sql(`
-                UPDATE ${this._tableName} SET ${this._fields.rightValue} = ${this._fields.rightValue} + ${nodes.length*2} 
-                WHERE {__TREE_ID__} ${this._fields.rightValue} > ${relNode[this._fields.leftValue]}
-            `),                     
-            this._sql(`
-                INSERT INTO ${this._tableName} ( ${fields.map(f=>escapeSqlString(f)).join(",")}) 
-                VALUES ${values}
-            `)
-        ]
-
-    }
-    /**
-     * 
-     * 增加多个节点
-     * 
-     * addNodes([
-     *  {...},
-     *  {...}
-     * ],'nodeId',FlexNodeRelPosition.LastChild)
-     * 
-     * 
-     * 1. 批量插入时，需要保证节点数据的字段名称是一样的，比如
-     *    addNode([{id:1,name:'test'},{id:2,xname:'test2'}])  // ❌错误
-     * 2. 所有关键字段中(id,name,treeId,leftValue,rightValue,level)中，
-     *      leftValue,rightValue,level是自动计算的，不需要手动输入
-     *      id字段则取决于数据库表设计，如果是自增则不必设置，否则需要
-     *      treeId则是在
-     * 
-     * 
-     * ，id是自增的，则可以不必指定，是可选的
-     * 3. 如果是单树表，可以不必指定treeId,如果是多树表，则必须指定
-     * 
-     * 
-     * 
-     * @param nodes
-     * @param atNode     添加到的目标节点的指定位置， undefined代表根节点
-     * @param pos            添加的位置，默认为最后一个子节点
-     * 
-     */
-    async addNodes(nodes:Partial<TreeNode>[],atNode?:NodeId | TreeNode | null, pos:FlexNodeRelPosition = FlexNodeRelPosition.LastChild){
-        this._assertUpdating()
-
-        if(nodes.length == 0) return
-
-        // 1. 先获取要添加的目标节点的信息，得到目标节点的leftValue,rightValue,level等
-        const relNode = await this._getRelNode(atNode) 
-
-        // 2. 检查添加位置是否合法
-        if(this.isRoot(relNode!)){ 
-            if(pos == FlexNodeRelPosition.NextSibling || pos == FlexNodeRelPosition.PreviousSibling){
-                throw new FlexTreeError('Root node can not have next and previous sibling node')
-            }
-        }
-
-        // 2. 处理节点数据:   单树表不需要增加treeId字段
-        const fields:string[] = [
-            this._fields.level,
-            this._fields.leftValue,
-            this._fields.rightValue
-        ]
-        if(this.isMultiTree) fields.push(this._fields.treeId)        
-        fields.push(...Object.keys(nodes[0]).filter(f=>!fields.includes(f)))// 添加其他字段
-
-
-        let sqls:string[] = []
-        
-        if(pos== FlexNodeRelPosition.LastChild){           
-            sqls = this._addLastChilds(relNode,nodes,fields) 
-        }else if(pos==FlexNodeRelPosition.FirstChild){
-            sqls = this._addFirstChilds(relNode,nodes,fields) 
-        }else if(pos== FlexNodeRelPosition.NextSibling){
-            sqls= this._addNextSiblings(relNode,nodes,fields)
-        }else if(pos == FlexNodeRelPosition.PreviousSibling){
-            sqls = this._addPreviousSiblings(relNode,nodes,fields)
-        }
-        await this.onExecuteWriteSql(sqls)
-    } 
     /***************************** 移动节点 *****************************/ 
-    private async _moveToLastChild(node:NodeId | TreeNode,atNode:TreeNode){
-        return []
-    }
-    private async _moveToFirstChild(node:NodeId | TreeNode,atNode?:NodeId | TreeNode){
-        return []  
-    }
-    private async _moveToNextSibling(node:NodeId | TreeNode,atNode?:NodeId | TreeNode){
-        return []  
-    }
-    private async _moveToPreviousSibling(node:NodeId | TreeNode,atNode?:NodeId | TreeNode){
-        return []  
-    }
-
-    /**
-     * 
-     * 返回node是否允许移动到atNode的指定的位置
-     * 
-     * 
-     * 当满足以下条件时不允许移动
-     * 
-     *  - 两个节点是一样的
-     * - toNode是node的后代
-     *
-     * @example
-     * 
-     *   canMoveNode(node1,node2)       node1能否移动到node2的后面，即下一个兄弟节点
-     *   canMoveNode(node1,node2,FlexNodeRelPosition.LastChild)  node1能否移动为node2的最后一个子节点
-     * 
-     */
-    async canMoveNode(node:NodeId | TreeNode,toNode?:NodeId | TreeNode, pos:FlexNodeRelPosition = FlexNodeRelPosition.NextSibling){
-        const fromNode = this._getRelNode(node) as unknown as TreeNode
-        toNode = this._getRelNode(toNode) as unknown as TreeNode
-        
-        let isAllow:boolean = true
-        
-        if(!this.isMultiTree || (this.isMultiTree && toNode[this._fields.treeId]==fromNode[this._fields.treeId])){        
-            if(toNode[this._fields.id]==fromNode[this._fields.id]){
-                isAllow=false
-            }else{
-                const r = await this.getNodeRelation(toNode,node)
-                if(r == FlexTreeNodeRelation.Descendants){
-                    isAllow =false
-                }
-            }
-        }
-
-        return isAllow
-    }
-    /**
-     * 
-     * 移动node到atNode节点lastChild,firstChild,NextSibling,PreviousSibling
-     * 
-     */
-    async moveNode(node:NodeId | TreeNode,toNode?:NodeId | TreeNode, pos:FlexNodeRelPosition = FlexNodeRelPosition.NextSibling){
-        this._assertUpdating()
-        if(!node || !toNode) throw new Error('invalid param')
-        
-        let relNode = this._getRelNode(toNode) as unknown as TreeNode
-        if(this.isRoot(relNode)){ 
-            if(pos == FlexNodeRelPosition.NextSibling || pos == FlexNodeRelPosition.PreviousSibling){
-                throw new FlexTreeError('Root node can not have next and previous sibling node')
-            }
-        }
 
 
-
-
-
-        let sqls:string[] = []
-        if(pos== FlexNodeRelPosition.LastChild){           
-            sqls = await  this._moveToLastChild(node,relNode) 
-        }else if(pos==FlexNodeRelPosition.FirstChild){
-            sqls = await this._moveToFirstChild(node,relNode) 
-        }else if(pos== FlexNodeRelPosition.NextSibling){
-            sqls=await  this._moveToNextSibling(node,relNode)
-        }else if(pos == FlexNodeRelPosition.PreviousSibling){
-            sqls = await this._moveToPreviousSibling(node,relNode)
-        }
-
-
-    }
-    
-    moveUpNode(node:NodeId | TreeNode){
-
-    }
-    moveDownNode(node:NodeId | TreeNode){
-        
-    }
     /**
      * 返回两个节点是否在同一棵树中
      */
@@ -927,11 +675,11 @@ export class FlexTreeManager<
      * const relation = getNodeRelation(node1, node2);
      * console.log(relation);  // 输出: FlexTreeNodeRelation.Child
      */
-    async getNodeRelation(srcNode:NodeId | TreeNode,targetNode:NodeId | TreeNode):Promise<FlexTreeNodeRelation>{
+    async getNodeRelation(srcNode:NodeId | TreeNode, targetNode:NodeId | TreeNode):Promise<FlexTreeNodeRelation>{
         const node = this.isValidNode(srcNode) ? srcNode as TreeNode: (await this.getNode(srcNode as NodeId)) as TreeNode
         const relNode = this.isValidNode(targetNode) ? targetNode as TreeNode : (await this.getNode(targetNode as NodeId)) as TreeNode
 
-
+        
         let result: FlexTreeNodeRelation = FlexTreeNodeRelation.Unknow
 
         const nodeId = node[this._fields.id]
@@ -948,12 +696,12 @@ export class FlexTreeManager<
         if(this.isSameTree(node,relNode)){
             if(this.isSameNode(node ,relNode)){ 
                 result = FlexTreeNodeRelation.Self          // 两个节点相等
-            }else if (leftValue > relLeftValue && rightValue < relRightValue && level == relLevel +1 ) {
-                result = FlexTreeNodeRelation.Child;        // 一个节点是另一个节点的子节点
+            // }else if (leftValue > relLeftValue && rightValue < relRightValue && level == relLevel +1 ) {
+            //     result = FlexTreeNodeRelation.Child;        // 一个节点是另一个节点的子节点
             } else if (leftValue > relLeftValue && rightValue < relRightValue) {
                 result = FlexTreeNodeRelation.Descendants;  // 一个节点是另一个节点的后代
-            } else if (leftValue < relLeftValue && rightValue > relRightValue && level == relLevel - 1) {
-                result = FlexTreeNodeRelation.Parent;       // 一个节点是另一个节点的父节点
+            // } else if (leftValue < relLeftValue && rightValue > relRightValue && level == relLevel - 1) {
+            //     result = FlexTreeNodeRelation.Parent;       // 一个节点是另一个节点的父节点
             } else if (leftValue < relLeftValue && rightValue > relRightValue) {
                 result = FlexTreeNodeRelation.Ancestors;   // 一个节点是另一个节点的祖先
             }else{                  
@@ -989,8 +737,8 @@ export class FlexTreeManager<
             result = FlexTreeNodeRelation.DiffTree          // 两个节点在不同的树中
         }
         return result
-    }
-
+    } 
 }
 
  
+
