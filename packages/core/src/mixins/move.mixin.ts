@@ -88,8 +88,8 @@ export class MoveNodeMixin<
             this._sql(`
                 UPDATE ${this.tableName} 
                 SET 
-                    ${this.keyFields.leftValue} = -${this.keyFields.leftValue} + ${toNode[this.keyFields.rightValue] - movedLength -2 }, 
-                    ${this.keyFields.rightValue} = -${this.keyFields.rightValue} + ${toNode[this.keyFields.rightValue] - movedLength -2 }
+                    ${this.keyFields.leftValue} = -${this.keyFields.leftValue} + ${toNode[this.keyFields.rightValue] - movedLength - 3 }, 
+                    ${this.keyFields.rightValue} = -${this.keyFields.rightValue} + ${toNode[this.keyFields.rightValue] - movedLength - 3 }
                 WHERE 
                     {__TREE_ID__} 
                     ${this.keyFields.leftValue} < 0 AND ${this.keyFields.rightValue} < 0
