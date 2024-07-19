@@ -66,37 +66,40 @@ export class MoveNodeMixin<
         const sqls:string[] = [] 
 
         sqls.push(...[
+                // UPDATE tree SET  leftValue = leftValue + 12 + 1 WHERE leftValue > 26
+
             this._sql(`
                 UPDATE ${this.tableName} 
                 SET 
-                    ${this.keyFields.leftValue} = ${this.keyFields.leftValue} + ${movedLength}
+                    ${this.keyFields.leftValue} = ${this.keyFields.leftValue} + ${movedLength}                              
                 WHERE 
                     {__TREE_ID__} 
-                    ${this.keyFields.leftValue} > ${toNode[this.keyFields.leftValue]}                     
+                    ${this.keyFields.leftValue} > (SELECT ${this.keyFields.rightValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )                
             `),
             this._sql(`
                 UPDATE ${this.tableName} 
                 SET 
-                    ${this.keyFields.rightValue} = ${this.keyFields.rightValue} + ${movedLength}
+                    ${this.keyFields.rightValue} = ${this.keyFields.rightValue} + ${movedLength}   
                 WHERE 
                     {__TREE_ID__} 
-                    ${this.keyFields.rightValue} > ${toNode[this.keyFields.rightValue]}                     
+                    ${this.keyFields.rightValue} > (SELECT ${this.keyFields.rightValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )                    
             `),
             // 
             this._sql(`
                 UPDATE ${this.tableName} 
                 SET 
-                    ${this.keyFields.leftValue} = ${toNode[this.keyFields.leftValue]} + (-${this.keyFields.leftValue} - ${leftValue}) + 1,
-                    ${this.keyFields.rightValue} =  ${toNode[this.keyFields.rightValue]} + (-${this.keyFields.rightValue} - ${rightValue}) + 1      
+                    ${this.keyFields.leftValue} = -${this.keyFields.leftValue} + ${toNode[this.keyFields.rightValue] - movedLength -2 }, 
+                    ${this.keyFields.rightValue} = -${this.keyFields.rightValue} + ${toNode[this.keyFields.rightValue] - movedLength -2 }
                 WHERE 
                     {__TREE_ID__} 
-                    -${this.keyFields.leftValue} >= ${leftValue} AND -${this.keyFields.rightValue} <= ${rightValue}
-            `),
-            
+                    ${this.keyFields.leftValue} < 0 AND ${this.keyFields.rightValue} < 0
+            `),            
         ])
         
         return sqls
     }
+
+
     private _moveToPreviousSibling(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,fromNode:NodeId | TreeNode,toNode?:NodeId | TreeNode){
         return []  
     }
