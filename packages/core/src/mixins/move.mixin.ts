@@ -116,6 +116,7 @@ export class MoveNodeMixin<
         const sqls:string[] = [] 
 
         sqls.push(...[
+            // 调整目标节点及其后代节点的左右值
             this._sql(`
                 UPDATE ${this.tableName} 
                 SET 
@@ -127,31 +128,31 @@ export class MoveNodeMixin<
             this._sql(`
                 UPDATE ${this.tableName} 
                 SET 
-                    ${this.keyFields.rightValue} = ${this.keyFields.rightValue} + ${movedLength}  
+                    ${this.keyFields.rightValue} =  ${this.keyFields.rightValue}  +  ${movedLength}  
                 WHERE 
                     {__TREE_ID__} 
-                    ${this.keyFields.rightValue} >= ${toNode[this.keyFields.rightValue]}                   
+                    ${this.keyFields.rightValue} <= ${toNode[this.keyFields.rightValue]}                               
             `),
+            // // 修复源节点的左右值
+            // this._sql(`
+            //     UPDATE ${this.tableName} 
+            //     SET 
+            //         ${this.keyFields.leftValue} = (SELECT ${this.keyFields.leftValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )
+            //                                       - ${movedLength} + (-${this.keyFields.leftValue} - ${leftValue}  ) 
+            //     WHERE 
+            //         {__TREE_ID__} ${this.keyFields.leftValue} < 0  
+            // `),         
             
-            this._sql(`
-                UPDATE ${this.tableName} 
-                SET 
-                    ${this.keyFields.leftValue} = (SELECT ${this.keyFields.leftValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )
-                                                 - ${movedLength} + (-${this.keyFields.leftValue} - ${leftValue}  ) 
-                WHERE 
-                    {__TREE_ID__} ${this.keyFields.leftValue} < 0  
-            `),         
-            
-            this._sql(`
-                UPDATE ${this.tableName} 
-                SET 
-                    ${this.keyFields.rightValue} =  (SELECT ${this.keyFields.leftValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${fromNode[this.keyFields.id]} )
-                                                 + (-${this.keyFields.rightValue} - ${leftValue } ) 
-                WHERE 
-                    {__TREE_ID__} ${this.keyFields.rightValue} < 0
-                        `),          
-                    ])                    
-            return sqls
+            // this._sql(`
+            //     UPDATE ${this.tableName} 
+            //     SET 
+            //         ${this.keyFields.rightValue} =  (SELECT ${this.keyFields.leftValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${fromNode[this.keyFields.id]} )
+            //                                      + (-${this.keyFields.rightValue} - ${leftValue } ) 
+            //     WHERE 
+            //         {__TREE_ID__} ${this.keyFields.rightValue} < 0
+            // `),          
+        ])                    
+        return sqls
     }
 
     private _moveToLastChild(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,fromNode:NodeId | TreeNode,toNode:TreeNode){
