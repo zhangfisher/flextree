@@ -84,16 +84,25 @@ export class MoveNodeMixin<
                     {__TREE_ID__} 
                     ${this.keyFields.rightValue} > (SELECT ${this.keyFields.rightValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )                    
             `),
-            // 
+            
             this._sql(`
                 UPDATE ${this.tableName} 
                 SET 
-                    ${this.keyFields.leftValue} = -${this.keyFields.leftValue} + ${toNode[this.keyFields.rightValue] - movedLength - 3 }, 
-                    ${this.keyFields.rightValue} = -${this.keyFields.rightValue} + ${toNode[this.keyFields.rightValue] - movedLength - 3 }
+                    ${this.keyFields.leftValue} = (SELECT ${this.keyFields.leftValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )
+                                                 + ${movedLength} + (-${this.keyFields.leftValue} - ${leftValue}  ) 
+                WHERE 
+                    {__TREE_ID__}  ${this.keyFields.leftValue} < 0  
+            `),         
+            
+            this._sql(`
+                UPDATE ${this.tableName} 
+                SET 
+                    ${this.keyFields.rightValue} = (SELECT ${this.keyFields.leftValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )
+                                                   + (${this.keyFields.leftValue} ) + (-${this.keyFields.rightValue} - ${leftValue } )
                 WHERE 
                     {__TREE_ID__} 
-                    ${this.keyFields.leftValue} < 0 AND ${this.keyFields.rightValue} < 0
-            `),            
+                     ${this.keyFields.rightValue} < 0
+            `),          
         ])
         
         return sqls
