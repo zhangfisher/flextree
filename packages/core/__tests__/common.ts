@@ -136,7 +136,9 @@ export async function dumpTree(srcDb:any,dbFile:string="tree.db"){
  * 
  * @param nodes 
  */
-export function verifyTree(nodes:IFlexTreeNode[]):boolean{
+export async function verifyTree(tree:FlexTreeManager):Promise<boolean>{
+
+    const nodes = await tree.getNodes()
     
     let pnodes:IFlexTreeNode[] = []
     for(let i = 0 ; i < nodes.length; i++){

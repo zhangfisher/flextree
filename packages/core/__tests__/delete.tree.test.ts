@@ -1,5 +1,5 @@
 import { test,describe,beforeEach, expect, afterEach } from "vitest" 
-import { FlexNodeRelPosition, FlexTreeManager, FlexTreeNodeError, NextSibling, PreviousSibling } from "../src/index"; 
+import { FlexNodeRelPosition, FlexTreeManager} from "../src/index"; 
 import { createTreeManager,createDemoTree,dumpTree, verifyTree } from "./common";
  
 
@@ -11,8 +11,7 @@ describe("删除树节点", () => {
         await createDemoTree(tree,{level:2})
     })    
     afterEach(async ()=>{ 
-        let nodes = await tree.getNodes()
-        expect(verifyTree(nodes)).toBe(true)
+        expect(await verifyTree(tree)).toBe(true)
         await dumpTree(tree.driver.db,"delete.db")
     })
     test("依次删除所有子节点",async ()=>{

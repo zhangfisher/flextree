@@ -9,7 +9,7 @@ describe("查询节点关系", () => {
     beforeEach(async ()=>{
         tree = await createTreeManager()
         await createDemoTree(tree)        
-        await verifyTree(await tree.getNodes())
+        await verifyTree(tree)
     })    
     afterEach(async ()=>{ 
         await dumpTree(tree.driver.db,"relation.db")

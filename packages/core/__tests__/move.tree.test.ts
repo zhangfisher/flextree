@@ -3,7 +3,7 @@
  */
 import { test,describe,beforeEach, expect, beforeAll, afterEach } from "vitest" 
 import { FlexNodeRelPosition, FlexTreeManager, FlexTreeNodeError, IFlexTreeNode, NextSibling, PreviousSibling } from "../src/index"; 
-import { createDemoTree, createTreeManager, dumpTree } from "./common";
+import { createDemoTree, createTreeManager, dumpTree, verifyTree } from "./common";
  
 
 
@@ -144,12 +144,16 @@ describe("移动树节点", () => {
                         expect(await tree.canMoveTo(c12,c13,pos)).toBe(true)
                         expect(await tree.canMoveTo(c13,c11,pos)).toBe(true)
             }
+            expect(await verifyTree(tree)).toBe(true)
+
         })
 
 
     })
 
     describe("移动节点到目标节点的后面成为其下一个兄弟节点",async ()=>{
+        // 向下移动
+
         test("同级内移动到下一个兄弟节点",async ()=>{
             
             let a1 =await tree.findNode({name:"A_1_1"})!
@@ -178,10 +182,11 @@ describe("移动树节点", () => {
             expect(a.rightValue).toBe(a.leftValue+11)
 
 
+            expect(await verifyTree(tree)).toBe(true)
 
 
         })
-        test("同级内连续多下移动到下一个兄弟节点",async ()=>{
+        test("同级内连续多下移动到同级内的下一个兄弟节点",async ()=>{
             let a1 =await tree.findNode({name:"A_1_1"})!
             let a2 = await tree.findNode({name:"A_1_2"})!
             let a3 = await tree.findNode({name:"A_1_3"})!
@@ -211,19 +216,112 @@ describe("移动树节点", () => {
             expect(a5.rightValue).toBe(a.leftValue+8)
             expect(a1.leftValue).toBe(a.leftValue+9)
             expect(a1.rightValue).toBe(a.leftValue+10)
-        })  
-        test("移动子树到目标节点的下一个兄弟节点",async ()=>{
 
-            let a1 =await tree.findNode({name:"A_1"})!
-            let a2 = await tree.findNode({name:"A_2"})!
-            let a3 = await tree.findNode({name:"A_3"})!
-            let a4 = await tree.findNode({name:"A_4"})!
-            let a5 = await tree.findNode({name:"A_5"})!
+            expect(await verifyTree(tree)).toBe(true)
+        })  
+        test("移动子树到同级内的目标节点的下一个兄弟节点",async ()=>{
+            let a =await tree.findNode({name:"A"})!
+            let b = await tree.findNode({name:"B"})!
+            let c = await tree.findNode({name:"C"})!
+            let d = await tree.findNode({name:"D"})!
+            let e = await tree.findNode({name:"E"})!
+            let f = await tree.findNode({name:"F"})!
             await tree.update(async ()=>{
-                await tree.moveNode(a1.id,a2.id,NextSibling)
+                await tree.moveNode(a.id,b.id,NextSibling)
+                await tree.moveNode(a.id,c.id,NextSibling)
+                await tree.moveNode(a.id,d.id,NextSibling)
+                await tree.moveNode(a.id,e.id,NextSibling)
+                await tree.moveNode(a.id,f.id,NextSibling)
             })
 
+            expect(await verifyTree(tree)).toBe(true)
 
         })      
+
+        // 向上移动：　以下是移动到前面的目标节点的下一个兄弟节点
+        test("向上同级内移动到前面的目标下一个兄弟节点",async ()=>{
+            
+            let a2 =await tree.findNode({name:"A_1_2"})!
+            let a5 = await tree.findNode({name:"A_1_5"})!
+            await tree.update(async ()=>{
+                await tree.moveNode(a5.id,a2.id,NextSibling)
+            })
+            a2 = await tree.findNode({name:"A_1_2"})!
+            a5 = await tree.findNode({name:"A_1_5"})!
+
+            expect(a5.leftValue).toBe(a2.rightValue+1)
+
+            expect(await verifyTree(tree)).toBe(true)
+        })
+        test("向上同级内连续多下移动到前面的目标同级内的下一个兄弟节点",async ()=>{
+            let a1 =await tree.findNode({name:"A_1_1"})!
+            let a2 = await tree.findNode({name:"A_1_2"})!
+            let a3 = await tree.findNode({name:"A_1_3"})!
+            let a4 = await tree.findNode({name:"A_1_4"})!
+            let a5 = await tree.findNode({name:"A_1_5"})!
+
+            await tree.update(async ()=>{
+                await tree.moveNode(a5.id,a3.id,NextSibling)
+                await tree.moveNode(a5.id,a2.id,NextSibling)
+                await tree.moveNode(a5.id,a1.id,NextSibling)
+            })
+            let a = await tree.findNode({name:"A_1"})!
+            a1 = await tree.findNode({name:"A_1_1"})!
+            a2 = await tree.findNode({name:"A_1_2"})!
+            a3 = await tree.findNode({name:"A_1_3"})! 
+            a4 = await tree.findNode({name:"A_1_4"})!
+            a5 = await tree.findNode({name:"A_1_5"})! 
+
+            expect(await verifyTree(tree)).toBe(true)
+        })  
+        test("向上移动子树到同级内的前面的目标节点的下一个兄弟节点",async ()=>{
+            let a =await tree.findNode({name:"A"})!
+            let b = await tree.findNode({name:"B"})!
+            let c = await tree.findNode({name:"C"})!
+            let d = await tree.findNode({name:"D"})!
+            let e = await tree.findNode({name:"E"})!
+            let f = await tree.findNode({name:"F"})!
+            await tree.update(async ()=>{
+                await tree.moveNode(f.id,d.id,NextSibling)
+                await tree.moveNode(f.id,c.id,NextSibling)
+                await tree.moveNode(f.id,b.id,NextSibling)
+                await tree.moveNode(f.id,a.id,NextSibling)
+            })
+
+            expect(await verifyTree(tree)).toBe(true)
+
+        })      
+    })
+    describe("移动节点到目标节点的前面成为其上一个兄弟节点",async ()=>{
+
+        // 向下移动
+        test("同级内移动到上一个兄弟节点",async ()=>{
+            let a1 =await tree.findNode({name:"A_1_1"})!
+            let a2 = await tree.findNode({name:"A_1_2"})!
+            await tree.update(async ()=>{
+                await tree.moveNode(a2.id,a1.id,PreviousSibling)
+            })
+            let a = await tree.findNode({name:"A_1"})!
+            a1 = await tree.findNode({name:"A_1_1"})!
+            a2 = await tree.findNode({name:"A_1_2"})!
+            a3 = await tree.findNode({name:"A_1_3"})!
+            let a4 = await tree.findNode({name:"A_1_4"})!
+            let a5 = await tree.findNode({name:"A_1_5"})!
+            
+
+            // expect(a2.leftValue).toBe(a.leftValue+1)
+            // expect(a2.rightValue).toBe(a.leftValue+2)
+            // expect(a1.leftValue).toBe(a.leftValue+3)
+            // expect(a1.rightValue).toBe(a.leftValue+4)
+            // expect(a3.leftValue).toBe(a.leftValue+5)
+            // expect(a3.rightValue).toBe(a.leftValue+6)
+            // expect(a4.leftValue).toBe(a.leftValue+7)
+            // expect(a4.rightValue).toBe(a.leftValue+8)
+            // expect(a5.leftValue).toBe(a.leftValue+9)
+            // expect(a5.rightValue).toBe(a.leftValue+10)
+            // expect(a.rightValue).toBe(a.leftValue+11)
+            // expect(await verifyTree(tree)).toBe(true)
+        })
+
     })
 })
