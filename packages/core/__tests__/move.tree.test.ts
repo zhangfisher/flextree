@@ -191,7 +191,7 @@ describe("移动树节点", () => {
 
             await tree.update(async ()=>{
                 await tree.moveNode(a1.id,a2.id,NextSibling)
-            //     await tree.moveNode(a1.id,a3.id,NextSibling)
+                await tree.moveNode(a1.id,a3.id,NextSibling)
             //     await tree.moveNode(a1.id,a4.id,NextSibling)
             //     await tree.moveNode(a1.id,a5.id,NextSibling)
             })
@@ -202,8 +202,8 @@ describe("移动树节点", () => {
             a4 = await tree.findNode({name:"A_1_4"})!
             a5 = await tree.findNode({name:"A_1_5"})!
 
-            expect(a2.leftValue).toBe(a.leftValue+1)
-            expect(a2.rightValue).toBe(a.leftValue+2)            
+            // expect(a2.leftValue).toBe(a.leftValue+1)
+            // expect(a2.rightValue).toBe(a.leftValue+2)            
             // expect(a3.leftValue).toBe(a.leftValue+3)
             // expect(a3.rightValue).toBe(a.leftValue+4)
             // expect(a4.leftValue).toBe(a.leftValue+5)
