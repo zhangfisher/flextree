@@ -2,7 +2,7 @@
  * 更新树
  */
 import { test,describe,beforeEach, expect, beforeAll, afterEach } from "vitest" 
-import { FlexNodeRelPosition, FlexTreeManager, FlexTreeNodeError, IFlexTreeNode, LastChild, NextSibling, PreviousSibling } from "../src/index"; 
+import { FirstChild, FlexNodeRelPosition, FlexTreeManager, FlexTreeNodeError, IFlexTreeNode, LastChild, NextSibling, PreviousSibling } from "../src/index"; 
 import { createDemoTree, createTreeManager, dumpTree, verifyTree } from "./common";
  
 
@@ -521,12 +521,20 @@ describe("移动树节点", () => {
     })
 
     describe("移动节点为目标节点最后一个子节点",async ()=>{
-        test("A_1_1移动为A_1_3的最后一个子节点",async ()=>{
-            let a13 =await tree.findNode({name:"A-1-3"})!
+        // 向下移动： 即目标节点在源节点后面
+        test("A-1-1移动为A-1-3的最后一个子节点",async ()=>{
             let a11 = await tree.findNode({name:"A-1-1"})!
+            let a13 =await tree.findNode({name:"A-1-3"})!            
             await tree.update(async ()=>{
                 await tree.moveNode(a11.id,a13.id,LastChild)
             }) 
+            a13 = await tree.findNode({name:"A-1-3"})!
+            a11 = await tree.findNode({name:"A-1-1"})!
+
+            expect(a11.level).toBe(a13.level+1)
+            expect(a11.rightValue+1).toBe(a13.rightValue)
+
+            expect(await verifyTree(tree)).toBe(true)
         })
         test("A移动为B的最后一个子节点",async ()=>{
             let a =await tree.findNode({name:"A"})!
@@ -534,10 +542,149 @@ describe("移动树节点", () => {
             await tree.update(async ()=>{
                 await tree.moveNode(a,b,LastChild)
             }) 
+            a =await tree.findNode({name:"A"})!
+            b = await tree.findNode({name:"B"})!
+            expect(a.level).toBe(b.level+1)
+            expect(a.rightValue).toBe(b.rightValue-1)
             expect(await verifyTree(tree)).toBe(true)
-
+        })
+        test("A移动为B-1-2的最后一个子节点",async ()=>{
+            let a =await tree.findNode({name:"A"})!
+            let b = await tree.findNode({name:"B-1-2"})!
+            await tree.update(async ()=>{
+                await tree.moveNode(a,b,LastChild)
+            }) 
+            a =await tree.findNode({name:"A"})!
+            b = await tree.findNode({name:"B-1-2"})!
+            expect(a.level).toBe(b.level+1)
+            expect(a.rightValue).toBe(b.rightValue-1)
+            expect(await verifyTree(tree)).toBe(true)
         })
 
+        // 向上移动： 即目标节点在源节点前面
+        test("A-1-3移动为A-1-1的最后一个子节点",async ()=>{
+            let a11 = await tree.findNode({name:"A-1-1"})!
+            let a13 =await tree.findNode({name:"A-1-3"})!            
+            await tree.update(async ()=>{
+                await tree.moveNode(a13,a11,LastChild)
+            }) 
+            a13 = await tree.findNode({name:"A-1-3"})!
+            a11 = await tree.findNode({name:"A-1-1"})!
+
+            expect(a13.level).toBe(a11.level+1)
+            expect(a13.rightValue+1).toBe(a11.rightValue)
+
+            expect(await verifyTree(tree)).toBe(true)
+        })
+        test("B移动为A的最后一个子节点",async ()=>{
+            let a =await tree.findNode({name:"A"})!
+            let b = await tree.findNode({name:"B"})!
+            await tree.update(async ()=>{
+                await tree.moveNode(b,a,LastChild)
+            }) 
+            a =await tree.findNode({name:"A"})!
+            b = await tree.findNode({name:"B"})!
+            expect(b.level).toBe(a.level+1)
+            expect(b.rightValue).toBe(a.rightValue-1)
+            expect(await verifyTree(tree)).toBe(true)
+        })
+        test("C移动为A-1-2的最后一个子节点",async ()=>{
+            let c =await tree.findNode({name:"C"})!
+            let a = await tree.findNode({name:"A-1-2"})!
+            await tree.update(async ()=>{
+                await tree.moveNode(c,a,LastChild)
+            }) 
+            c =await tree.findNode({name:"C"})!
+            a = await tree.findNode({name:"A-1-2"})!
+            expect(c.level).toBe(a.level+1)
+            expect(c.rightValue).toBe(a.rightValue-1)
+            expect(await verifyTree(tree)).toBe(true)
+        })
     })
 
+    
+    describe("移动节点为目标节点第一个子节点",async ()=>{
+        // 向下移动： 即目标节点在源节点后面
+        test("A-1-1移动为A-1-3的第一个子节点",async ()=>{
+            let a11 = await tree.findNode({name:"A-1-1"})!
+            let a13 =await tree.findNode({name:"A-1-3"})!            
+            await tree.update(async ()=>{
+                await tree.moveNode(a11.id,a13.id,FirstChild)
+            }) 
+            a13 = await tree.findNode({name:"A-1-3"})!
+            a11 = await tree.findNode({name:"A-1-1"})!
+
+            expect(a11.level).toBe(a13.level+1)
+            expect(a11.leftValue).toBe(a13.leftValue+1)
+
+            expect(await verifyTree(tree)).toBe(true)
+        })
+        test("A移动为B的第一个子节点",async ()=>{
+            let a =await tree.findNode({name:"A"})!
+            let b = await tree.findNode({name:"B"})!
+            await tree.update(async ()=>{
+                await tree.moveNode(a,b,FirstChild)
+            }) 
+            a =await tree.findNode({name:"A"})!
+            b = await tree.findNode({name:"B"})!
+            expect(a.level).toBe(b.level+1)
+            expect(a.leftValue).toBe(b.leftValue+1)
+            expect(await verifyTree(tree)).toBe(true)
+        })
+        test("B移动为A-1-2的第一个子节点",async ()=>{
+            let a =await tree.findNode({name:"A"})!
+            let b = await tree.findNode({name:"B-1-2"})!
+            await tree.update(async ()=>{
+                await tree.moveNode(a,b,FirstChild)
+            }) 
+            a =await tree.findNode({name:"A"})!
+            b = await tree.findNode({name:"B-1-2"})!
+            expect(a.level).toBe(b.level+1)
+            expect(a.leftValue).toBe(b.leftValue+1)
+            expect(await verifyTree(tree)).toBe(true)
+        })
+
+        // 向上移动： 即目标节点在源节点前面
+        test("A-1-3移动为A-1-1的第一个子节点",async ()=>{
+            let a11 = await tree.findNode({name:"A-1-1"})!
+            let a13 =await tree.findNode({name:"A-1-3"})!            
+            await tree.update(async ()=>{
+                await tree.moveNode(a13,a11,FirstChild)
+            }) 
+            a13 = await tree.findNode({name:"A-1-3"})!
+            a11 = await tree.findNode({name:"A-1-1"})!
+
+            expect(a13.level).toBe(a11.level+1)
+            expect(a13.leftValue).toBe(a11.leftValue+1)
+
+            expect(await verifyTree(tree)).toBe(true)
+        })
+
+
+
+        test("B移动为A的第一个子节点",async ()=>{
+            let a =await tree.findNode({name:"A"})!
+            let b = await tree.findNode({name:"B"})!
+            await tree.update(async ()=>{
+                await tree.moveNode(b,a,FirstChild)
+            }) 
+            a =await tree.findNode({name:"A"})!
+            b = await tree.findNode({name:"B"})!
+            expect(b.level).toBe(a.level+1)
+            expect(b.leftValue).toBe(a.leftValue+1)
+            expect(await verifyTree(tree)).toBe(true)
+        })
+        test("C移动为A-1-2的第一个子节点",async ()=>{
+            let c =await tree.findNode({name:"C"})!
+            let a = await tree.findNode({name:"A-1-2"})!
+            await tree.update(async ()=>{
+                await tree.moveNode(c,a,FirstChild)
+            }) 
+            c =await tree.findNode({name:"C"})!
+            a = await tree.findNode({name:"A-1-2"})!
+            expect(c.level).toBe(a.level+1)
+            expect(c.leftValue).toBe(a.leftValue+1)
+            expect(await verifyTree(tree)).toBe(true)
+        })
+    })
 })

@@ -1,4 +1,4 @@
- 
+
 /**
  * 
  * 树管理器,负责核心的树操作
@@ -35,6 +35,8 @@ import { mix } from "ts-mixer"
 import { MoveNodeMixin } from "./mixins/move.mixin"
 import { DeleteNodeMixin } from "./mixins/delete.mixin"
 import { AddNodeMixin } from "./mixins/add.mixin"
+import { IsNodeMixin } from "./mixins/is.mixin"
+import { SqlMixin } from "./mixins/sql.mixin"
 
 
 export interface FlexTreeManagerOptions<TreeIdType=number>{
@@ -59,7 +61,9 @@ export interface FlexTreeManager<
     extends 
         MoveNodeMixin<Data,KeyFields,TreeNode,NodeId,TreeId>,
         DeleteNodeMixin<Data,KeyFields,TreeNode,NodeId,TreeId>,
-        AddNodeMixin<Data,KeyFields,TreeNode,NodeId,TreeId>
+        AddNodeMixin<Data,KeyFields,TreeNode,NodeId,TreeId>,
+        IsNodeMixin<Data,KeyFields,TreeNode,NodeId,TreeId>,
+        SqlMixin<Data,KeyFields,TreeNode,NodeId,TreeId>
 {}
 
 /**
@@ -73,7 +77,7 @@ export interface FlexTreeManager<
  *  - KeyFields: 当自定义的关键字段名称,需要提供该类型
  * 
  */
-@mix(MoveNodeMixin,DeleteNodeMixin,AddNodeMixin)
+@mix(MoveNodeMixin,DeleteNodeMixin,AddNodeMixin,IsNodeMixin,SqlMixin)
 export class FlexTreeManager<
         Data extends Record<string,any>={},
         KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
@@ -141,52 +145,6 @@ export class FlexTreeManager<
             throw new FlexTreeDriverError(e.message)
         }   
         if(!this._driver.ready) throw new FlexTreeDriverError()
-    }
-
-    /**
-     * 执行读取操作
-     * @param sqls 
-     * @returns 
-     */    
-    async onExecuteReadSql(sql:string):Promise<any>{
-        await this.assertDriverReady()        
-        return await this._driver.getRows(sql)
-    } 
-     
-    
-    /**
-     * 执行操作，无返回值
-     * @param sqls 
-     * @returns 
-     */
-    async onExecuteSql(sqls:string[]):Promise<any>{        
-        await this.assertDriverReady()        
-        return await this._driver.exec(sqls) 
-    } 
-
-    async onExecuteWriteSql(sqls:string[]):Promise<any>{        
-        await this.assertDriverReady()        
-        return await this._driver.exec(sqls) 
-    } 
-    async onGetScalar(sql:string):Promise<any>{        
-        await this.assertDriverReady()        
-        return await this._driver.getScalar(sql) 
-    } 
-    /**
-     * 构建sql时调用，进行一些额外的处理
-     * 
-     *
-     * @param sql 
-     */
-    protected _sql(sql:string){
-        // 在一表多树时,需要增加额外的树判定
-        if(this._treeId){
-            const treeId = typeof(this._treeId)=='string' ? `'${this._treeId}'` : this._treeId  
-            sql = sql.params({__TREE_ID__: `${this._fields.treeId}=${treeId} AND ` ||''})
-        }else{
-            sql = sql.params({__TREE_ID__:''})
-        }      
-        return sql
     }
 
     
@@ -300,19 +258,6 @@ export class FlexTreeManager<
         `)        
         return await this.getScalar(sql)
     } 
-
-    private async getOneNode(sql:string):Promise<TreeNode>{        
-        const result = await this.onExecuteReadSql(sql)  
-        if(result.length === 0) throw new FlexTreeNodeNotFoundError()
-        return result[0] as TreeNode
-    }
-    
-    private async getNodeList(sql:string):Promise<TreeNode[]>{        
-        return await this.onExecuteReadSql(sql)  
-    }
-    private async getScalar<T=number>(sql:string):Promise<T>{        
-        return await this.driver.getScalar(sql)  as T
-    }
 
     /**
      * 仅获取子节点
@@ -501,14 +446,6 @@ export class FlexTreeManager<
         return await this.getNodeList(sql)
     }
     /**
-     * 
-     * 判断输入的节点对象是否是根节点
-     * 
-     */
-    isRoot(node:TreeNode){
-        return node.level == 0 && node.leftValue == 1
-    }
-    /**
      * 返回是否存在根节点
      * @returns 
      */
@@ -628,41 +565,6 @@ export class FlexTreeManager<
     /***************************** 移动节点 *****************************/ 
 
 
-    /**
-     * 返回两个节点是否在同一棵树中
-     */
-    isSameTree(srcNode:TreeNode,targetNode:TreeNode){
-        if(this.isMultiTree){
-            return srcNode[this._fields.treeId] == targetNode[this._fields.treeId]
-        }else{
-            return true        
-        }
-    }
-    isSameNode(node1:TreeNode,node2:TreeNode){
-        return node1[this._fields.id] == node2[this._fields.id]
-    }
-
-    /**
-    * 判断给定的节点是否有效
-    * @description
-    * 用于检查传入的节点参数是否符合预期，确保节点存在且类型正确。这通常在处理与节点相关的操作之前进行，以避免潜在的错误。
-    * @param {any} node - 需要判断的节点
-    * @returns {boolean} - 如果节点有效，返回true；否则返回false
-    * @example
-    * isValidNode('123'); // 返回false，因为'123'不是一个有效的节点ID或TreeNode对象
-    * isValidNode({ id: 123, label: '节点' }); // 返回true，因为这是一个有效的TreeNode对象
-    */
-    isValidNode(node:any):boolean{
-        if(!node) return false
-        if(typeof(node)!=='object') return false
-        if(Object.keys(node).some(k=>!(k in this._fields))) return false
-        if(!node[this._fields.id]) return false 
-        if(!(typeof(node[this._fields.leftValue])=='number' && node[this._fields.leftValue]>=1)) return false 
-        if(!(typeof(node[this._fields.rightValue])=='number' && node[this._fields.rightValue]>=1)) return false
-        if(node[this._fields.leftValue]>=node[this._fields.rightValue]) return false
-        if(!(typeof(node.level)=='number' || node.level>=0)) return false
-        return true
-    }
 
     /**
      * 获取两个节点之间的关系。
