@@ -70,18 +70,22 @@ export async function createTreeManager(treeId?:any){
  * @param tree 
  * @param level 
  */
-export async function createDemoTree(tree:FlexTreeManager,options?:{level?:number,treeCount?:number}){
+export async function createDemoTree(tree:FlexTreeManager,options?:{level?:number,treeCount?:number}):Promise<number>{
     const { level,treeCount } = Object.assign({level:3,treeCount:1},options)
     const names=["A","B","C","D","E","F"]
+    let count:number = 0
     for(let treeId=1;treeId<=treeCount;treeId++){
         await tree.update(async ()=>{
             await tree.createRoot({id:1,name:"root",treeId})
+            count++
             // level=1:   id=100,200,300,400,500,600,700
             await tree.addNodes(names.map((name,index)=>{
+                count++
                 return {name,id:(index+1)*100,treeId}
             }))    
             async function createNodes(pid:number,pname:string,lv:number){
                 const nodes =  new Array(5).fill(0).map<any>((_,i)=>{ 
+                    count++
                     return {name:`${pname}-${i+1}`,id:parseInt(`${pid}${Number(i)+1}`),treeId} 
                 })
                 await tree.addNodes(nodes,pid)
@@ -96,6 +100,7 @@ export async function createDemoTree(tree:FlexTreeManager,options?:{level?:numbe
             }        
         })
     }
+    return count
 }
 
 

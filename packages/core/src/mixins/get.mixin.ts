@@ -49,22 +49,24 @@ export class GetNodeMixin<
      *  - level:        限制返回的级别
      *  - includeSelf:  返回结果是否包括自身
      */
-    async getDescendants(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId,options?:{level?:number,includeSelf?:boolean}):Promise<IFlexTreeNode[]>{
+    async getDescendants(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode,options?:{level?:number,includeSelf?:boolean}):Promise<IFlexTreeNode[]>{
         const { level,includeSelf} =Object.assign({includeSelf:false,level:0},options)
+        const relNode = await this.getNodeData(nodeId)
+        const relNodeId =escapeSqlString(relNode[this.keyFields.id])
         let sql:string =''
         if(level==0){  //不限定层级
             sql=this._sql(`SELECT Node.* FROM ${this.tableName} Node
-                JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${escapeSqlString(nodeId)}
+                JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
                 WHERE 
                   {__TREE_ID__} 
                   ((Node.${this.keyFields.leftValue} > RelNode.${this.keyFields.leftValue}
                   AND Node.${this.keyFields.rightValue} < RelNode.${this.keyFields.rightValue})                  
-                  ${includeSelf ? `OR Node.${this.keyFields.id} = ${escapeSqlString(nodeId)}` : ''})     
+                  ${includeSelf ? `OR Node.${this.keyFields.id} = ${relNodeId}` : ''})     
                 ORDER BY ${this.keyFields.leftValue}             
                 `)
         }else{ //限定层级
             sql=this._sql(`SELECT Node.* FROM ${this.tableName} Node
-                JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${escapeSqlString(nodeId)}
+                JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
                 WHERE 
                 {__TREE_ID__} 
                 ((Node.${this.keyFields.leftValue} > RelNode.${this.keyFields.leftValue}
@@ -72,7 +74,7 @@ export class GetNodeMixin<
                 -- 限定层级
                 AND Node.${this.keyFields.level} > RelNode.${this.keyFields.level}
                 AND Node.${this.keyFields.level} <= RelNode.${this.keyFields.level}+${level})
-                ${includeSelf ? `OR Node.${this.keyFields.id} = ${escapeSqlString(nodeId)}` : ''})
+                ${includeSelf ? `OR Node.${this.keyFields.id} = ${relNodeId}` : ''})
                 ORDER BY ${this.keyFields.leftValue}             
             `)
         }
@@ -82,14 +84,19 @@ export class GetNodeMixin<
     /**
      * 获取后代节点数量
      */
-    async getDescendantCount(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId){ 
+    async getDescendantCount(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode,options?:{level?:number}){ 
+        const { level} =Object.assign({level:0},options)
+        const relNode = await this.getNodeData(nodeId)
+        const relNodeId =escapeSqlString(relNode[this.keyFields.id])
+        const relNodeLevel =relNode[this.keyFields.level]
+
         const sql = this._sql(`SELECT COUNT(*) FROM ${this.tableName} Node
-            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${escapeSqlString(nodeId)}
+            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
             WHERE {__TREE_ID__} 
                 (   
                     Node.${this.keyFields.leftValue} > RelNode.${this.keyFields.leftValue}
                     AND Node.${this.keyFields.rightValue} < RelNode.${this.keyFields.rightValue}
-                )       
+                ) ${ level>0 ? `AND Node.${this.keyFields.level} <= ${relNodeLevel + level} ` : '' }       
         `)        
         return await this.getScalar(sql)
     } 
@@ -100,7 +107,7 @@ export class GetNodeMixin<
      * @param nodeId 
      * @returns 
      */
-    async getChildren(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId){
+    async getChildren(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode){
         return await this.getDescendants(nodeId,{level:1})
     }
 
@@ -109,17 +116,21 @@ export class GetNodeMixin<
      * @param node 
      * @param options 
      */
-    async getAncestors(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId,options?:{includeSelf?:boolean}){
+    async getAncestors(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | TreeNode,options?:{includeSelf?:boolean}){
         const { includeSelf } = Object.assign({includeSelf:false},options)
+
+        const relNode = await this.getNodeData(node)
+        const relNodeId =escapeSqlString(relNode[this.keyFields.id]) 
+
         const sql = this._sql(`SELECT Node.* FROM ${this.tableName} Node
-            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${escapeSqlString(nodeId)}
+            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
             WHERE {__TREE_ID__} 
             (
                 (   
                     Node.${this.keyFields.leftValue} < RelNode.${this.keyFields.leftValue}
                     AND Node.${this.keyFields.rightValue} > RelNode.${this.keyFields.rightValue}
                 )   
-                ${includeSelf ? `OR Node.${this.keyFields.id} = ${escapeSqlString(nodeId)}` : ''})
+                ${includeSelf ? `OR Node.${this.keyFields.id} = ${relNodeId}` : ''}
             ) 
             ORDER BY ${this.keyFields.leftValue}     
         `)        
