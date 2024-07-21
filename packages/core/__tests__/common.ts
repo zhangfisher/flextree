@@ -82,7 +82,7 @@ export async function createDemoTree(tree:FlexTreeManager,options?:{level?:numbe
             }))    
             async function createNodes(pid:number,pname:string,lv:number){
                 const nodes =  new Array(5).fill(0).map<any>((_,i)=>{ 
-                    return {name:`${pname}_${i+1}`,id:parseInt(`${pid}${Number(i)+1}`),treeId} 
+                    return {name:`${pname}-${i+1}`,id:parseInt(`${pid}${Number(i)+1}`),treeId} 
                 })
                 await tree.addNodes(nodes,pid)
                 if(lv<level){
