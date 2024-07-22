@@ -75,6 +75,39 @@ export class GetNodeMixin<
     } 
 
     /**
+     * 获取第几个子节点
+     * 
+     * getChildNode(nodeId,1)  //获取第一个子节点
+     * getChildNode(nodeId,-1) //获取最后一个子节点
+     * getChildNode(nodeId,3)  //获取第三个子节点
+     * 
+     * @param this 
+     * @param node 
+     */
+    async getChild(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | TreeNode, index:number=1):Promise<TreeNode | undefined>{ 
+        const relNodeId = escapeSqlString(isLikeNode(node,this.keyFields) ? (node as any)[this.keyFields.id] : node)
+        const sql = this._sql(`SELECT * FROM ${this.tableName}  Node
+            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
+            WHERE {__TREE_ID__} 
+                (
+                    Node.${this.keyFields.leftValue} > RelNode.${this.keyFields.leftValue}
+                    AND Node.${this.keyFields.rightValue} < RelNode.${this.keyFields.rightValue}
+                    AND Node.${this.keyFields.level} = RelNode.${this.keyFields.level} + 1
+                )
+            ORDER BY Node.${this.keyFields.leftValue} LIMIT 1 OFFSET ${index-1}
+        `)
+        const result = await this.onExecuteReadSql(`SELECT * FROM tree Node
+            JOIN tree RelNode ON RelNode.id = 100
+            WHERE  (
+            Node.leftValue > RelNode.leftValue
+            AND Node.rightValue < RelNode.rightValue
+            AND Node.level = RelNode.level+1    )            
+            ORDER BY Node.leftValue LIMIT 1 OFFSET 0`)
+        return result.length > 0 ? result[0] as TreeNode : undefined
+    }
+
+
+    /**
      * 获取指定节点的所有后代
      * 
      * @param node 

@@ -4,13 +4,14 @@
  * 树管理器,负责核心的树操作
  * 
  */
-import {  CustomTreeKeyFields, DefaultTreeKeyFields, FlexTreeUpdater, IFlexTreeNode, NonUndefined } from "./types" 
+import {  CustomTreeKeyFields, DefaultTreeKeyFields, FlexTreeUpdater, IFlexTreeNode, NonUndefined,FlexTreeEvents } from "./types" 
 import { deepMerge } from "flex-tools/object/deepMerge"
 import {RequiredDeep } from "type-fest"
 import {  FlexTreeDriverError, FlexTreeError, FlexTreeInvalidUpdateError } from "./errors"
 import { IDatabaseDriver } from "./driver"
 import sqlString from "sqlString" 
 import { mix } from "ts-mixer"
+import mitt from "mitt"
 import { MoveNodeMixin } from "./mixins/move.mixin"
 import { DeleteNodeMixin } from "./mixins/delete.mixin"
 import { AddNodeMixin } from "./mixins/add.mixin"
@@ -23,7 +24,7 @@ import { RelationMixin } from "./mixins/relation.mixin"
 
 
 
-export interface FlexTreeManagerOptions<TreeIdType=number>{
+export interface FlexTreeManagerOptions<TreeIdType=number>{ 
     treeId?     : TreeIdType                    // 使用支持单表多树时需要提供
     fields?: {
         id?        : string
@@ -90,6 +91,8 @@ export class FlexTreeManager<
     private _fields:RequiredDeep<NonUndefined<FlexTreeManagerOptions['fields']>>
     private _driver:IDatabaseDriver
     private _ready:boolean = false                          // 当driver准备就绪时,ready为true时,才允许执行读写操作
+    private _emitter = mitt<FlexTreeEvents>()
+    private _lastUpdateAt = 0
     constructor(tableName:string,options?:FlexTreeManagerOptions<KeyFields['treeId']>){
         this._tableName = tableName
         this._options = deepMerge({
@@ -116,22 +119,20 @@ export class FlexTreeManager<
     get tableName(){ return this._tableName }
     get driver(){  return this._options.driver!}
     get treeId(){ return this._treeId}
-    set treeId(value:TreeId){
-
-    }
+    set treeId(value:TreeId){ this._treeId = value }
     get keyFields(){ return this._fields}
+    get updateAt(){return this._lastUpdateAt}
     get isMultiTree(){ return this._treeId !== undefined}
+    get on(){ return this._emitter.on.bind(this) }
+    get off(){ return this._emitter.off.bind(this) }
+    get emit(){ return this._emitter.emit.bind(this) }
+
 
     async ready(){
         if(this._driver && this._ready) return true
         return false
     }
     
-    
-
-
-    /***************************** SQL 操作 *****************************/
-
     async assertDriverReady(){
         try{
             if(!this._driver) throw new FlexTreeDriverError()
@@ -162,12 +163,15 @@ export class FlexTreeManager<
     async update(updater:FlexTreeUpdater){
         if(this._isUpdating) throw new Error('The tree update operation must be performed within update(async ()=>{....})')
         this._isUpdating = true     
+        this._emitter.emit("beforeUpdate","")
         try{
             await updater(this as FlexTreeManager)
+            this._lastUpdateAt = Date.now()
         }catch(e){
             throw e        
         }finally{
             this._isUpdating = false
+            this._emitter.emit("afterUpdate","")
         }
     } 
     /**

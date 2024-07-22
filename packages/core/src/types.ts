@@ -89,6 +89,17 @@ export type IFlexTreeNode<
 
 
 
+
+
+export type FlexTreeUpdater = (tree:FlexTreeManager)=>Promise<void>
+
+
+export type FlexTreeEvents = {
+    beforeUpdate : string
+    afterUpdate  :  string
+}
+
+
 export type IJsonTree<Data extends Record<string,any>=Record<string,any>,IdType=string,TreeIdType=number> = {
     id?        : IdType    
     treeId?    : TreeIdType    
@@ -98,27 +109,3 @@ export type IJsonTree<Data extends Record<string,any>=Record<string,any>,IdType=
     rightValue?: number 
     children?: IJsonTree[]
 } & Data
-
-
- 
-
-// export type IFlexTreeNode3<
-//     Fields extends Record<string,any> = Record<string,any>,                 // 额外的节点字段    
-//     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields
-// > = {
-//     [K in ((DefaultTreeKeyFields & KeyFields)['id'])[0]]: (DefaultTreeKeyFields & KeyFields)['id'][1]
-// } & {
-//     [K in ((DefaultTreeKeyFields & KeyFields)['treeId'])[0]]: (DefaultTreeKeyFields & KeyFields)['treeId'][1]
-// } & {
-//     [K in ((DefaultTreeKeyFields & KeyFields)['name'] & string)]: string
-// } & {
-//     [K in ((DefaultTreeKeyFields & KeyFields)['level'] & 'level')]: number
-// } & {
-//     [K in ((DefaultTreeKeyFields & KeyFields)['leftValue'] & 'leftValue')]: number
-// }  & {
-//     [K in ((DefaultTreeKeyFields & KeyFields)['rightValue'] & 'rightValue')]: number
-// } & Fields
- 
-
-
-export type FlexTreeUpdater = (tree:FlexTreeManager)=>Promise<void>

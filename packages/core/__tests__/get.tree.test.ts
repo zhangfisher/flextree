@@ -176,5 +176,19 @@ describe("访问树", () => {
 
   })
 
+  describe("获取第几个子节点",async ()=>{
+    test("获取第一个子节点",async ()=>{
+      let a = await tree.findNode({name:"A"})
+      let a1 = await tree.findNode({name:"A-1"})
+      let a2 = await tree.findNode({name:"A-2"})
+      let a3 = await tree.findNode({name:"A-3"})
+      let a4 = await tree.findNode({name:"A-4"})
+      let a5 = await tree.findNode({name:"A-5"})
+      const nodes = await tree.getNodes()
+      expect(await tree.getChild(a,1)).toStrictEqual(a1)
+
+
+    })
+  })
 
 })

@@ -1,107 +1,88 @@
-import {   IFlexTreeNode } from "./types"
-import { deepMerge } from "flex-tools/object/deepMerge"
-import { Dict } from "flex-tools/types"
+import {  CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNode, NonUndefined,FlexTreeEvents } from "./types" 
+import  {  FlexTreeManager,type FlexTreeManagerOptions } from "./manager";
+import { FlexTreeNode } from "./node"
+import { FlexTreeNotFoundError } from "./errors" 
 
-import mitt from 'mitt'
-import { FlexTreeManager } from "./manager";
+import {RequiredDeep } from "type-fest"
 
-export type DeepRequired<T extends Dict = Dict> = {
-    [P in keyof T]-?: T[P] extends Dict
-            ? DeepRequired<T[P]>
-            : Required<T[P]>
- };
-
-export type FlexTreeEvents = {
-    update:string
-}
-export type FlexTreeOptions = {
-    
-}
+export type FlexTreeOptions<TreeIdType=number> = FlexTreeManagerOptions<TreeIdType>
 
 export type FlexTreeStatus = 'initial' | 'loading' | 'loaded' | 'error'
 
-export class FlexTree<T extends Record<string,any>=IFlexTreeNode> {
-    private _options:DeepRequired<FlexTreeOptions>
-    private _emitter = mitt<FlexTreeEvents>()
-    private _treeId:string
-    private _nodes:Map<string,IFlexTreeNode<T>> = new Map()
+export class FlexTree<
+    Data extends Record<string,any>={},
+    KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
+    TreeNode extends IFlexTreeNode<Data,KeyFields> = IFlexTreeNode<Data,KeyFields>,
+    NodeId = NonUndefined<KeyFields['id']>[1],
+    TreeId = NonUndefined<KeyFields['treeId']>[1]
+    > {
+    private _options:RequiredDeep<FlexTreeOptions<KeyFields['treeId']>>
+    private _treeId:TreeId    
     private _status: FlexTreeStatus = 'initial'
-    private _manager?:FlexTreeManager
- 
-    constructor(id:string,options?:FlexTreeOptions){
-        this._treeId = id
-        this._options = deepMerge({
-            fields:{
-                id        : 'id',
-                name      : 'title',
-                level     : 'level',
-                leftValue : 'leftValue',
-                rightValue: 'rightValue',
-                order     : 'order'
-            }
-        },options) as DeepRequired<FlexTreeOptions>
-    } 
+    private _manager:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>
+    private _root?:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>
+    nodes:Map<NodeId,IFlexTreeNode<Data,KeyFields>> = new Map()
+
+    constructor(tableName:string,options?:FlexTreeOptions<KeyFields['treeId']>){        
+        this._manager = new FlexTreeManager(tableName,options)
+        this._treeId = this._manager.treeId
+        this._options = this._manager.options as RequiredDeep<FlexTreeOptions<KeyFields['treeId']>>
+    }     
     get options(){ return this._options }    
-    get on(){ return this._emitter.on.bind(this) }
-    get off(){ return this._emitter.off.bind(this) }
-    get emit(){ return this._emitter.emit.bind(this) }
-    get manager(){ return this._manager!}
-    [Symbol.iterator](){return this._nodes[Symbol.iterator]}
-     
+    get on(){ return this._manager.on.bind(this) }
+    get off(){ return this._manager.off.bind(this) }
+    get emit(){ return this._manager.emit.bind(this) }
+    get manager(){ return this._manager!} 
+    get root(){
+
+        return this._root 
+    }
+    /**
+     * 返回树的id
+     */
+    get id(){return this._treeId}
 
     /**
      * 返回根节点
      */
-    get root(){
-        return null
-    }
     /**
-     * 执行更新操作
-     * 
-     * 
-     * tree.update(async ()=>{
-     *    
-     * })
-     * 
-     * @param callback 
-     */
-    // update(updater:FlexTreeUpdater<IFlexTreeNode<T>>){
-    //     if(this._isUpdating) throw new Error('FlexTree is updating')
-    //     updater(this)
-    //         .then(()=>{
-    //         })            
-    //         .finally(()=>{
-    //             this._isUpdating = false
-    //         })
-    // }
-    /**
-     * 加载树
-     * 
-     * @param options
+     * 加载树到内存中
+        * @param options
      *  - level: 指定加载的层级
      *           如果没有指定,默认值=0,则只加载当前层级
      *           =1代表仅加载第一级,依此类推.
-     * 
-     *  
-     * 
-     * 
      */
-    load(nodes:IFlexTreeNode[],options?:{level?:number}){
+    async load(){ 
+        if(this._status == 'loading') return
+        this._status = 'loading'
+        // 加载根节点
+        try{
+            this.nodes.clear()
+            const nodes = await this.manager.getNodes()
+            if(!nodes || nodes.length==0){
+                throw new FlexTreeNotFoundError()
+            }
+            this._root = new FlexTreeNode(nodes[0].id,this as any)
+            nodes.forEach(node=>{                
+                this.nodes.set(node.id,node)
+            })
+            this._status = 'loaded'
+        }catch(e){
+            this._status = 'error'
+        }        
+    } 
 
+    async getNode(nodeId:NodeId){
+        if(this.nodes.has(nodeId)){
+            return new FlexTreeNode(nodeId,this)
+        }else{
+            let node = await this.manager.getNode(nodeId)
+            if(node){
+                this.nodes.set(nodeId,node)
+                return new FlexTreeNode(nodeId,this)
+            }
+        }
     }
-    /**
-     * 获取指定的节点
-     * 
-     * @param id
-     * @param options
-     * - level: 指定加载的层级,如=1代表仅加载第一级,依此类推.
-     * 
-     * 
-     */
-    getNode(id:string,options?:{level?:number}):IFlexTreeNode<T> | undefined{
-        return undefined
-    }
-
 
 
 }

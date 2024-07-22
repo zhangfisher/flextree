@@ -316,7 +316,11 @@ export class MoveNodeMixin<
         }else{
             preNode = await this.getParent(srcNode.id)
             if(preNode){
-                await this.moveNode(srcNode.id,preNode.id,FlexNodeRelPosition.NextSibling)
+                try{
+                    await this.moveNode(srcNode.id,preNode.id,FlexNodeRelPosition.NextSibling)
+                }catch(e){
+                    throw new FlexTreeNodeInvalidOperationError()
+                }                
             }else{
                 throw new FlexTreeNodeInvalidOperationError()
             }
@@ -331,6 +335,21 @@ export class MoveNodeMixin<
     async moveDownNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | TreeNode){
         this._assertUpdating()
         const srcNode = await this.getNodeData(node) as unknown as TreeNode
+        let nextNode = await this.getNextSibling(srcNode)
+        if(nextNode){
+            await this.moveNode(srcNode.id,nextNode.id,FlexNodeRelPosition.NextSibling)
+        }else{
+            nextNode = await this.getParent(srcNode.id)
+            if(nextNode){
+                try{
+                    await this.moveNode(srcNode.id,nextNode.id,FlexNodeRelPosition.NextSibling)
+                }catch(e){
+                    throw new FlexTreeNodeInvalidOperationError()
+                }                
+            }else{
+                throw new FlexTreeNodeInvalidOperationError()
+            }
+        }
 
 
     }

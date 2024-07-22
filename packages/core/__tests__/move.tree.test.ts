@@ -2,7 +2,7 @@
  * 更新树
  */
 import { test,describe,beforeEach, expect, beforeAll, afterEach } from "vitest" 
-import { FirstChild, FlexNodeRelPosition, FlexTreeManager, FlexTreeNodeError, IFlexTreeNode, LastChild, NextSibling, PreviousSibling } from "../src/index"; 
+import { FirstChild, FlexNodeRelPosition, FlexTreeManager, FlexTreeNodeInvalidOperationError, IFlexTreeNode, LastChild, NextSibling, PreviousSibling } from "../src/index"; 
 import { createDemoTree, createTreeManager, dumpTree, verifyTree } from "./common";
  
 
@@ -331,9 +331,8 @@ describe("移动树节点", () => {
             })    
             c5 = await tree.findNode({name:"C-5"})
             c55 = await tree.findNode({name:"C-5-5"})
-            // expect(c55.leftValue).toBe(c5.rightValue+1)
-
-            // expect(await verifyTree(tree)).toBe(true)
+            expect(c55.leftValue).toBe(c5.rightValue+1)
+            expect(await verifyTree(tree)).toBe(true)
         })
 
     })
@@ -762,22 +761,101 @@ describe("移动树节点", () => {
                 await tree.moveUpNode(f55.id)  // 3
                 await tree.moveUpNode(f55.id)  // 2
                 await tree.moveUpNode(f55.id)  // 1
-                // await tree.moveUpNode(f55.id)  // 1
+                await tree.moveUpNode(f55.id)  // 1
             })            
-            let nodes = await tree.getNodes()
-            // let f5 = await tree.findNode({name:"F-5"})
+            let f5 = await tree.findNode({name:"F-5"})      
+            f55 = await tree.findNode({name:"F-5-5"})      
+            const fChildren = await tree.getChildren(f5)
+            expect(fChildren.length).toBe(4)
+            expect(fChildren[0].name).toBe("F-5-1")
+            expect(fChildren[1].name).toBe("F-5-2")
+            expect(fChildren[2].name).toBe("F-5-3")
+            expect(fChildren[3].name).toBe("F-5-4")
             
-            // const fChildren = await tree.getChildren(f5)
-            // expect(fChildren.length).toBe(4)
-            // expect(fChildren[0].name).toBe("F-5-1")
-            // expect(fChildren[1].name).toBe("F-5-2")
-            // expect(fChildren[2].name).toBe("F-5-3")
-            // expect(fChildren[3].name).toBe("F-5-4")
-            
-            // expect(f55.leftValue).toBe(f5.rightValue+1)
-            // expect(await verifyTree(tree)).toBe(true)
+            expect(f55.level).toBe(f5.level)
+            expect(f55.leftValue).toBe(f5.rightValue+1)
+            expect(await verifyTree(tree)).toBe(true)
 
         })
+        test("F-5-5连续向上移动直至根节点",async ()=>{
+            let f55 = await tree.findNode({name:"F-5-5"})
+            let root = await tree.findNode({name:"root"})
+            await tree.update(async ()=>{
+                while(true){
+                    try{
+                        await tree.moveUpNode(f55.id)  
+                    }catch(e){                        
+                        expect(e).toBeInstanceOf(FlexTreeNodeInvalidOperationError)
+                        f55 = await tree.findNode({name:"F-5-5"})
+                        expect(f55.level).toBe(1)
+                        expect(f55.leftValue).toBe(root.leftValue+1)
+                        break
+                    }
+                }
+            })
+            expect(await verifyTree(tree)).toBe(true)
+        })
+
+    })
+
+    describe("向下移动节点",async ()=>{
+        
+
+        test("向下移动一个节点",async ()=>{
+            let f11 = await tree.findNode({name:"F-1-1"})
+            await tree.update(async ()=>{
+                await tree.moveDownNode(f11)
+            })            
+            f11 = await tree.findNode({name:"F-1-1"})
+            let f12 = await tree.findNode({name:"F-1-2"})
+
+            expect(f11.level).toBe(f12.level)
+            expect(f11.leftValue).toBe(f12.leftValue+2)
+            expect(await verifyTree(tree)).toBe(true)
+
+        })
+        test("向下移动一个节点直到变成其父节点的下一个兄弟节点",async ()=>{
+            let a11 = await tree.findNode({name:"A-1-1"})
+            await tree.update(async ()=>{
+                await tree.moveDownNode(a11.id)  // 2
+                await tree.moveDownNode(a11.id)  // 3
+                await tree.moveDownNode(a11.id)  // 4
+                await tree.moveDownNode(a11.id)  // 5
+                await tree.moveDownNode(a11.id)  // 1
+            })            
+            let a1 = await tree.findNode({name:"A-1"})      
+            a11 = await tree.findNode({name:"A-1-1"})      
+            const fChildren = await tree.getChildren(a1)
+            expect(fChildren.length).toBe(4)
+            expect(fChildren[0].name).toBe("A-1-2")
+            expect(fChildren[1].name).toBe("A-1-3")
+            expect(fChildren[2].name).toBe("A-1-4")
+            expect(fChildren[3].name).toBe("A-1-5")
+            
+            expect(a11.level).toBe(a1.level)
+            expect(a11.leftValue).toBe(a1.rightValue+1)
+            expect(await verifyTree(tree)).toBe(true)
+
+        })
+        test("A-1-1连续向下移动直至最后节点",async ()=>{
+            let root = await tree.findNode({name:"root"})
+            let a11 = await tree.findNode({name:"A-1-1"})            
+            await tree.update(async ()=>{
+                while(true){
+                    try{
+                        await tree.moveDownNode(a11.id)  
+                    }catch(e){                        
+                        expect(e).toBeInstanceOf(FlexTreeNodeInvalidOperationError)
+                        a11 = await tree.findNode({name:"A-1-1"})  
+                        expect(a11.level).toBe(1)
+                        expect(a11.leftValue).toBe(root.rightValue-2)
+                        break
+                    }
+                }
+            })
+            expect(await verifyTree(tree)).toBe(true)
+        })
+
     })
 
 })
