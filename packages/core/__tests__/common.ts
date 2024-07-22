@@ -1,7 +1,7 @@
 import Database from "better-sqlite3"
 import { FlexTreeManager, IFlexTreeNode,FlexTreeVerifyError } from "../src/index";
 import SqliteDriver  from "../../sqlite/src/index" 
-
+import path from "node:path"
  
 
 export async function createTreeTable(driver:SqliteDriver){
@@ -113,7 +113,8 @@ export async function createDemoTree(tree:FlexTreeManager,options?:{level?:numbe
  * @param srcDb 
  */
 export async function dumpTree(srcDb:any,dbFile:string="tree.db"){
-    const destDb = new Database(`./dumps/${dbFile}`) 
+    const dbFilename = path.join(__dirname,`./dumps/${dbFile}`)
+    const destDb = new Database(dbFilename) 
     await destDb.exec(`
         CREATE TABLE IF NOT EXISTS tree (        
             id INTEGER PRIMARY KEY,
@@ -148,9 +149,6 @@ export async function verifyTree(tree:FlexTreeManager):Promise<boolean>{
     let pnodes:IFlexTreeNode[] = []
     for(let i = 0 ; i < nodes.length; i++){
         const node = nodes[i]
-        if(i==nodes.length-1){
-            console.log("111")
-        }
         if(node.rightValue - node.leftValue == 1){  // 无子节点
             if(pnodes.length>0){
                 let pnode = pnodes[pnodes.length-1]

@@ -1,11 +1,14 @@
 
-import { IFlexTreeNode } from "./types";
-import { Dict } from "flex-tools/type/dict"
+import {  CustomTreeKeyFields, DefaultTreeKeyFields, FlexTreeUpdater, IFlexTreeNode, NonUndefined } from "./types" 
 
-export class FlexTreeNode<T extends Record<string,any>={},IdType=string,TreeIdType=number> implements IFlexTreeNode{
+export class FlexTreeNode<
+    Fields extends Record<string,any> = Record<string,any>,                 // 额外的节点字段    
+    KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields
+    > implements IFlexTreeNode<Fields,KeyFields>{
+
     _data:Required<IFlexTreeNode<T,IdType,TreeIdType>>
     constructor(data:Dict<string>){
-        this._data = data  as Required<IFlexTreeNode<T,IdType,TreeIdType>>
+        this._data = data  as Required<IFlexTreeNode<Fields,KeyFields>>
 
     }
     get id(){ return this._data.id  }
@@ -14,10 +17,7 @@ export class FlexTreeNode<T extends Record<string,any>={},IdType=string,TreeIdTy
     get leftValue(){ return this._data.leftValue }
     get rightalue(){ return this._data.rightValue } 
     get data(){ return this._data } 
-
-    get isRoot(){
-        return this.level == 0 && this.leftValue==1
-    }
+ 
     // /**
     //  * 返回子节点
     //  */

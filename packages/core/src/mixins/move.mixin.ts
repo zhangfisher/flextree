@@ -1,6 +1,6 @@
 import {type FlexTreeManager } from "../manager";
 import { CustomTreeKeyFields, DefaultTreeKeyFields, FlexNodeRelPosition, FlexTreeNodeRelation, IFlexTreeNode, NonUndefined } from "../types";
-import { FlexTreeError } from "../errors"
+import { FlexTreeError, FlexTreeNodeInvalidOperationError } from "../errors"
 
 
 export class MoveNodeMixin<
@@ -84,8 +84,9 @@ export class MoveNodeMixin<
             this._sql(`
                 UPDATE ${this.tableName} 
                 SET 
-                    ${this.keyFields.leftValue} = (SELECT ${this.keyFields.leftValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )
-                                                 + ${movedLength} + (-${this.keyFields.leftValue} - ${leftValue}  ) 
+                    ${this.keyFields.leftValue} = (SELECT ${this.keyFields.rightValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )
+                                                 + (-${this.keyFields.leftValue} - ${leftValue} ) + 1 ,
+                    ${this.keyFields.level} = ${toNode[this.keyFields.level]} +  ${this.keyFields.level} - ${fromNode[this.keyFields.level]} 
                 WHERE 
                     {__TREE_ID__} ${this.keyFields.leftValue} < 0  
             `),         
@@ -135,7 +136,8 @@ export class MoveNodeMixin<
                 UPDATE ${this.tableName} 
                 SET 
                     ${this.keyFields.leftValue} = (SELECT ${this.keyFields.leftValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )
-                                                  - ${movedLength} + (-${this.keyFields.leftValue} - ${leftValue}  ) 
+                                                  - ${movedLength} + (-${this.keyFields.leftValue} - ${leftValue}  ) ,
+                    ${this.keyFields.level} = ${toNode[this.keyFields.level]} +  ${this.keyFields.level} - ${fromNode[this.keyFields.level]} 
                 WHERE 
                     {__TREE_ID__} ${this.keyFields.leftValue} < 0  
             `),         
@@ -144,7 +146,7 @@ export class MoveNodeMixin<
                 UPDATE ${this.tableName} 
                 SET 
                     ${this.keyFields.rightValue} =  (SELECT ${this.keyFields.leftValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${fromNode[this.keyFields.id]} )
-                                                 + (-${this.keyFields.rightValue} - ${leftValue } ) 
+                                                 + (-${this.keyFields.rightValue} - ${leftValue } )                 
                 WHERE 
                     {__TREE_ID__} ${this.keyFields.rightValue} < 0
             `),          
@@ -301,11 +303,35 @@ export class MoveNodeMixin<
 
         await this.onExecuteWriteSql(sqls)
     }
-    
-    moveUpNode(node:NodeId | TreeNode){
-
+    /**
+     * 节点上移
+     * @param node 
+     */
+    async moveUpNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | TreeNode){
+        this._assertUpdating()
+        const srcNode = await this.getNodeData(node) as unknown as TreeNode
+        let preNode = await this.getPreviousSibling(srcNode)
+        if(preNode){
+            await this.moveNode(srcNode.id,preNode.id,FlexNodeRelPosition.PreviousSibling)
+        }else{
+            preNode = await this.getParent(srcNode.id)
+            if(preNode){
+                await this.moveNode(srcNode.id,preNode.id,FlexNodeRelPosition.NextSibling)
+            }else{
+                throw new FlexTreeNodeInvalidOperationError()
+            }
+        }
     }
-    moveDownNode(node:NodeId | TreeNode){
-        
+    /**
+     * 
+     * 节点下移
+     * 
+     * @param node 
+     */
+    async moveDownNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | TreeNode){
+        this._assertUpdating()
+        const srcNode = await this.getNodeData(node) as unknown as TreeNode
+
+
     }
 }

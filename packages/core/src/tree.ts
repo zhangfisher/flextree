@@ -1,5 +1,4 @@
 import {   IFlexTreeNode } from "./types"
-// import { DeepRequired } from "flex-tools/types"
 import { deepMerge } from "flex-tools/object/deepMerge"
 import { Dict } from "flex-tools/types"
 
@@ -23,12 +22,12 @@ export type FlexTreeStatus = 'initial' | 'loading' | 'loaded' | 'error'
 
 export class FlexTree<T extends Record<string,any>=IFlexTreeNode> {
     private _options:DeepRequired<FlexTreeOptions>
-    private _isUpdating = false
     private _emitter = mitt<FlexTreeEvents>()
     private _treeId:string
     private _nodes:Map<string,IFlexTreeNode<T>> = new Map()
     private _status: FlexTreeStatus = 'initial'
     private _manager?:FlexTreeManager
+ 
     constructor(id:string,options?:FlexTreeOptions){
         this._treeId = id
         this._options = deepMerge({
@@ -43,7 +42,6 @@ export class FlexTree<T extends Record<string,any>=IFlexTreeNode> {
         },options) as DeepRequired<FlexTreeOptions>
     } 
     get options(){ return this._options }    
-    get updating(){ return this._isUpdating }
     get on(){ return this._emitter.on.bind(this) }
     get off(){ return this._emitter.off.bind(this) }
     get emit(){ return this._emitter.emit.bind(this) }

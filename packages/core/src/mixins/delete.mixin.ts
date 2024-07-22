@@ -13,15 +13,15 @@ export class DeleteNodeMixin<
      * 删除指定节点及其子节点
      * 
      * @param this 
-     * @param node  
+     * @param nodeId  
      * @param options
      *  - onlyMark  只是标记删除，不实际删除：将删除的记录的leftValue和rightValue设置为负数即可
      *  - onExecuteBefore(sql): 执行前回调，返回false则不执行
      * @returns 
      */
-    async deleteNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | TreeNode,options?:{onlyMark?:boolean,onExecuteBefore?:(sqls:string[])=>boolean}) {        
+    async deleteNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode,options?:{onlyMark?:boolean,onExecuteBefore?:(sqls:string[])=>boolean}) {        
         const { onlyMark,onExecuteBefore} = Object.assign({mark:false,},options)
-        const nodeData = await this.getNodeData(node) as unknown as TreeNode
+        const nodeData = await this.getNodeData(nodeId) as unknown as TreeNode
         let leftValue = nodeData[this.keyFields.leftValue]
         let rightValue = nodeData[this.keyFields.rightValue]        
         const sqls:string[] = []

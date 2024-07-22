@@ -1,6 +1,5 @@
 import {type FlexTreeManager } from "../manager";
-import { CustomTreeKeyFields, DefaultTreeKeyFields, FlexNodeRelPosition, FlexTreeNodeRelation, IFlexTreeNode, NonUndefined } from "../types";
-import { FlexTreeError, FlexTreeNodeNotFoundError } from "../errors"
+import { CustomTreeKeyFields, DefaultTreeKeyFields,IFlexTreeNode, NonUndefined } from "../types";
 
 
 export class SqlMixin<
@@ -58,10 +57,9 @@ export class SqlMixin<
     }
 
 
-    protected async getOneNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,sql:string):Promise<TreeNode>{        
+    protected async getOneNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,sql:string):Promise<TreeNode | null>{        
         const result = await this.onExecuteReadSql(sql)  
-        if(result.length === 0) throw new FlexTreeNodeNotFoundError()
-        return result[0] as TreeNode
+        return result.length > 0 ? result[0] as TreeNode : null
     }
     
     protected async getNodeList(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,sql:string):Promise<TreeNode[]>{        

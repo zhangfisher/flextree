@@ -1,35 +1,7 @@
-import { test,describe,beforeAll,beforeEach, afterEach, expect } from "vitest"
+import { test,describe,beforeEach, afterEach, expect } from "vitest"
 import { createDemoTree, createTreeManager, dumpTree } from "./common"
 import { FlexTreeManager } from "../src"
 
-
-// async function createTreeDb(){
-//     let db = await open({ filename: ":memory:", driver: sqlite3.Database });
-//     await db.exec(`
-//         CREATE TABLE tree (
-//             id INTEGER PRIMARY KEY AUTOINCREMENT,
-//             name VARCHAR(60), 
-//             tree INTEGER, 
-//             node_level INTEGER,  
-//             node_left INTEGER, 
-//             node_right INTEGER
-//         );
-//     `)
-//     return db
-// }
- 
-// describe("创建树", () => {
-
-//     let db:Database
-//     beforeEach(async () => {
-//         db = await createTreeDb()  
-//     })
-
-//   test("create root node on single tree", () => {
-    
-//   })
-
-// })
 describe("访问树", () => {
   let tree:FlexTreeManager
   let nodeCount:number = 0
@@ -42,13 +14,13 @@ describe("访问树", () => {
   })
   test("检查根节点是否存在", async () => {
       expect(await tree.hasRoot()).toBe(true)
-      let root = await tree.getRoot()
+      let root = (await tree.getRoot())!
       expect(root).not.toBe(null)
       expect(root.level).toBe(0)
       expect(root.leftValue).toBe(1)    
   })
   test("获取后代节点", async () => {
-    let root = await tree.getRoot()
+    let root = (await tree.getRoot())!
     let descendants = await tree.getDescendants(root)
     expect(descendants.length).toBe(nodeCount-1)
     
@@ -76,7 +48,7 @@ describe("访问树", () => {
   })
 
   test("获取后代节点数量", async () => {
-    let root = await tree.getRoot()
+    let root = (await tree.getRoot())!
     let descendantCount = await tree.getDescendantCount(root)
     expect(descendantCount).toBe(nodeCount-1)
 
@@ -139,8 +111,70 @@ describe("访问树", () => {
     }
  
   })
+  test("获取父节点",async ()=>{
+    let root = await tree.getRoot()
+    let a = await tree.findNode({name:"A"})
+    let a1 = await tree.findNode({name:"A-1"})
+    let a11 = await tree.findNode({name:"A-1-1"})
+    let b = await tree.findNode({name:"B"})
+    let b1 = await tree.findNode({name:"B-1"})
+    let b11 = await tree.findNode({name:"B-1-1"})
+
+    expect(await tree.getParent(a)).toStrictEqual(root)
+    expect(await tree.getParent(a1)).toStrictEqual(a)
+    expect(await tree.getParent(a11)).toStrictEqual(a1)
+
+    expect(await tree.getParent(b)).toStrictEqual(root)
+    expect(await tree.getParent(b1)).toStrictEqual(b)
+    expect(await tree.getParent(b11)).toStrictEqual(b1)
+
+  })
+
+  test("获取兄弟节点",async ()=>{
+
+    let a = await tree.findNode({name:"A"})
+    let siblings = await tree.getSiblings(a)
+    expect(siblings.length).toBe(5)
+    expect(siblings.map(node=>node.name).join(",")).toStrictEqual("B,C,D,E,F")
+
+    siblings = await tree.getSiblings(a,{includeSelf:true})
+    expect(siblings.length).toBe(6)
+    expect(siblings.map(node=>node.name).join(",")).toStrictEqual("A,B,C,D,E,F")
 
 
+  })
+
+  test("获取下一个兄弟节点",async ()=>{
+    let a = await tree.findNode({name:"A"})
+    let b = await tree.findNode({name:"B"})
+    let c = await tree.findNode({name:"C"})
+    let d = await tree.findNode({name:"D"})
+    let e = await tree.findNode({name:"E"})
+    let f = await tree.findNode({name:"F"})
+    expect(await tree.getNextSibling(a)).toStrictEqual(b)
+    expect(await tree.getNextSibling(b)).toStrictEqual(c)
+    expect(await tree.getNextSibling(c)).toStrictEqual(d)
+    expect(await tree.getNextSibling(d)).toStrictEqual(e)
+    expect(await tree.getNextSibling(e)).toStrictEqual(f)
+    expect(await tree.getNextSibling(f)).toBe(null)
+
+  })
+
+  test("获取上一个兄弟节点",async ()=>{
+    let a = await tree.findNode({name:"A"})
+    let b = await tree.findNode({name:"B"})
+    let c = await tree.findNode({name:"C"})
+    let d = await tree.findNode({name:"D"})
+    let e = await tree.findNode({name:"E"})
+    let f = await tree.findNode({name:"F"})
+    expect(await tree.getPreviousSibling(a)).toBe(null)
+    expect(await tree.getPreviousSibling(b)).toStrictEqual(a)
+    expect(await tree.getPreviousSibling(c)).toStrictEqual(b)
+    expect(await tree.getPreviousSibling(d)).toStrictEqual(c)
+    expect(await tree.getPreviousSibling(e)).toStrictEqual(d)
+    expect(await tree.getPreviousSibling(f)).toStrictEqual(e)
+
+  })
 
 
 })

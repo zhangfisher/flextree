@@ -1,7 +1,5 @@
 import {type FlexTreeManager } from "../manager";
-import { CustomTreeKeyFields, DefaultTreeKeyFields, FlexNodeRelPosition, FlexTreeNodeRelation, IFlexTreeNode, NonUndefined } from "../types";
-import { FlexTreeError } from "../errors"
-
+import { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNode, NonUndefined } from "../types";
 
 export class IsNodeMixin<
     Data extends Record<string,any>={},
@@ -10,26 +8,21 @@ export class IsNodeMixin<
     NodeId = NonUndefined<KeyFields['id']>[1],
     TreeId = NonUndefined<KeyFields['treeId']>[1]
 >{ 
-    
-    /**
-     * 
-     * 判断输入的节点对象是否是根节点
-     * 
-     */
-    isRoot(node:TreeNode){
-        return node.level == 0 && node.leftValue == 1
-    }
-    
+     
     /**
      * 返回两个节点是否在同一棵树中
      */
-    isSameTree(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,srcNode:TreeNode,targetNode:TreeNode){
+    isSameTree(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node1:TreeNode,node2:TreeNode){
         if(this.isMultiTree){
-            return srcNode[this.keyFields.treeId] == targetNode[this.keyFields.treeId]
+            return node1[this.keyFields.treeId] == node2[this.keyFields.treeId]
         }else{
             return true        
         }
     }
+    /**
+     * 判断两个节点是否相同
+     * 
+     */
     isSameNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node1:TreeNode,node2:TreeNode){
         return node1[this.keyFields.id] == node2[this.keyFields.id]
     }

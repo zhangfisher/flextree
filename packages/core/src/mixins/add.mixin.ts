@@ -1,5 +1,5 @@
 import {type FlexTreeManager } from "../manager";
-import { CustomTreeKeyFields, DefaultTreeKeyFields, FlexNodeRelPosition, FlexTreeNodeRelation, IFlexTreeNode, NonUndefined } from "../types";
+import { CustomTreeKeyFields, DefaultTreeKeyFields, FlexNodeRelPosition, IFlexTreeNode, NonUndefined } from "../types";
 import { FlexTreeError } from "../errors"
 import { escapeSqlString } from '../utils/escapeSqlString';
 

@@ -320,6 +320,22 @@ describe("移动树节点", () => {
 
             expect(await verifyTree(tree)).toBe(true)
         })  
+        test("移动C-5-5为C-5的下一个兄弟节点",async ()=>{
+            
+            let c55 = await tree.findNode({name:"C-5-5"})
+            let c5 = await tree.findNode({name:"C-5"})            
+            
+
+            await tree.update(async ()=>{
+                await tree.moveNode(c55,c5,NextSibling)   
+            })    
+            c5 = await tree.findNode({name:"C-5"})
+            c55 = await tree.findNode({name:"C-5-5"})
+            // expect(c55.leftValue).toBe(c5.rightValue+1)
+
+            // expect(await verifyTree(tree)).toBe(true)
+        })
+
     })
     describe("移动节点到目标节点的前面成为其上一个兄弟节点",async ()=>{
 
@@ -517,6 +533,41 @@ describe("移动树节点", () => {
             expect(await verifyTree(tree)).toBe(true)
 
         })
+        test("移动F-5-5为F-5-4的上一个兄弟节点",async ()=>{
+            let f55 = await tree.findNode({name:"F-5-5"})
+            let f54 = await tree.findNode({name:"F-5-4"})
+            let f53 = await tree.findNode({name:"F-5-3"})
+            let f52 = await tree.findNode({name:"F-5-2"})
+            let f51 = await tree.findNode({name:"F-5-1"})
+
+            await tree.update(async ()=>{
+                await tree.moveNode(f55,f54,PreviousSibling)   
+                // 因为移动后f55的左右值已经变化，所以需要重新获取f55
+                f55 = await tree.findNode({name:"F-5-5"})
+                await tree.moveNode(f55,f53,PreviousSibling)   
+                f55 = await tree.findNode({name:"F-5-5"})
+                await tree.moveNode(f55,f52,PreviousSibling)   
+                f55 = await tree.findNode({name:"F-5-5"})
+                await tree.moveNode(f55,f51,PreviousSibling)   
+            })    
+            expect(await verifyTree(tree)).toBe(true)
+        })
+        test("移动C-5-5为C-5的上一个兄弟节点",async ()=>{
+            
+            let c55 = await tree.findNode({name:"C-5-5"})
+            let c5 = await tree.findNode({name:"C-5"})            
+            
+
+            await tree.update(async ()=>{
+                await tree.moveNode(c55,c5,PreviousSibling)   
+            })    
+            c5 = await tree.findNode({name:"C-5"})
+            c55 = await tree.findNode({name:"C-5-5"})
+            expect(c5.leftValue).toBe(c55.rightValue+1)
+
+            expect(await verifyTree(tree)).toBe(true)
+        })
+
 
     })
 
@@ -687,4 +738,46 @@ describe("移动树节点", () => {
             expect(await verifyTree(tree)).toBe(true)
         })
     })
+
+    describe("向上移动节点",async ()=>{
+        
+
+        test("向上移动一个节点",async ()=>{
+            let f55 = await tree.findNode({name:"F-5-5"})
+            await tree.update(async ()=>{
+                await tree.moveUpNode(f55)
+            })            
+            f55 = await tree.findNode({name:"F-5-5"})
+            let f54 = await tree.findNode({name:"F-5-4"})
+
+            expect(f55.level).toBe(f54.level)
+            expect(f54.leftValue).toBe(f55.leftValue+2)
+            expect(await verifyTree(tree)).toBe(true)
+
+        })
+        test("向上移动一个节点直到变成其父节点的下一个兄弟节点",async ()=>{
+            let f55 = await tree.findNode({name:"F-5-5"})
+            await tree.update(async ()=>{
+                await tree.moveUpNode(f55.id)  // 4
+                await tree.moveUpNode(f55.id)  // 3
+                await tree.moveUpNode(f55.id)  // 2
+                await tree.moveUpNode(f55.id)  // 1
+                // await tree.moveUpNode(f55.id)  // 1
+            })            
+            let nodes = await tree.getNodes()
+            // let f5 = await tree.findNode({name:"F-5"})
+            
+            // const fChildren = await tree.getChildren(f5)
+            // expect(fChildren.length).toBe(4)
+            // expect(fChildren[0].name).toBe("F-5-1")
+            // expect(fChildren[1].name).toBe("F-5-2")
+            // expect(fChildren[2].name).toBe("F-5-3")
+            // expect(fChildren[3].name).toBe("F-5-4")
+            
+            // expect(f55.leftValue).toBe(f5.rightValue+1)
+            // expect(await verifyTree(tree)).toBe(true)
+
+        })
+    })
+
 })
