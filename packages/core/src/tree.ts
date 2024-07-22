@@ -1,7 +1,7 @@
 import {  CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNode, NonUndefined,FlexTreeEvents } from "./types" 
 import  {  FlexTreeManager,type FlexTreeManagerOptions } from "./manager";
 import { FlexTreeNode } from "./node"
-import { FlexTreeNotFoundError } from "./errors" 
+import { FlexTreeNotFoundError,FlexTreeInvalidError } from "./errors" 
 
 import {RequiredDeep } from "type-fest"
 
@@ -34,14 +34,12 @@ export class FlexTree<
     get emit(){ return this._manager.emit.bind(this) }
     get manager(){ return this._manager!} 
     get root(){
-
         return this._root 
     }
     /**
      * 返回树的id
      */
-    get id(){return this._treeId}
-
+    get id(){return this._treeId} 
     /**
      * 返回根节点
      */
@@ -62,10 +60,40 @@ export class FlexTree<
             if(!nodes || nodes.length==0){
                 throw new FlexTreeNotFoundError()
             }
-            this._root = new FlexTreeNode(nodes[0].id,this as any)
-            nodes.forEach(node=>{                
-                this.nodes.set(node.id,node)
-            })
+            this._root = new FlexTreeNode(nodes[0],undefined,this as any)
+            const pnodes:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>[] = [this._root]
+            let preNode = this._root 
+            for(let node of nodes){                
+                if(node.level == preNode.level){
+                    const parent = pnodes[pnodes.length-1]
+                    const nodeObj = new FlexTreeNode(node,parent,this as any)
+                    parent!.children.push(nodeObj) 
+                    preNode = nodeObj
+                }else if(node.level > preNode.level  ){
+                    if(node.level == preNode.level + 1){                        
+                        const nodeObj = new FlexTreeNode(node,preNode,this as any)
+                        preNode.children.push(nodeObj) 
+                        preNode = nodeObj
+                        pnodes.push(preNode)
+                    }else{
+                        throw new FlexTreeInvalidError(`Invalid tree structure`)
+                    }                    
+                }else if(node.level < preNode.level){
+                    while(true){
+                        let parent = pnodes.pop()
+                        if(parent && node.level == parent.level + 1){
+                            const nodeObj = new FlexTreeNode(node,parent,this as any)
+                            parent.children.push(nodeObj) 
+                            preNode = nodeObj
+                            pnodes.push(preNode)
+                            break
+                        }else if(pnodes.length == 0){
+                            break
+                        }
+                    }
+                    
+                }
+            }
             this._status = 'loaded'
         }catch(e){
             this._status = 'error'
@@ -76,6 +104,9 @@ export class FlexTree<
         if(this.nodes.has(nodeId)){
             return new FlexTreeNode(nodeId,this)
         }else{
+            if(this.nodes.has(nodeId)){
+
+            }
             let node = await this.manager.getNode(nodeId)
             if(node){
                 this.nodes.set(nodeId,node)

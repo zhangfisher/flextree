@@ -177,18 +177,36 @@ describe("访问树", () => {
   })
 
   describe("获取第几个子节点",async ()=>{
-    test("获取第一个子节点",async ()=>{
+    test("获取第n个子节点",async ()=>{
       let a = await tree.findNode({name:"A"})
       let a1 = await tree.findNode({name:"A-1"})
       let a2 = await tree.findNode({name:"A-2"})
       let a3 = await tree.findNode({name:"A-3"})
       let a4 = await tree.findNode({name:"A-4"})
       let a5 = await tree.findNode({name:"A-5"})
-      const nodes = await tree.getNodes()
       expect(await tree.getChild(a,1)).toStrictEqual(a1)
-
-
+      expect(await tree.getChild(a,2)).toStrictEqual(a2)
+      expect(await tree.getChild(a,3)).toStrictEqual(a3)
+      expect(await tree.getChild(a,4)).toStrictEqual(a4)
+      expect(await tree.getChild(a,5)).toStrictEqual(a5)
+    })   
+    test("获取第n个子节点,但n值无效",async ()=>{
+      let a = await tree.findNode({name:"A"})
+      expect(await tree.getChild(a,110)).toBe(undefined)
     })
+    test("获取倒数第n个子节点",async ()=>{
+      let a = await tree.findNode({name:"A"})
+      let a1 = await tree.findNode({name:"A-1"})
+      let a2 = await tree.findNode({name:"A-2"})
+      let a3 = await tree.findNode({name:"A-3"})
+      let a4 = await tree.findNode({name:"A-4"})
+      let a5 = await tree.findNode({name:"A-5"}) 
+      expect(await tree.getChild(a,-1)).toStrictEqual(a5)
+      expect(await tree.getChild(a,-2)).toStrictEqual(a4)
+      expect(await tree.getChild(a,-3)).toStrictEqual(a3)
+      expect(await tree.getChild(a,-4)).toStrictEqual(a2)
+      expect(await tree.getChild(a,-5)).toStrictEqual(a1)
+    })  
   })
 
 })
