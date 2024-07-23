@@ -62,7 +62,31 @@ describe("访问树节点实例", () => {
         await root.update({name:"ROOT"})
         expect(root.name).toBe("ROOT")
     })
+    test("根据节点id获取节点实例",async ()=>{
+        await tree.load()
+        const a = tree.find(node=>node.name=="A")[0]
+        expect(tree.get(a!.id)).toBe(a)
+        const anodes = tree.find(node=>node.name.startsWith("A"))
+        for(let node of anodes){
+            const n = tree.get(node.id)!            
+            expect(n.name.startsWith("A")).toBe(true)
+        }
+    })
 
+    test("在节点后代中根据id获取节点实例",async ()=>{
+        await tree.load()
+        const a = tree.find(node=>node.name=="A")[0]
+        const a11 = tree.find(node=>node.name=="A-1-1")[0]
+        expect(a.get(a11.id)).toBe(undefined) 
+        expect(a.get(a11.id,true)).toBe(a11) 
+    })
+
+    test("删除节点的子节点及后代中的指定节点实例",async ()=>{
+        await tree.load()
+        const a = tree.find(node=>node.name=="A")[0]
+        const a11 = tree.find(node=>node.name=="A-1-1")[0] 
+        
+    })
     
 
 

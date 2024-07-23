@@ -115,11 +115,22 @@ export class FlexTree<
         if(!node) throw new FlexTreeNotFoundError(`Node ${path} not found`)            
         await node.update(data)
     }
+
     /**
      * 删除指定的节点
      */
-    async deleteNode(nodeId: NodeId ){        
-        await this.manager.deleteNode(nodeId)        
+    async delete(nodeId: NodeId | ((node:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>)=>boolean) ){        
+        if(typeof nodeId == 'function'){            
+            const nodes = this.find(node=>(nodeId as any)(node)).map(node=>node.id)
+            await this.manager.write(async ()=>{
+                for(let id of nodes){
+                    await this.manager.deleteNode(id) 
+                }   
+            })
+        }else{
+
+            await this.manager.deleteNode(nodeId)    
+        }   
     }
     /**
      * 根据节点id获取节点实例
@@ -131,6 +142,36 @@ export class FlexTree<
             return this._root?.get(nodeId,true)
         }
     }
-
+    /**
+     * 
+     * @param condition 
+     * @returns 
+     */
+    find(condition:(node:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>)=>boolean):FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>[]{
+        return this._root!.find(condition,true)
+    }
+    /**
+     * 
+     * 重置节点
+     * 
+     * - 将节点从树中移除
+     * - 重新加载节点
+     * 
+     * @param nodeId
+     */
+    reset(nodeId:NodeId){
+        const node = this.get(nodeId)
+        if(node){
+            let parent = node.parent
+            let index = -1
+            if( parent && parent.children){
+                index = parent.children?.findIndex(n=>n.id!=node.id)
+                if(index>=0){
+                    parent.children?.splice(index,1)
+                }
+            }
+            this.load()            
+        }
+    }
 
 }

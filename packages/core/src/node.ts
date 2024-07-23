@@ -37,9 +37,13 @@ export class FlexTreeNode<
     get children(){ return this._children }
     get data(){ return this._node as TreeNode }
     get root(){ return this._tree.root }
-    get parent(){ return this._parent }
-
-
+    get parent(){ return this._parent }    
+    get siblings(){ 
+        if(this._parent){
+            return this._parent.children?.filter(n=>n.id!=this.id)
+        }
+    }    
+    
     /**
      * 从数据库中同步数据 
      */
@@ -136,20 +140,32 @@ export class FlexTreeNode<
      * @param fn 
      * @returns 
      */
-    find(fn:(node:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>)=>boolean,includeDescendants:boolean=false):FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>[] {
+    find(condition:(node:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>)=>boolean,includeDescendants:boolean=true):FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>[] {
         const nodes:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>[] = []
         if(this._children){
             for(let node of this._children){
-                if(fn(node)){
+                if(condition(node)){
                     nodes.push(node)                
                 }
                 if(includeDescendants){
-                    nodes.push(...node.find(fn,includeDescendants))                
+                    nodes.push(...node.find(condition,includeDescendants))                
                 }
             }
         }
         return nodes
     }   
+
+    async moveUp(){
+        try{
+            await this._tree.manager.moveUpNode(this._id)
+            
+        }catch(e){
+            throw e
+        }        
+    }
+
+
+
 
     toString(){
         return `${this.name}(${this._id})`
