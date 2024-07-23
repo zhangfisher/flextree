@@ -15,7 +15,7 @@ describe("添加树节点", () => {
             await dumpTree(tree.driver.db,"create.root.db")
         })
         test('单树表中创建根节点', async () => { 
-            await tree.update(async ()=>await tree.createRoot({name:"root"}))
+            await tree.write(async ()=>await tree.createRoot({name:"root"}))
             const root = await tree.getRoot()
             expect(root).not.toBeNull()
             expect(root.name).toBe("root")
@@ -25,11 +25,11 @@ describe("添加树节点", () => {
         })
 
         test('单树表中创建根节点时如果已存在则触发错误', async () => { 
-            await  tree.update(async ()=>await tree.createRoot({name:"root"}))
-            expect(tree.update(async ()=>await tree.createRoot({name:"root2"}))).rejects.toThrow(FlexTreeNodeError)
+            await  tree.write(async ()=>await tree.createRoot({name:"root"}))
+            expect(tree.write(async ()=>await tree.createRoot({name:"root2"}))).rejects.toThrow(FlexTreeNodeError)
         })
         test('判定是否存在根节点', async () => { 
-            await tree.update(async ()=>await tree.createRoot({name:"root"}))
+            await tree.write(async ()=>await tree.createRoot({name:"root"}))
             const result = await tree.hasRoot()
             expect(result).toBe(true)
         })
@@ -40,14 +40,14 @@ describe("添加树节点", () => {
         let tree:FlexTreeManager  
         beforeEach(async () => {
             tree = await createTreeManager()
-            await tree.update(async ()=>await tree.createRoot({name:"root"}))
+            await tree.write(async ()=>await tree.createRoot({name:"root"}))
         })
         
         afterEach(async ()=>{ 
             await dumpTree(tree.driver.db,"create.lastchild.db")
         })
         test("在根节点下创建最后的子节点", async () => {
-            await tree.update(async ()=>{
+            await tree.write(async ()=>{
                 await tree.addNodes([
                     {name:"A"},
                     {name:"B"},
@@ -75,7 +75,7 @@ describe("添加树节点", () => {
             expect(nodes[3].level).toBe(1)
         })
         test("多次在根节点下创建最后的子节点", async () => {
-            await tree.update(async ()=>{
+            await tree.write(async ()=>{
                 await tree.addNodes([{name:"A"}])
                 await tree.addNodes([{name:"B"}])
                 await tree.addNodes([{name:"C"}])
@@ -101,7 +101,7 @@ describe("添加树节点", () => {
             expect(nodes[3].level).toBe(1)
         })
         test("在多个节点下均创建最后的子节点", async () => {
-            await tree.update(async ()=>{
+            await tree.write(async ()=>{
                 await tree.addNodes([{id:2,name:"A"}])
                 await tree.addNodes([{id:3,name:"B"}])
                 await tree.addNodes([{id:4,name:"C"}])
@@ -195,13 +195,13 @@ describe("添加树节点", () => {
         let tree:FlexTreeManager  
         beforeEach(async () => {
             tree = await createTreeManager()
-            await tree.update(async ()=>await tree.createRoot({name:"root"}))
+            await tree.write(async ()=>await tree.createRoot({name:"root"}))
         })      
         afterEach(async ()=>{ 
             await dumpTree(tree.driver.db,"create.firstchild.db")
         })
         test("在根节点依次添加子节点到最前面", async () => {
-            await tree.update(async ()=>{           
+            await tree.write(async ()=>{           
                 await tree.addNodes([{name:"A"}],null,FlexNodeRelPosition.FirstChild)
                 await tree.addNodes([{name:"B"}],null,FlexNodeRelPosition.FirstChild)
                 await tree.addNodes([{name:"C"}],null,FlexNodeRelPosition.FirstChild)
@@ -228,7 +228,7 @@ describe("添加树节点", () => {
 
         })
         test("一次性在根节点添加子节点到最前面", async () => {
-            await tree.update(async ()=>{           
+            await tree.write(async ()=>{           
                 await tree.addNodes([{name:"A"},{name:"B"},{name:"C"}],null,FlexNodeRelPosition.FirstChild) 
             })
             let nodes = await tree.getNodes()
@@ -253,7 +253,7 @@ describe("添加树节点", () => {
 
         })
         test("在多级节点下添加多个子节点到最前面", async () => {
-            await tree.update(async ()=>{           
+            await tree.write(async ()=>{           
                 await tree.addNodes([{id:2,name:"A"},{id:3,name:"B"},{id:4,name:"C"}]) 
                 await tree.addNodes([{name:"A1"},{name:"A2"},{name:"A3"}],2,FlexNodeRelPosition.FirstChild) 
                 await tree.addNodes([{name:"B1"},{name:"B2"},{name:"B3"}],3,FlexNodeRelPosition.FirstChild)
@@ -336,7 +336,7 @@ describe("添加树节点", () => {
         let tree:FlexTreeManager  
         beforeEach(async () => {
             tree = await createTreeManager()
-            await tree.update(async ()=>{
+            await tree.write(async ()=>{
                 await tree.createRoot({name:"root"})
                 await tree.addNodes([{id:2,name:"X"}]) 
             })
@@ -347,7 +347,7 @@ describe("添加树节点", () => {
         })
         test("一性能添加多个兄弟节点",async ()=>{
             
-            await tree.update(async ()=>{           
+            await tree.write(async ()=>{           
                 await tree.addNodes([{name:"A"},{name:"B"},{name:"C"}],2,NextSibling)    
             })
             let nodes = await tree.getNodes()
@@ -380,7 +380,7 @@ describe("添加树节点", () => {
         })
         test("多次添加多个兄弟节点",async ()=>{
             
-            await tree.update(async ()=>{           
+            await tree.write(async ()=>{           
                 await tree.addNodes([{name:"A"}],2,NextSibling)    
                 await tree.addNodes([{name:"B"}],2,NextSibling)    
                 await tree.addNodes([{name:"C"}],2,NextSibling)    
@@ -414,7 +414,7 @@ describe("添加树节点", () => {
         })
         test("顺序多次添加多个兄弟节点",async ()=>{
             
-            await tree.update(async ()=>{           
+            await tree.write(async ()=>{           
                 await tree.addNodes([{id:100,name:"A"}],2,NextSibling)    
                 await tree.addNodes([{id:101,name:"B"}],100,NextSibling)    
                 await tree.addNodes([{name:"C"}],101,NextSibling)    
@@ -449,7 +449,7 @@ describe("添加树节点", () => {
 
         test("在多级树中多次添加多个兄弟节点",async ()=>{
                 
-            await tree.update(async ()=>{
+            await tree.write(async ()=>{
                 await tree.addNodes([{id:3,name:"A"}])
                 await tree.addNodes([{id:4,name:"B"}])
                 await tree.addNodes([{id:5,name:"C"}])
@@ -490,7 +490,7 @@ describe("添加树节点", () => {
             }
         })
         test("在多级树中添加兄弟节点",async ()=>{
-            await tree.update(async ()=>{
+            await tree.write(async ()=>{
                 await tree.addNodes([{id:3,name:"A"}],2)
                 await tree.addNodes([{id:4,name:"AA"}],3)
                 await tree.addNodes([{id:5,name:"AAA"}],4)
@@ -507,7 +507,7 @@ describe("添加树节点", () => {
         let tree:FlexTreeManager  
         beforeEach(async () => {
             tree = await createTreeManager()
-            await tree.update(async ()=>{
+            await tree.write(async ()=>{
                 await tree.createRoot({name:"root"})
                 await tree.addNodes([{id:2,name:"X"}]) 
             })
@@ -517,7 +517,7 @@ describe("添加树节点", () => {
         })
         test("一性次添加多个节点到X节点前",async ()=>{
             
-            await tree.update(async ()=>{           
+            await tree.write(async ()=>{           
                 await tree.addNodes([{name:"A"},{name:"B"},{name:"C"}],2,PreviousSibling)    
             })
             let nodes = await tree.getNodes()
@@ -549,7 +549,7 @@ describe("添加树节点", () => {
 
         })
         test("多次添加多个节点到X节点前",async ()=>{
-            await tree.update(async ()=>{           
+            await tree.write(async ()=>{           
                 await tree.addNodes([{name:"A"}],2,PreviousSibling)    
                 await tree.addNodes([{name:"B"}],2,PreviousSibling)    
                 await tree.addNodes([{name:"C"}],2,PreviousSibling)    

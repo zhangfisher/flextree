@@ -267,7 +267,7 @@ export class MoveNodeMixin<
      * 
      */
     async moveNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | TreeNode,toNode?:NodeId | TreeNode , pos:FlexNodeRelPosition = FlexNodeRelPosition.NextSibling){
-        this._assertUpdating()
+        this._assertWriteable()
         if(!node || !toNode) throw new Error('invalid node param')
         
         let srcNode = await this.getNodeData(node) as unknown as TreeNode
@@ -308,7 +308,7 @@ export class MoveNodeMixin<
      * @param node 
      */
     async moveUpNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | TreeNode){
-        this._assertUpdating()
+        this._assertWriteable()
         const srcNode = await this.getNodeData(node) as unknown as TreeNode
         let preNode = await this.getPreviousSibling(srcNode)
         if(preNode){
@@ -333,7 +333,7 @@ export class MoveNodeMixin<
      * @param node 
      */
     async moveDownNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | TreeNode){
-        this._assertUpdating()
+        this._assertWriteable()
         const srcNode = await this.getNodeData(node) as unknown as TreeNode
         let nextNode = await this.getNextSibling(srcNode)
         if(nextNode){

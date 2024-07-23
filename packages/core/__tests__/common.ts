@@ -1,7 +1,9 @@
 import Database from "better-sqlite3"
 import { FlexTreeManager, IFlexTreeNode,FlexTreeVerifyError } from "../src/index";
 import SqliteDriver  from "../../sqlite/src/index" 
+import { FlexTree } from "../src/tree";
 import path from "node:path"
+
  
 
 export async function createTreeTable(driver:SqliteDriver){
@@ -48,6 +50,20 @@ export async function createTreeManager(treeId?:any){
     })    
 }
 
+export async function createFlexTree(treeId?:any){
+    const sqliteDriver = new SqliteDriver()
+    await sqliteDriver.open()    
+    if(treeId){
+        await createMultiTreeTable(sqliteDriver)
+    }else{
+        await createTreeTable(sqliteDriver)
+    } 
+    await clearAllTables(sqliteDriver)
+    return new FlexTree("tree",{
+        treeId,
+        driver: sqliteDriver
+    })    
+}
 /**
  * 
  * 生成一个 demo 树，树的结构如下：
@@ -75,7 +91,7 @@ export async function createDemoTree(tree:FlexTreeManager,options?:{level?:numbe
     const names=["A","B","C","D","E","F"]
     let count:number = 0
     for(let treeId=1;treeId<=treeCount;treeId++){
-        await tree.update(async ()=>{
+        await tree.write(async ()=>{
             await tree.createRoot({id:1,name:"root",treeId})
             count++
             // level=1:   id=100,200,300,400,500,600,700

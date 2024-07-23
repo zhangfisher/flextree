@@ -42,7 +42,7 @@ export class RootNodeMixin<
      * @param node   节点数据
      */
     async createRoot(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node:Partial<TreeNode>){       
-        this._assertUpdating()
+        this._assertWriteable()
         if(await this.hasRoot()) throw new FlexTreeNodeError('Root node already exists')
         // 1. 创建根节点数据
         const record =Object.assign({},node,{                

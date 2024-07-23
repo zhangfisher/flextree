@@ -88,7 +88,9 @@ export type IFlexTreeNode<
     & Fields  
 
 
-
+export type RemoveKeyFields<T extends Record<string,any>,KeyFields extends CustomTreeKeyFields> = {
+    [K in keyof T]: K extends KeyFields[keyof KeyFields] ? never : T[K]
+}  
 
 
 export type FlexTreeUpdater = (tree:FlexTreeManager)=>Promise<void>

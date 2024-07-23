@@ -164,7 +164,7 @@ export class AddNodeMixin<
      * 
      */
     async addNodes(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodes:Partial<TreeNode>[],atNode?:NodeId | TreeNode | null, pos:FlexNodeRelPosition = FlexNodeRelPosition.LastChild){
-        this._assertUpdating()
+        this._assertWriteable()
 
         if(nodes.length == 0) return
 
