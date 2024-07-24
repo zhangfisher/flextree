@@ -15,11 +15,11 @@ hero:
       link: https://github.com/zhangfisher/flextree
 
 features:
-  - title: Feature A
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature B
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature C
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+  - title: 高效访问
+    details: 提供了基于左右值算法的高效的树结构存储和访问
+  - title: 简单易用
+    details: 提供了简单易用的API，支持多种树操作
+  - title: 功能丰富
+    details: 支持多种树操作，如增删改查、遍历、移动、查询等
 ---
 

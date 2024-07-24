@@ -13,6 +13,8 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@lite-tree/icons": "^1.0.5",
+    "@lite-tree/vue": "^1.1.3",
     "ts-node": "^10.9.2",
     "tsup": "^8.1.0",
     "typescript": "^5.4.5",

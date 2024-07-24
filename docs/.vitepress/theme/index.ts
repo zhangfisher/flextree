@@ -3,6 +3,9 @@ import { h } from 'vue'
 import type { Theme } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
 import './style.css'
+import { LiteTree } from '@lite-tree/vue'
+import "@lite-tree/icons/filetypes.css"
+
 
 export default {
   extends: DefaultTheme,
@@ -12,6 +15,6 @@ export default {
     })
   },
   enhanceApp({ app, router, siteData }) {
-    // ...
+    app.component('LiteTree', LiteTree)
   }
 } satisfies Theme
