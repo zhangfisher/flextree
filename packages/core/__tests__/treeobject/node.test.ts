@@ -10,6 +10,7 @@ describe("访问树节点实例", () => {
     beforeEach(async () => {
         tree = await createFlexTree()        
         await createDemoTree(tree.manager)
+        await tree.load()
     })    
     afterEach(async ()=>{ 
         await dumpTree(tree.manager.driver.db,"create.root.db")
@@ -27,8 +28,7 @@ describe("访问树节点实例", () => {
         })        
     })
  
-    test("根据路径获取节点实例",async ()=>{ 
-        await tree.load()
+    test("根据路径获取节点实例",async ()=>{  
         const root = tree.root!
         expect(root.getByPath("/")).toBe(root)
         expect(root.getByPath("./")).toBe(root)
@@ -55,15 +55,13 @@ describe("访问树节点实例", () => {
         expect(b1.getByPath("B-1/B-1-1")?.name).toBe("B-1-1")
     })
 
-    test("更新节点数据",async ()=>{ 
-        await tree.load()
+    test("更新节点数据",async ()=>{  
         const root = tree.root!
         expect(root.name).toBe("root")
         await root.update({name:"ROOT"})
         expect(root.name).toBe("ROOT")
     })
-    test("根据节点id获取节点实例",async ()=>{
-        await tree.load()
+    test("根据节点id获取节点实例",async ()=>{ 
         const a = tree.find(node=>node.name=="A")[0]
         expect(tree.get(a!.id)).toBe(a)
         const anodes = tree.find(node=>node.name.startsWith("A"))
@@ -73,22 +71,43 @@ describe("访问树节点实例", () => {
         }
     })
 
-    test("在节点后代中根据id获取节点实例",async ()=>{
-        await tree.load()
+    test("在节点后代中根据id获取节点实例",async ()=>{ 
         const a = tree.find(node=>node.name=="A")[0]
         const a11 = tree.find(node=>node.name=="A-1-1")[0]
         expect(a.get(a11.id)).toBe(undefined) 
         expect(a.get(a11.id,true)).toBe(a11) 
     })
 
-    test("删除节点的子节点及后代中的指定节点实例",async ()=>{
-        await tree.load()
-        const a = tree.find(node=>node.name=="A")[0]
-        const a11 = tree.find(node=>node.name=="A-1-1")[0] 
-        
-    })
-    
+    test("访问节点的兄弟节点",async ()=>{
+        const a = tree.find(node=>node.name=="A-1")[0]
 
+        const siblings =  a.siblings!
+
+        expect(siblings.length).toBe(4)
+        expect(siblings[0].name).toBe("A-2")
+        expect(siblings[1].name).toBe("A-3")
+        expect(siblings[2].name).toBe("A-4")
+        expect(siblings[3].name).toBe("A-5")
+    })
+    test("访问节点的祖先节点",async ()=>{
+        
+        const a12 = tree.find(node=>node.name=="A-1-2")[0]
+
+        const ancestors =  a12.ancestors!
+        expect(ancestors.length).toBe(3) 
+        expect(ancestors[0].name).toBe("root")
+        expect(ancestors[1].name).toBe("A")
+        expect(ancestors[2].name).toBe("A-1") 
+    })
+    test("访问节点的后代节点",async ()=>{
+        
+        const a = tree.find(node=>node.name=="A")[0]
+
+        const descendants =  a.descendants!
+        for(let node of descendants){
+            expect(node.name.startsWith("A")).toBe(true)
+        }
+    })
 
 })
 

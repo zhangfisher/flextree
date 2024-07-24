@@ -1,4 +1,4 @@
-import {  CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNode, NonUndefined,FlexTreeEvents } from "./types" 
+import {  CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNode, NonUndefined } from "./types" 
 import  {  FlexTreeManager,type FlexTreeManagerOptions } from "./manager";
 import { FlexTreeNode } from "./node"
 import { FlexTreeNotFoundError,FlexTreeInvalidError } from "./errors" 
@@ -26,6 +26,7 @@ export class FlexTree<
         this._manager = new FlexTreeManager(tableName,options)
         this._treeId = this._manager.treeId
         this._options = this._manager.options as RequiredDeep<FlexTreeOptions<KeyFields['treeId']>>
+        this._manager.on('afterWrite',this.onAfterWrite.bind(this))
     }     
     get options(){ return this._options }    
     get on(){ return this._manager.on.bind(this) }
@@ -40,9 +41,13 @@ export class FlexTree<
      * 返回树的id
      */
     get id(){return this._treeId} 
+
     /**
-     * 返回根节点
+     * 当节点后更新时调用
      */
+    private onAfterWrite(){
+        this.load()
+    } 
     /**
      * 加载树到内存中
         * @param options
@@ -149,29 +154,6 @@ export class FlexTree<
      */
     find(condition:(node:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>)=>boolean):FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>[]{
         return this._root!.find(condition,true)
-    }
-    /**
-     * 
-     * 重置节点
-     * 
-     * - 将节点从树中移除
-     * - 重新加载节点
-     * 
-     * @param nodeId
-     */
-    reset(nodeId:NodeId){
-        const node = this.get(nodeId)
-        if(node){
-            let parent = node.parent
-            let index = -1
-            if( parent && parent.children){
-                index = parent.children?.findIndex(n=>n.id!=node.id)
-                if(index>=0){
-                    parent.children?.splice(index,1)
-                }
-            }
-            this.load()            
-        }
-    }
+    } 
 
 }

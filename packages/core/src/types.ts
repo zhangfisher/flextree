@@ -97,8 +97,8 @@ export type FlexTreeUpdater = (tree:FlexTreeManager)=>Promise<void>
 
 
 export type FlexTreeEvents = {
-    beforeUpdate : string
-    afterUpdate  :  string
+    beforeWrite : undefined         // 当执行写操作前触发
+    afterWrite  : undefined         // 当执行写操作后触发
 }
 
 

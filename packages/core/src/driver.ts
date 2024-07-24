@@ -15,8 +15,7 @@ export interface IDatabaseDriver{
     // 执行查询并返回结果
     getRows(sql:string):Promise<any[]>
     // 执行查询并返回标量
-    getScalar<T=number>(sql:string):Promise<T> 
-    delete(sql:string):Promise<any>    
+    getScalar<T=number>(sql:string):Promise<T>  
     open(config?:any):Promise<any>
     // 返回一个数据库实例对象
     db:any

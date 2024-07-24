@@ -1,0 +1,31 @@
+{
+  "name": "flextree-prisma-example",
+  "version": "1.0.0",
+  "description": "",
+  "private": "true",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "db:generate": "prisma generate",
+    "db:sync": "prisma db push",
+    "dev": "ts-node --experimentalSpecifierResolution node ./src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "5.17.0",
+    "prisma": "^5.17.0",
+    "flextree":"workspace:*",
+    "@flextree/prisma":"workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.12",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  }
+}

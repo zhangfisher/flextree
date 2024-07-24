@@ -20,6 +20,7 @@ export class DeleteNodeMixin<
      * @returns 
      */
     async deleteNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode,options?:{onlyMark?:boolean,onExecuteBefore?:(sqls:string[])=>boolean}) {        
+        this._assertWriteable()
         const { onlyMark,onExecuteBefore} = Object.assign({mark:false,},options)
         const nodeData = await this.getNodeData(nodeId) as unknown as TreeNode
         let leftValue = nodeData[this.keyFields.leftValue]
@@ -63,5 +64,17 @@ export class DeleteNodeMixin<
         }
         return await this.driver.exec(sqls)
     }
-
+    /**
+     * 清除树所有节点,包括根节点
+     */
+    async clear(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>){
+        this._assertWriteable()
+        let sql:string = ''
+        if(this.treeId){
+            sql = this._sql(`DELETE FROM ${this.tableName} WHERE {__TREE_ID__}`)
+        }else{
+            sql = `DELETE FROM ${this.tableName}`
+        }        
+        return await this.onExecuteWriteSql([sql])
+    }
 }

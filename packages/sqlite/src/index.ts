@@ -1,8 +1,7 @@
 
 import type { IDatabaseDriver,FlexTreeManager } from "flextree"
 import Database from "better-sqlite3" 
-import { buildInsertSql } from "./utils"
-
+ 
 
 export default class SqliteDriver implements IDatabaseDriver{
     _db?:Database.Database
@@ -46,14 +45,7 @@ export default class SqliteDriver implements IDatabaseDriver{
         this.assertDbIsOpen()        
         return await this.db.prepare(sql).pluck().get() as T
     } 
-
-    async update(sqls: string[]){
-
-    }
-    
-    async delete(sql: string){
-
-    }
+ 
 
     async exec(sqls: string | string[]){
         this.assertDbIsOpen() 

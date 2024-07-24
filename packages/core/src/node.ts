@@ -1,7 +1,7 @@
 
-import {  CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNode, NonUndefined } from "./types" 
+import { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNode, NonUndefined } from './types';
 import type { FlexTree} from "./tree"
-import { FlexTreeNodeNotFoundError } from './errors';
+import { FlexTreeInvalidError, FlexTreeNodeNotFoundError, FlexTreeNotFoundError } from './errors';
 import { filterObject } from "./utils/filterObject";
 import { getRelNodePath } from "./utils/getRelNodePath";
 
@@ -17,6 +17,7 @@ export class FlexTreeNode<
     private _node: IFlexTreeNode<Data,KeyFields>
     private _children?:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>[]  
     private _parent:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId> | undefined
+    private _outdated:boolean = false           // 当数据过期时,需要重新从数据库中获取数据
     constructor(node:TreeNode,parent:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId> | undefined ,tree:FlexTree<Data,KeyFields,TreeNode,NodeId,TreeId>){
         this._id = node[tree.manager.keyFields.id]
         this._tree = tree
@@ -34,15 +35,34 @@ export class FlexTreeNode<
     get rightalue(){ return this._node.rightValue } 
     get treeId(){ return this._node.rightValue }     
     get tree(){ return this._tree }
-    get children(){ return this._children }
     get data(){ return this._node as TreeNode }
     get root(){ return this._tree.root }
     get parent(){ return this._parent }    
+    get children(){ return this._children }
     get siblings(){ 
         if(this._parent){
             return this._parent.children?.filter(n=>n.id!=this.id)
         }
     }    
+    get descendants(){
+        const descendants:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>[] = []
+        if(this._children){
+            for(let node of this._children){
+                descendants.push(node)
+                descendants.push(...node.descendants)
+            }
+        }
+        return descendants
+    }
+    get ancestors(){
+        const ancestors:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>[] = []
+        let parent = this._parent
+        while(parent){
+            ancestors.splice(0,0,parent)
+            parent = parent.parent
+        }
+        return ancestors
+    }
     
     /**
      * 从数据库中同步数据 
@@ -57,10 +77,8 @@ export class FlexTreeNode<
     } 
     /**
      * 
-     * 更新节点数据
-     * 
+     * 更新节点数据 
      * 不包括关键字段
-     * 
      * 
      */
     async update(data:Partial<TreeNode>){        
@@ -97,11 +115,8 @@ export class FlexTreeNode<
      * @param ofe 
      */
     getByPath(path:string,options?:{byField?:string,delimiter?:string}):FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId> | undefined{
-        
         const {byField,delimiter} = Object.assign({byField:this._tree.manager.keyFields.name,delimiter:"/"},options)
-
         let [entryNode,entryPath] = getRelNodePath(this as any,path,delimiter) as  [FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId> ,string]
-
         for(let subpath of entryPath.split(delimiter)){
             if(subpath=='') continue
             if(entryNode.children){
@@ -154,16 +169,71 @@ export class FlexTreeNode<
         }
         return nodes
     }   
+    /**
+     *  加载节点及子节点并创建节点实例 
+     */
+    async load(){   
+        const nodes = (await this.tree.manager.getDescendants(this._id, { includeSelf: true })) as unknown as TreeNode[]
+        if(!nodes || nodes.length==0){
+            throw new FlexTreeNotFoundError()
+        }
+        Object.assign(this._node,nodes[0])          // 更新节点数据
 
-    async moveUp(){
-        try{
-            await this._tree.manager.moveUpNode(this._id)
-            
-        }catch(e){
-            throw e
-        }        
+        const pnodes:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>[] = [this]
+        let preNode:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId> = this
+
+        for(let node of nodes){  
+            if(node.id == this._id) continue              
+            if(node.level == preNode.level){
+                const parent = pnodes[pnodes.length-1]
+                const nodeObj = new FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>(node,parent,this as any)
+                parent.children!.push(nodeObj) 
+                preNode = nodeObj
+            }else if(node.level > preNode.level  ){
+                if(node.level == preNode.level + 1){                        
+                    const nodeObj = new FlexTreeNode(node,preNode,this as any)
+                    preNode.children!.push(nodeObj) 
+                    preNode = nodeObj
+                    if(node.rightValue-node.leftValue > 1){                            
+                        pnodes.push(preNode)
+                    }
+                }else{
+                    throw new FlexTreeInvalidError(`Invalid tree structure`)
+                }                    
+            }else if(node.level < preNode.level){
+                while(true){
+                    let parent = pnodes[pnodes.length-1]
+                    if(parent && node.level == parent.level + 1){
+                        const nodeObj = new FlexTreeNode(node,parent,this as any)
+                        parent.children!.push(nodeObj) 
+                        preNode = nodeObj
+                        if(node.rightValue-node.leftValue > 1){                            
+                            pnodes.push(preNode)
+                        }
+                        break
+                    }else if(pnodes.length == 0){
+                        break
+                    }else{
+                        pnodes.pop()                        
+                    }
+                }
+                
+            }
+        }  
+    } 
+    /**
+     * 向上移动节点
+     * 
+     * 由于向上移动节点会导致树的左右值发生变化，因此需要重新加载树
+     * 
+     * - 移动节点只是在同级移动,此时仅同级/后代节点的leftValue和rightValue变化,因此此时只需要重新加载该节点及后代节点即可
+     * - 向上移动至上父节点之上,则会影响父级/后代节点的leftValue和rightValue变化
+     */
+    moveUp(){
+        if(this._parent){
+             
+        }
     }
-
 
 
 

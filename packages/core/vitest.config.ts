@@ -7,6 +7,7 @@ export default defineConfig({
     sequence:{
         concurrent:false,        
     },
+    includeTaskLocation:true,
     // fileParallelism:true
   },
 })

@@ -109,13 +109,6 @@ describe("访问树对象实例", () => {
         expect(root.name).toBe("ROOT")
     })
 
-    test("删除指定的节点",async ()=>{
-
-
-    })
-
-
-
 })
 
 

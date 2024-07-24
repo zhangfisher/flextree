@@ -28,6 +28,7 @@ import { FindNodeMixin } from "./mixins/find.mixin";
 import { RootNodeMixin } from "./mixins/root.mixin";
 import { RelationMixin } from "./mixins/relation.mixin";
 import { UpdateNodeMixin } from "./mixins/update.mixin";
+import { VerifyTreeMixin } from "./mixins/verify.mixin";
 
 export interface FlexTreeManagerOptions<TreeIdType = number> {
 	treeId?: TreeIdType; // 使用支持单表多树时需要提供
@@ -57,7 +58,8 @@ export interface FlexTreeManager<
 		FindNodeMixin<Data, KeyFields, TreeNode, NodeId, TreeId>,
 		RootNodeMixin<Data, KeyFields, TreeNode, NodeId, TreeId>,
 		RelationMixin<Data, KeyFields, TreeNode, NodeId, TreeId>,
-		UpdateNodeMixin<Data, KeyFields, TreeNode, NodeId, TreeId>
+		UpdateNodeMixin<Data, KeyFields, TreeNode, NodeId, TreeId>,
+		VerifyTreeMixin<Data, KeyFields, TreeNode, NodeId, TreeId>
 		{}
 
 /**
@@ -81,7 +83,8 @@ export interface FlexTreeManager<
 	FindNodeMixin,
 	RootNodeMixin,
 	RelationMixin,
-	UpdateNodeMixin
+	UpdateNodeMixin,
+	VerifyTreeMixin
 )
 export class FlexTreeManager<
 	Data extends Record<string, any> = {},
@@ -192,12 +195,9 @@ export class FlexTreeManager<
 	 * @param callback
 	 */
 	async write(fn: (tree:FlexTreeManager)=>Promise<void>) {
-		if (this._isWriting)
-			throw new Error(
-				"The tree update operation must be performed within update(async ()=>{....})"
-			);
+		if (this._isWriting) throw new FlexTreeInvalidUpdateError('The tree is performing a write operation and does not support concurrent operations');
 		this._isWriting = true;
-		this._emitter.emit("beforeUpdate", "");
+		this._emitter.emit("beforeWrite");
 		try {
 			await fn(this as FlexTreeManager);
 			this._lastUpdateAt = Date.now();
@@ -205,7 +205,7 @@ export class FlexTreeManager<
 			throw e;
 		} finally {
 			this._isWriting = false;
-			this._emitter.emit("afterUpdate", "");
+			this._emitter.emit("afterWrite");
 		}
 	}
 	/**
@@ -217,6 +217,8 @@ export class FlexTreeManager<
 		}
 	}
 	protected _assertWriteable() {
-		if (!this._isWriting) throw new FlexTreeInvalidUpdateError();
+		if (!this._isWriting) {
+			throw new FlexTreeInvalidUpdateError("The tree write operation must be performed within write(async ()=>{....})")
+		}
 	}
 }

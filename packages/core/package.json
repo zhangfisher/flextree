@@ -1,11 +1,16 @@
 {
   "name": "flextree",
   "version": "1.0.0",
-  "description": "",
+  "description": "Tree storage typescript library based on left-right value algorithm",
   "type": "module",
   "main": "src/index.ts",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:zhangfisher/flextree.git"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest",
+    "coverage": "vitest --ui --coverage"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +25,8 @@
     "@flextree/sqlite": "workspace:^",
     "@types/better-sqlite3": "^7.6.11",
     "@types/sqlstring": "^2.3.2",
+    "@vitest/coverage-v8": "^2.0.4",
+    "@vitest/ui": "^2.0.4",
     "better-sqlite3": "^11.1.2",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
@@ -28,7 +35,7 @@
     "tsup": "^8.1.0",
     "type-fest": "^4.21.0",
     "typescript": "^5.4.5",
-    "vitest": "^1.6.0"
+    "vitest": "^2.0.4"
   },
   "tsd": {
     "directory": "__tests__"
