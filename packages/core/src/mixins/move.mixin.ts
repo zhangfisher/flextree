@@ -4,9 +4,9 @@ import { FlexTreeError, FlexTreeNodeInvalidOperationError } from "../errors"
 
 
 export class MoveNodeMixin<
-    Data extends Record<string,any>={},
+    Fields extends Record<string,any>={},
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Data,KeyFields> = IFlexTreeNode<Data,KeyFields>,
+    TreeNode extends IFlexTreeNode<Fields,KeyFields> = IFlexTreeNode<Fields,KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
     TreeId = NonUndefined<KeyFields['treeId']>[1]
 >{
@@ -31,7 +31,7 @@ export class MoveNodeMixin<
      * @param pos 
      * @returns 
      */
-    async canMoveTo(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | TreeNode,toNode?:NodeId | TreeNode, pos:FlexNodeRelPosition = FlexNodeRelPosition.NextSibling) {
+    async canMoveTo(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | TreeNode,toNode?:NodeId | TreeNode, pos:FlexNodeRelPosition = FlexNodeRelPosition.NextSibling) {
         
         const srcNode = await this.getNodeData(node) as unknown as TreeNode
         const targetNode = await this.getNodeData(toNode) as unknown as TreeNode        
@@ -54,7 +54,7 @@ export class MoveNodeMixin<
     /**
      * 移动到下一个节点
      */
-    private _moveToNextSibling(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,fromNode: TreeNode,toNode: TreeNode){
+    private _moveToNextSibling(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,fromNode: TreeNode,toNode: TreeNode){
         
         const movedLength = fromNode[this.keyFields.rightValue] - fromNode[this.keyFields.leftValue] + 1
         
@@ -105,7 +105,7 @@ export class MoveNodeMixin<
     }
 
 
-    private _moveToPreviousSibling(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,fromNode: TreeNode,toNode: TreeNode){
+    private _moveToPreviousSibling(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,fromNode: TreeNode,toNode: TreeNode){
         
         const movedLength = fromNode[this.keyFields.rightValue] - fromNode[this.keyFields.leftValue] + 1
         
@@ -154,7 +154,7 @@ export class MoveNodeMixin<
         return sqls
     }
 
-    private _moveToLastChild(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,fromNode: TreeNode,toNode: TreeNode){
+    private _moveToLastChild(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,fromNode: TreeNode,toNode: TreeNode){
         const movedLength = fromNode[this.keyFields.rightValue] - fromNode[this.keyFields.leftValue] + 1
         
         const leftValue = fromNode[this.keyFields.leftValue]  
@@ -199,7 +199,7 @@ export class MoveNodeMixin<
         ]            
         return sqls
     }
-    private _moveToFirstChild(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,fromNode: TreeNode,toNode: TreeNode){
+    private _moveToFirstChild(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,fromNode: TreeNode,toNode: TreeNode){
         const movedLength = fromNode[this.keyFields.rightValue] - fromNode[this.keyFields.leftValue] + 1
         
         const leftValue = fromNode[this.keyFields.leftValue]  
@@ -266,7 +266,7 @@ export class MoveNodeMixin<
      *  5. 将源节点的leftValue、rightValue转换为正数，并在目标节点的leftValue、rightValue之间插入
      * 
      */
-    async moveNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | TreeNode,toNode?:NodeId | TreeNode , pos:FlexNodeRelPosition = FlexNodeRelPosition.NextSibling){
+    async moveNode(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | TreeNode,toNode?:NodeId | TreeNode , pos:FlexNodeRelPosition = FlexNodeRelPosition.NextSibling){
         this._assertWriteable()
         if(!node || !toNode) throw new Error('invalid node param')
         
@@ -307,7 +307,7 @@ export class MoveNodeMixin<
      * 节点上移
      * @param node 
      */
-    async moveUpNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | TreeNode){
+    async moveUpNode(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | TreeNode){
         this._assertWriteable()
         const srcNode = await this.getNodeData(node) as unknown as TreeNode
         let preNode = await this.getPreviousSibling(srcNode)
@@ -332,7 +332,7 @@ export class MoveNodeMixin<
      * 
      * @param node 
      */
-    async moveDownNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | TreeNode){
+    async moveDownNode(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | TreeNode){
         this._assertWriteable()
         const srcNode = await this.getNodeData(node) as unknown as TreeNode
         let nextNode = await this.getNextSibling(srcNode)

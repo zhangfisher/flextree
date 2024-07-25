@@ -6,9 +6,9 @@ import sqlString from "sqlString"
 
 
 export class RootNodeMixin<
-    Data extends Record<string,any>={},
+    Fields extends Record<string,any>={},
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Data,KeyFields> = IFlexTreeNode<Data,KeyFields>,
+    TreeNode extends IFlexTreeNode<Fields,KeyFields> = IFlexTreeNode<Fields,KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
     TreeId = NonUndefined<KeyFields['treeId']>[1]
 >{ 
@@ -18,7 +18,7 @@ export class RootNodeMixin<
      * 返回是否存在根节点
      * @returns 
      */
-    async hasRoot(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>){
+    async hasRoot(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>){
         const sql = this._sql(`select count(*) from ${this.tableName} 
             where {__TREE_ID__} ${this.keyFields.leftValue}=1 and ${this.keyFields.level}=0`)
         return await this.getScalar(sql) == 1 
@@ -41,7 +41,7 @@ export class RootNodeMixin<
      * 
      * @param node   节点数据
      */
-    async createRoot(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node:Partial<TreeNode>){       
+    async createRoot(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,node:Partial<TreeNode>){       
         this._assertWriteable()
         if(await this.hasRoot()) throw new FlexTreeNodeError('Root node already exists')
         // 1. 创建根节点数据

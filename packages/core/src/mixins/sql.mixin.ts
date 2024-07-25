@@ -3,9 +3,9 @@ import { CustomTreeKeyFields, DefaultTreeKeyFields,IFlexTreeNode, NonUndefined }
 
 
 export class SqlMixin<
-    Data extends Record<string,any>={},
+    Fields extends Record<string,any>={},
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Data,KeyFields> = IFlexTreeNode<Data,KeyFields>,
+    TreeNode extends IFlexTreeNode<Fields,KeyFields> = IFlexTreeNode<Fields,KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
     TreeId = NonUndefined<KeyFields['treeId']>[1]
 >{ 
@@ -15,7 +15,7 @@ export class SqlMixin<
      * @param sqls 
      * @returns 
      */    
-    async onExecuteReadSql(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,sql:string):Promise<any>{
+    async onExecuteReadSql(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,sql:string):Promise<any>{
         await this.assertDriverReady()        
         return await this.driver.getRows(sql)
     } 
@@ -26,16 +26,16 @@ export class SqlMixin<
      * @param sqls 
      * @returns 
      */
-    async onExecuteSql(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,sqls:string[]):Promise<any>{        
+    async onExecuteSql(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,sqls:string[]):Promise<any>{        
         await this.assertDriverReady()        
         return await this.driver.exec(sqls) 
     } 
 
-    async onExecuteWriteSql(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,sqls:string[]):Promise<any>{        
+    async onExecuteWriteSql(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,sqls:string[]):Promise<any>{        
         await this.assertDriverReady()        
         return await this.driver.exec(sqls) 
     } 
-    async onGetScalar(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,sql:string):Promise<any>{        
+    async onGetScalar(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,sql:string):Promise<any>{        
         await this.assertDriverReady()        
         return await this.driver.getScalar(sql) 
     } 
@@ -45,7 +45,7 @@ export class SqlMixin<
      *
      * @param sql 
      */
-    protected _sql(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,sql:string){
+    protected _sql(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,sql:string){
         // 在一表多树时,需要增加额外的树判定
         if(this.treeId){
             const treeId = typeof(this.treeId)=='string' ? `'${this.treeId}'` : this.treeId  
@@ -57,15 +57,15 @@ export class SqlMixin<
     }
 
 
-    protected async getOneNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,sql:string):Promise<TreeNode | null>{        
+    protected async getOneNode(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,sql:string):Promise<TreeNode | null>{        
         const result = await this.onExecuteReadSql(sql)  
         return result.length > 0 ? result[0] as TreeNode : null
     }
     
-    protected async getNodeList(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,sql:string):Promise<TreeNode[]>{        
+    protected async getNodeList(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,sql:string):Promise<TreeNode[]>{        
         return await this.onExecuteReadSql(sql)  
     }
-    protected async getScalar<T=number>(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,sql:string):Promise<T>{        
+    protected async getScalar<T=number>(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,sql:string):Promise<T>{        
         return await this.driver.getScalar(sql)  as T
     }
 }

@@ -2,7 +2,6 @@ import {  CustomTreeKeyFields, DefaultTreeKeyFields, FlexTreeExportOptions, IFle
 import  {  FlexTreeManager,type FlexTreeManagerOptions } from "./manager";
 import { FlexTreeNode } from "./node"
 import { FlexTreeNotFoundError,FlexTreeInvalidError } from "./errors" 
-import { pick } from "flex-tools/object/pick"
 
 import {RequiredDeep } from "type-fest"
 
@@ -11,20 +10,20 @@ export type FlexTreeOptions<TreeIdType=number> = FlexTreeManagerOptions<TreeIdTy
 export type FlexTreeStatus = 'initial' | 'loading' | 'loaded' | 'error'
 
 export class FlexTree<
-    Data extends Record<string,any>={},
+    Fields extends Record<string,any>={},
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Data,KeyFields> = IFlexTreeNode<Data,KeyFields>,
+    TreeNode extends IFlexTreeNode<Fields,KeyFields> = IFlexTreeNode<Fields,KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
     TreeId = NonUndefined<KeyFields['treeId']>[1]
     > {
     private _options:RequiredDeep<FlexTreeOptions<KeyFields['treeId']>>
     private _treeId:TreeId    
     private _status: FlexTreeStatus = 'initial'
-    private _manager:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>
-    private _root?:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId> 
+    private _manager:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>
+    private _root?:FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId> 
 
     constructor(tableName:string,options?:FlexTreeOptions<KeyFields['treeId']>){        
-        this._manager = new FlexTreeManager(tableName,options)
+        this._manager = new FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>(tableName,options)
         this._treeId = this._manager.treeId
         this._options = this._manager.options as RequiredDeep<FlexTreeOptions<KeyFields['treeId']>>
         this._manager.on('afterWrite',this.onAfterWrite.bind(this))
@@ -34,6 +33,8 @@ export class FlexTree<
     get off(){ return this._manager.off.bind(this) }
     get emit(){ return this._manager.emit.bind(this) }
     get manager(){ return this._manager!} 
+    
+    
 
     get root(){
         return this._root
@@ -66,7 +67,7 @@ export class FlexTree<
                 throw new FlexTreeNotFoundError()
             }
             this._root = new FlexTreeNode(nodes[0],undefined,this as any)
-            const pnodes:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>[] = [this._root]
+            const pnodes:FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId>[] = [this._root]
             let preNode = this._root 
             for(let node of nodes){  
                 if(node.level == 0) continue              
@@ -112,7 +113,7 @@ export class FlexTree<
         }        
     } 
 
-    getByPath(path:string,options?:{byField?:string,delimiter?:string}):FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId> | undefined{
+    getByPath(path:string,options?:{byField?:string,delimiter?:string}):FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId> | undefined{
         return this.root?.getByPath(path,options)
     }
 
@@ -125,7 +126,7 @@ export class FlexTree<
     /**
      * 删除指定的节点
      */
-    async delete(nodeId: NodeId | ((node:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>)=>boolean) ){        
+    async delete(nodeId: NodeId | ((node:FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId>)=>boolean) ){        
         if(typeof nodeId == 'function'){            
             const nodes = this.find(node=>(nodeId as any)(node)).map(node=>node.id)
             await this.manager.write(async ()=>{
@@ -153,7 +154,7 @@ export class FlexTree<
      * @param condition 
      * @returns 
      */
-    find(condition:(node:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>)=>boolean):FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>[]{
+    find(condition:(node:FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId>)=>boolean):FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId>[]{
         return this._root!.find(condition,true)
     } 
 

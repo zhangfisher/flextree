@@ -1,11 +1,12 @@
 
-import { CustomTreeKeyFields, DefaultTreeKeyFields, FlexTreeExportNestedNodes, FlexTreeExportOptions, IFlexTreeNode, NonUndefined } from './types';
+import { CustomTreeKeyFields, DefaultTreeKeyFields, FlexTreeExportNestedFormat, FlexTreeExportOptions, FlexTreeExportPidFormat, IFlexTreeNode, NonUndefined } from './types';
 import type { FlexTree} from "./tree"
 import { FlexTreeInvalidError, FlexTreeNodeNotFoundError, FlexTreeNotFoundError } from './errors';
 import { filterObject } from "./utils/filterObject";
 import { getRelNodePath } from "./utils/getRelNodePath";
 import { pick } from 'flex-tools/object/pick';
-import { JsonObject,JsonValue } from "type-fest"
+import { omit } from 'flex-tools/object/omit';
+
 export class FlexTreeNode<
         Fields extends Record<string,any>={},
         KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
@@ -17,8 +18,7 @@ export class FlexTreeNode<
     private _tree:FlexTree<Fields,KeyFields,TreeNode,NodeId,TreeId>
     private _node: IFlexTreeNode<Fields,KeyFields>
     private _children?:FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId>[]  
-    private _parent:FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId> | undefined
-    private _outdated:boolean = false           // 当数据过期时,需要重新从数据库中获取数据
+    private _parent:FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId> | undefined        
     constructor(node:TreeNode,parent:FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId> | undefined ,tree:FlexTree<Fields,KeyFields,TreeNode,NodeId,TreeId>){
         this._id = node[tree.manager.keyFields.id]
         this._tree = tree
@@ -226,51 +226,77 @@ export class FlexTreeNode<
 
     /**
      * 导出当前节点及其后代节点
+     * 
+     * export({format:"nested",
+     *  fields:["name","level","leftValue","rightValue"]          // 导出指定字段
+     * })
+     * 
      */
-    export<Format extends FlexTreeExportOptions['format'] = 'nested',
-        Returns = Format extends 'nested' ? FlexTreeExportNestedNodes<Fields,KeyFields,TreeNode,NodeId> : any
-    >(options?:FlexTreeExportOptions<Fields,KeyFields,NodeId,TreeId>):Returns{
+    export<Format extends FlexTreeExportOptions['format'] = 'nested',        
+        OPTIONS extends FlexTreeExportOptions<Fields,KeyFields,NodeId,TreeId> = FlexTreeExportOptions<Fields,KeyFields,NodeId,TreeId>,        
+        Returns = Format extends 'nested' ? FlexTreeExportNestedFormat<Fields,KeyFields,TreeNode,NodeId> 
+                                            : FlexTreeExportPidFormat<Fields,KeyFields,TreeNode,NodeId,TreeId,OPTIONS>
+    >(options?:OPTIONS):Returns{
         const  opts = Object.assign({
-            format:"nested",
-            childrenField:'children',
-            pdiField:'pid',
-            fields:[],
-            level:0                     // 限定节点的级别
+            format              : "nested",
+            childrenField       : 'children',
+            pidField            : 'pid',
+            fields              : [],
+            level               : 0,                // 限定节点的级别
+            includeKeyFields    : false                    
         },options) as Required<FlexTreeExportOptions<Fields,KeyFields,NodeId,TreeId>>        
-        const {format,childrenField,pidField,level,fields}  = opts 
-
-        if(fields.length>0){
-            // 导出一定会包括主键id
-            if(fields.includes(this._tree.manager.keyFields.id)){
+        const {format,childrenField,pidField,includeKeyFields,level,fields}  = opts 
+        // 当指字了fields时,确保包含id字段,不包括treeId字段
+        if(fields.length>0){                        
+            if(fields.includes(this._tree.manager.keyFields.id)){// 导出一定会包括主键id
                 fields.push(this._tree.manager.keyFields.id)
-            }
-            // 移除treeId字段
-            const index  = fields.findIndex(name=>name==this._tree.manager.keyFields.treeId)
+            }            
+            const index  = fields.findIndex(name=>name==this._tree.manager.keyFields.treeId)// 移除treeId字段
             if(index>=0) fields.splice(index,1)
-        }
-
+        }     
         // 提取节点数据
-        function pickNodeData(data:any){            
-            const {leftValue,rightValue,level,...rest} = data
+        const pickNodeData=(data:any)=>{            
             if(fields.length>0){
                 return pick(data,fields as string[]) as any 
             }else{
-                return Object.assign({},data)
+                if(includeKeyFields){
+                    return Object.assign({},data)
+                }else{
+                    if(includeKeyFields){
+                        return Object.assign({},omit(data,Object.values(this._tree.manager.keyFields),true))
+                    }else{
+                        return Object.assign({},omit(data,[
+                            this._tree.manager.keyFields.leftValue,
+                            this._tree.manager.keyFields.rightValue,
+                        ],true))
+                    }
+                }
             }
         }
+
         let results:Returns 
-        if(format=='pid'){   
-                   
-                // @ts-ignore   
-            results =  {}   
+        if(format=='pid'){  
+            // @ts-ignore 
+            results = []
+            const curNodedata = pickNodeData(this._node)
+            curNodedata[pidField] =this.parent ? this.parent.id : 0
+            // @ts-ignore
+            results.push(curNodedata)
+            if(this._children){
+                for(let node of this._children){     
+                    const children = node.export(opts) as any [] 
+                    // @ts-ignore
+                    results.push(...children)
+                }
+            }
         }else{
             results = pickNodeData(this._node)
             if(this._children){           
                 // @ts-ignore     
-                results[childrenField] = this._children.map(n=>n.export(options)) 
+                results[childrenField] = this._children.map(n=>n.export(opts)) 
             }       
         } 
-        return results 
+        return results as Returns
     }
     toString(){
         return `${this.name}(${this._id})`

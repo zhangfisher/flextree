@@ -10,7 +10,8 @@
   },
   "scripts": {
     "test": "vitest",
-    "coverage": "vitest --ui --coverage"
+    "coverage": "vitest --ui --coverage",
+    "build":"tsup"
   },
   "keywords": [],
   "author": "",

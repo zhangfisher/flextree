@@ -1,12 +1,11 @@
 import { test,describe,beforeEach, expect, beforeAll, afterEach } from "vitest" 
 import { FlexNodeRelPosition, FlexTreeManager, FlexTreeNodeError, FlexTreeNodeRelation, NextSibling, PreviousSibling } from "../../src/index"; 
-import { createDemoTree, createFlexTree, dumpTree,verifyTree } from "../common";
-import { FlexTree} from "../../src/tree";
-
+import { createDemoTree, createFlexTree, dumpTree,ReturnPromiseType } from "../common";
+ 
 
 describe("访问树节点实例", () => {
     
-    let tree:FlexTree 
+    let tree:ReturnPromiseType<typeof createFlexTree>
     beforeEach(async () => {
         tree = await createFlexTree()        
         await createDemoTree(tree.manager)
@@ -19,7 +18,7 @@ describe("访问树节点实例", () => {
     test("同步节点数据",async ()=>{ 
         await tree.load()
         const root = tree.root!
-        expect(root.name).toBe("root")
+        expect(root.name).toBe("root") 
         await tree.manager.write(async ()=>{            
             await tree.manager.update({...root.data,name:"ROOT"})
             expect(root.name).toBe("root")
@@ -29,7 +28,7 @@ describe("访问树节点实例", () => {
     })
  
     test("根据路径获取节点实例",async ()=>{  
-        const root = tree.root!
+        const root = tree.root!        
         expect(root.getByPath("/")).toBe(root)
         expect(root.getByPath("./")).toBe(root)
         expect(root.getByPath("./A")?.name).toBe("A")

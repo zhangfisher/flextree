@@ -62,3 +62,4 @@ export default class SqliteDriver implements IDatabaseDriver{
 
 
 
+"\n        CREATE TABLE IF NOT EXISTS  tree (\n            id INTEGER PRIMARY KEY AUTOINCREMENT,\n            name VARCHAR(60),              \n            treeId INTEGER, \n            level INTEGER,  \n            leftValue INTEGER, \n            rightValue INTEGER,\n            title VARCHAR(60),\n            size INTEGER\n        );\n    "

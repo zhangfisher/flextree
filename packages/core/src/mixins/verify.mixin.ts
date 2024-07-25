@@ -4,9 +4,9 @@ import { FlexTreeVerifyError } from "../errors"
 
 
 export class VerifyTreeMixin<
-    Data extends Record<string,any>={},
+    Fields extends Record<string,any>={},
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Data,KeyFields> = IFlexTreeNode<Data,KeyFields>,
+    TreeNode extends IFlexTreeNode<Fields,KeyFields> = IFlexTreeNode<Fields,KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
     TreeId = NonUndefined<KeyFields['treeId']>[1]
 >{ 
@@ -17,7 +17,7 @@ export class VerifyTreeMixin<
      * 校验树的完整性，即树的左右值是否正确
      * 
      */
-    async verify(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodes?:TreeNode[]){ 
+    async verify(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,nodes?:TreeNode[]){ 
         nodes = nodes ? nodes :  await this.getNodes()        
         const pnodes:IFlexTreeNode[] = []
         for(let i = 0 ; i < nodes.length; i++){

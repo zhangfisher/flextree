@@ -14,7 +14,9 @@ export async function createTreeTable(driver:SqliteDriver){
             treeId INTEGER, 
             level INTEGER,  
             leftValue INTEGER, 
-            rightValue INTEGER
+            rightValue INTEGER,
+            title VARCHAR(60),
+            size INTEGER
         );
     `])
 }
@@ -26,7 +28,9 @@ export async function createMultiTreeTable(driver:SqliteDriver){
             treeId INTEGER, 
             level INTEGER,  
             leftValue INTEGER, 
-            rightValue INTEGER,
+            rightValue INTEGER,            
+            title VARCHAR(60),
+            size INTEGER
             UNIQUE(treeId, leftValue)
         );
     `]) 
@@ -44,7 +48,10 @@ export async function createTreeManager(treeId?:any){
         await createTreeTable(sqliteDriver)
     } 
     await clearAllTables(sqliteDriver)
-    return new FlexTreeManager("tree",{
+    return new FlexTreeManager<{
+        title:string,
+        size:number
+    }>("tree",{
         treeId,
         driver: sqliteDriver
     })    
@@ -59,10 +66,14 @@ export async function createFlexTree(treeId?:any){
         await createTreeTable(sqliteDriver)
     } 
     await clearAllTables(sqliteDriver)
-    return new FlexTree("tree",{
+    const tree=  new FlexTree<{
+        title:string,
+        size:number
+    }>("tree",{
         treeId,
         driver: sqliteDriver
     })    
+    return tree
 }
 /**
  * 
@@ -97,12 +108,16 @@ export async function createDemoTree(tree:FlexTreeManager,options?:{level?:numbe
             // level=1:   id=100,200,300,400,500,600,700
             await tree.addNodes(names.map((name,index)=>{
                 count++
-                return {name,id:(index+1)*100,treeId}
+                return {name,id:(index+1)*100,treeId,title:`${name}-title`,size:Math.random()*1000}
             }))    
             async function createNodes(pid:number,pname:string,lv:number){
                 const nodes =  new Array(5).fill(0).map<any>((_,i)=>{ 
                     count++
-                    return {name:`${pname}-${i+1}`,id:parseInt(`${pid}${Number(i)+1}`),treeId} 
+                    const name = `${pname}-${i+1}`
+                    return {
+                        name,id:parseInt(`${pid}${Number(i)+1}`),treeId
+                        ,title:`${name}-title`,size:Math.random()*1000
+                    } 
                 })
                 await tree.addNodes(nodes,pid)
                 if(lv<level){
@@ -203,3 +218,6 @@ export async function verifyTree(tree:FlexTreeManager):Promise<boolean>{
     if(pnodes.length>0) throw new FlexTreeVerifyError()
         return true
 }
+
+
+export type ReturnPromiseType<T extends (...args: any) => any> = ReturnType<T> extends Promise<infer U> ? U : ReturnType<T> ;

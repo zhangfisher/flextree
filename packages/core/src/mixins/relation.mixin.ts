@@ -1,14 +1,10 @@
 import {type FlexTreeManager } from "../manager";
 import {FlexTreeNodeRelation, CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNode, NonUndefined } from "../types";
-import { FlexTreeNodeError } from "../errors"
-import { escapeSqlString } from '../utils/escapeSqlString';
-import sqlString from "sqlString"
-
 
 export class RelationMixin<
-    Data extends Record<string,any>={},
+    Fields extends Record<string,any>={},
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Data,KeyFields> = IFlexTreeNode<Data,KeyFields>,
+    TreeNode extends IFlexTreeNode<Fields,KeyFields> = IFlexTreeNode<Fields,KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
     TreeId = NonUndefined<KeyFields['treeId']>[1]
 >{ 
@@ -24,7 +20,7 @@ export class RelationMixin<
      * const relation = getNodeRelation(node1, node2);
      * console.log(relation);  // 输出: FlexTreeNodeRelation.Child
      */
-    async getNodeRelation(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,srcNode:NodeId | TreeNode, targetNode:NodeId | TreeNode):Promise<FlexTreeNodeRelation>{
+    async getNodeRelation(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,srcNode:NodeId | TreeNode, targetNode:NodeId | TreeNode):Promise<FlexTreeNodeRelation>{
         const node = this.isValidNode(srcNode) ? srcNode as TreeNode: (await this.getNode(srcNode as NodeId)) as TreeNode
         const relNode = this.isValidNode(targetNode) ? targetNode as TreeNode : (await this.getNode(targetNode as NodeId)) as TreeNode
 

@@ -2,9 +2,9 @@ import {type FlexTreeManager } from "../manager";
 import { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNode, NonUndefined } from "../types";
 
 export class IsNodeMixin<
-    Data extends Record<string,any>={},
+    Fields extends Record<string,any>={},
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Data,KeyFields> = IFlexTreeNode<Data,KeyFields>,
+    TreeNode extends IFlexTreeNode<Fields,KeyFields> = IFlexTreeNode<Fields,KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
     TreeId = NonUndefined<KeyFields['treeId']>[1]
 >{ 
@@ -12,7 +12,7 @@ export class IsNodeMixin<
     /**
      * 返回两个节点是否在同一棵树中
      */
-    isSameTree(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node1:TreeNode,node2:TreeNode){
+    isSameTree(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,node1:TreeNode,node2:TreeNode){
         if(this.isMultiTree){
             return node1[this.keyFields.treeId] == node2[this.keyFields.treeId]
         }else{
@@ -23,7 +23,7 @@ export class IsNodeMixin<
      * 判断两个节点是否相同
      * 
      */
-    isSameNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node1:TreeNode,node2:TreeNode){
+    isSameNode(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,node1:TreeNode,node2:TreeNode){
         return node1[this.keyFields.id] == node2[this.keyFields.id]
     }
 
@@ -37,7 +37,7 @@ export class IsNodeMixin<
     * isValidNode('123'); // 返回false，因为'123'不是一个有效的节点ID或TreeNode对象
     * isValidNode({ id: 123, label: '节点' }); // 返回true，因为这是一个有效的TreeNode对象
     */
-    isValidNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node:any):boolean{
+    isValidNode(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,node:any):boolean{
         if(!node) return false
         if(typeof(node)!=='object') return false
         if(Object.keys(node).some(k=>!(k in this.keyFields))) return false
