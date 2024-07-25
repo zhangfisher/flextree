@@ -242,36 +242,35 @@ export class FlexTreeNode<
             childrenField       : 'children',
             pidField            : 'pid',
             fields              : [],
-            level               : 0,                // 限定节点的级别
+            level               : 0,                // 限定节点的级别,level=0表示不限定,level=1表示只导出当前节点
             includeKeyFields    : false                    
         },options) as Required<FlexTreeExportOptions<Fields,KeyFields,NodeId,TreeId>>        
         const {format,childrenField,pidField,includeKeyFields,level,fields}  = opts 
         // 当指字了fields时,确保包含id字段,不包括treeId字段
-        if(fields.length>0){                        
-            if(fields.includes(this._tree.manager.keyFields.id)){// 导出一定会包括主键id
-                fields.push(this._tree.manager.keyFields.id)
-            }            
+        if(fields.length>0){       
             const index  = fields.findIndex(name=>name==this._tree.manager.keyFields.treeId)// 移除treeId字段
             if(index>=0) fields.splice(index,1)
         }     
         // 提取节点数据
         const pickNodeData=(data:any)=>{            
+            let result:Record<string,any> ={}
             if(fields.length>0){
-                return pick(data,fields as string[]) as any 
+                result =  pick(data,fields as string[]) as any 
             }else{
                 if(includeKeyFields){
-                    return Object.assign({},data)
+                    result =  Object.assign({},data)
                 }else{
-                    if(includeKeyFields){
-                        return Object.assign({},omit(data,Object.values(this._tree.manager.keyFields),true))
-                    }else{
-                        return Object.assign({},omit(data,[
-                            this._tree.manager.keyFields.leftValue,
-                            this._tree.manager.keyFields.rightValue,
-                        ],true))
-                    }
+                    result =  Object.assign({},omit(data,[
+                        this._tree.manager.keyFields.leftValue,
+                        this._tree.manager.keyFields.rightValue,
+                        this._tree.manager.keyFields.level,
+                        this._tree.manager.keyFields.treeId,
+                    ],true))
                 }
             }
+            // @ts-ignore
+            result[this._tree.manager.keyFields.id] = data[this._tree.manager.keyFields.id]
+            return result
         }
 
         let results:Returns 
@@ -290,8 +289,9 @@ export class FlexTreeNode<
                 }
             }
         }else{
-            results = pickNodeData(this._node)
-            if(this._children){           
+            results = pickNodeData(this._node) as Returns
+            if(this._children && (level==0 || ( level>1) )){           
+                if(level>1) opts.level = opts.level - 1 
                 // @ts-ignore     
                 results[childrenField] = this._children.map(n=>n.export(opts)) 
             }       

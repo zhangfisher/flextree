@@ -1,11 +1,11 @@
 import { test,describe,beforeEach, expect, afterEach } from "vitest" 
 import { FlexNodeRelPosition, FlexTreeManager} from "../src/index"; 
-import { createTreeManager,createDemoTree,dumpTree, verifyTree } from "./common";
+import { createTreeManager,createDemoTree,dumpTree, verifyTree,DemoFlexTreeManager } from "./common";
  
 
 
 describe("删除树节点", () => {
-    let tree:FlexTreeManager
+    let tree:DemoFlexTreeManager
     beforeEach(async ()=>{
         tree = await createTreeManager()
         await createDemoTree(tree,{level:2})

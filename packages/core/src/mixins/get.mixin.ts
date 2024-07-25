@@ -110,7 +110,7 @@ export class GetNodeMixin<
      *  - level:        限制返回的级别
      *  - includeSelf:  返回结果是否包括自身
      */
-    async getDescendants(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode,options?:{level?:number,includeSelf?:boolean}):Promise<IFlexTreeNode[]>{
+    async getDescendants(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode,options?:{level?:number,includeSelf?:boolean}):Promise<IFlexTreeNode<Fields,KeyFields>[]>{
         const { level,includeSelf} =Object.assign({includeSelf:false,level:0},options)
         const relNode = await this.getNodeData(nodeId)
         const relNodeId =escapeSqlString(relNode[this.keyFields.id])

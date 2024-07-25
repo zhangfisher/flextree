@@ -1,9 +1,7 @@
 import { test,describe,beforeEach, afterEach, expect } from "vitest"
-import { createDemoTree, createTreeManager, dumpTree } from "./common"
-import { FlexTreeManager } from "../src"
-
+import { createDemoTree, createTreeManager,DemoFlexTreeManager, dumpTree } from "./common" 
 describe("访问树", () => {
-  let tree:FlexTreeManager
+  let tree:DemoFlexTreeManager
   let nodeCount:number = 0
   beforeEach(async ()=>{
     tree = await createTreeManager()

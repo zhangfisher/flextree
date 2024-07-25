@@ -28,21 +28,13 @@ export class FlexTree<
         this._options = this._manager.options as RequiredDeep<FlexTreeOptions<KeyFields['treeId']>>
         this._manager.on('afterWrite',this.onAfterWrite.bind(this))
     }     
+    get id(){ return this._treeId }    
     get options(){ return this._options }    
     get on(){ return this._manager.on.bind(this) }
     get off(){ return this._manager.off.bind(this) }
     get emit(){ return this._manager.emit.bind(this) }
     get manager(){ return this._manager!} 
-    
-    
-
-    get root(){
-        return this._root
-    }
-    /**
-     * 返回树的id
-     */
-    get id(){return this._treeId} 
+    get root(){ return this._root    } 
 
     /**
      * 当节点后更新时调用

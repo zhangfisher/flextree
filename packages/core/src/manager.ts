@@ -44,22 +44,22 @@ export interface FlexTreeManagerOptions<TreeIdType = number> {
 }
 
 export interface FlexTreeManager<
-	Data extends Record<string, any> = {},
+	Fields extends Record<string, any> = {},
 	KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-	TreeNode extends IFlexTreeNode<Data, KeyFields> = IFlexTreeNode<Data, KeyFields>,
+	TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
 	NodeId = NonUndefined<KeyFields["id"]>[1],
 	TreeId = NonUndefined<KeyFields["treeId"]>[1]
-> extends MoveNodeMixin<Data, KeyFields, TreeNode, NodeId, TreeId>,
-		DeleteNodeMixin<Data, KeyFields, TreeNode, NodeId, TreeId>,
-		AddNodeMixin<Data, KeyFields, TreeNode, NodeId, TreeId>,
-		IsNodeMixin<Data, KeyFields, TreeNode, NodeId, TreeId>,
-		SqlMixin<Data, KeyFields, TreeNode, NodeId, TreeId>,
-		GetNodeMixin<Data, KeyFields, TreeNode, NodeId, TreeId>,
-		FindNodeMixin<Data, KeyFields, TreeNode, NodeId, TreeId>,
-		RootNodeMixin<Data, KeyFields, TreeNode, NodeId, TreeId>,
-		RelationMixin<Data, KeyFields, TreeNode, NodeId, TreeId>,
-		UpdateNodeMixin<Data, KeyFields, TreeNode, NodeId, TreeId>,
-		VerifyTreeMixin<Data, KeyFields, TreeNode, NodeId, TreeId> 
+> extends MoveNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+		DeleteNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+		AddNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+		IsNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+		SqlMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+		GetNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+		FindNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+		RootNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+		RelationMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+		UpdateNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+		VerifyTreeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId> 
 		{}
 
 /**
@@ -87,9 +87,9 @@ export interface FlexTreeManager<
 	VerifyTreeMixin 
 )
 export class FlexTreeManager<
-	Data extends Record<string, any> = {},
+	Fields extends Record<string, any> = {},
 	KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-	TreeNode extends IFlexTreeNode<Data, KeyFields> = IFlexTreeNode<Data, KeyFields>,
+	TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
 	NodeId = NonUndefined<KeyFields["id"]>[1],
 	TreeId = NonUndefined<KeyFields["treeId"]>[1]
 > {

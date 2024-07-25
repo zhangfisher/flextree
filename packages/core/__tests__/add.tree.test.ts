@@ -1,13 +1,13 @@
 import { test,describe,beforeEach, expect, beforeAll, afterEach } from "vitest" 
 import { FlexNodeRelPosition, FlexTreeManager, FlexTreeNodeError, NextSibling, PreviousSibling } from "../src/index"; 
-import { createTreeManager, dumpTree } from "./common";
+import { createTreeManager, DemoFlexTreeManager, dumpTree } from "./common";
  
 
 describe("添加树节点", () => {
 
     describe("创建根节点", () => {
 
-        let tree:FlexTreeManager 
+        let tree:DemoFlexTreeManager 
         beforeEach(async () => {
             tree = await createTreeManager()        
         })    

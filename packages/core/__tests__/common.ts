@@ -57,6 +57,11 @@ export async function createTreeManager(treeId?:any){
     })    
 }
 
+export type DemoFlexTreeManager= FlexTreeManager<{
+    title:string,
+    size:number
+}>
+
 export async function createFlexTree(treeId?:any){
     const sqliteDriver = new SqliteDriver()
     await sqliteDriver.open()    
@@ -72,7 +77,7 @@ export async function createFlexTree(treeId?:any){
     }>("tree",{
         treeId,
         driver: sqliteDriver
-    })    
+    })        
     return tree
 }
 /**
@@ -97,18 +102,18 @@ export async function createFlexTree(treeId?:any){
  * @param tree 
  * @param level 
  */
-export async function createDemoTree(tree:FlexTreeManager,options?:{level?:number,treeCount?:number}):Promise<number>{
+export async function createDemoTree(tree:DemoFlexTreeManager,options?:{level?:number,treeCount?:number}):Promise<number>{
     const { level,treeCount } = Object.assign({level:3,treeCount:1},options)
     const names=["A","B","C","D","E","F"]
     let count:number = 0
     for(let treeId=1;treeId<=treeCount;treeId++){
         await tree.write(async ()=>{
-            await tree.createRoot({id:1,name:"root",treeId})
+            await tree.createRoot({id:1,name:"root",treeId,title:"root-title",size:Math.floor(Math.random()*1000)})
             count++
             // level=1:   id=100,200,300,400,500,600,700
             await tree.addNodes(names.map((name,index)=>{
                 count++
-                return {name,id:(index+1)*100,treeId,title:`${name}-title`,size:Math.random()*1000}
+                return {name,id:(index+1)*100,treeId,title:`${name}-title`,size:Math.floor(Math.random()*1000)}
             }))    
             async function createNodes(pid:number,pname:string,lv:number){
                 const nodes =  new Array(5).fill(0).map<any>((_,i)=>{ 
@@ -116,7 +121,7 @@ export async function createDemoTree(tree:FlexTreeManager,options?:{level?:numbe
                     const name = `${pname}-${i+1}`
                     return {
                         name,id:parseInt(`${pid}${Number(i)+1}`),treeId
-                        ,title:`${name}-title`,size:Math.random()*1000
+                        ,title:`${name}-title`,size:Math.floor(Math.random()*1000)
                     } 
                 })
                 await tree.addNodes(nodes,pid)
@@ -153,7 +158,9 @@ export async function dumpTree(srcDb:any,dbFile:string="tree.db"){
             level INTEGER,  
             name VARCHAR(60),  
             leftValue INTEGER, 
-            rightValue INTEGER
+            rightValue INTEGER,            
+            title VARCHAR(60),
+            size INTEGER
     )`)
     const rows = srcDb.prepare("SELECT * FROM tree").all()
     await destDb.exec("BEGIN")
