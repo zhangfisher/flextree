@@ -2,9 +2,9 @@ import {type FlexTreeManager } from "../manager";
 import { CustomTreeKeyFields, DefaultTreeKeyFields,  IFlexTreeNode, NonUndefined } from "../types";
 
 export class DeleteNodeMixin<
-    Data extends Record<string,any>={},
+    Fields extends Record<string,any>={},
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Data,KeyFields> = IFlexTreeNode<Data,KeyFields>,
+    TreeNode extends IFlexTreeNode<Fields,KeyFields> = IFlexTreeNode<Fields,KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
     TreeId = NonUndefined<KeyFields['treeId']>[1]
 >{
@@ -19,7 +19,7 @@ export class DeleteNodeMixin<
      *  - onExecuteBefore(sql): 执行前回调，返回false则不执行
      * @returns 
      */
-    async deleteNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode,options?:{onlyMark?:boolean,onExecuteBefore?:(sqls:string[])=>boolean}) {        
+    async deleteNode(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode,options?:{onlyMark?:boolean,onExecuteBefore?:(sqls:string[])=>boolean}) {        
         this._assertWriteable()
         const { onlyMark,onExecuteBefore} = Object.assign({mark:false,},options)
         const nodeData = await this.getNodeData(nodeId) as unknown as TreeNode
@@ -67,7 +67,7 @@ export class DeleteNodeMixin<
     /**
      * 清除树所有节点,包括根节点
      */
-    async clear(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>){
+    async clear(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>){
         this._assertWriteable()
         let sql:string = ''
         if(this.treeId){

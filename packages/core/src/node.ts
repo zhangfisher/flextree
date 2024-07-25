@@ -1,24 +1,25 @@
 
-import { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNode, NonUndefined } from './types';
+import { CustomTreeKeyFields, DefaultTreeKeyFields, FlexTreeExportNestedNodes, FlexTreeExportOptions, IFlexTreeNode, NonUndefined } from './types';
 import type { FlexTree} from "./tree"
 import { FlexTreeInvalidError, FlexTreeNodeNotFoundError, FlexTreeNotFoundError } from './errors';
 import { filterObject } from "./utils/filterObject";
 import { getRelNodePath } from "./utils/getRelNodePath";
-
+import { pick } from 'flex-tools/object/pick';
+import { JsonObject,JsonValue } from "type-fest"
 export class FlexTreeNode<
-        Data extends Record<string,any>={},
+        Fields extends Record<string,any>={},
         KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-        TreeNode extends IFlexTreeNode<Data,KeyFields> = IFlexTreeNode<Data,KeyFields>,
+        TreeNode extends IFlexTreeNode<Fields,KeyFields> = IFlexTreeNode<Fields,KeyFields>,
         NodeId = NonUndefined<KeyFields['id']>[1],
         TreeId = NonUndefined<KeyFields['treeId']>[1]
     >{
     private _id:NodeId
-    private _tree:FlexTree<Data,KeyFields,TreeNode,NodeId,TreeId>
-    private _node: IFlexTreeNode<Data,KeyFields>
-    private _children?:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>[]  
-    private _parent:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId> | undefined
+    private _tree:FlexTree<Fields,KeyFields,TreeNode,NodeId,TreeId>
+    private _node: IFlexTreeNode<Fields,KeyFields>
+    private _children?:FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId>[]  
+    private _parent:FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId> | undefined
     private _outdated:boolean = false           // 当数据过期时,需要重新从数据库中获取数据
-    constructor(node:TreeNode,parent:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId> | undefined ,tree:FlexTree<Data,KeyFields,TreeNode,NodeId,TreeId>){
+    constructor(node:TreeNode,parent:FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId> | undefined ,tree:FlexTree<Fields,KeyFields,TreeNode,NodeId,TreeId>){
         this._id = node[tree.manager.keyFields.id]
         this._tree = tree
         this._parent = parent
@@ -45,7 +46,7 @@ export class FlexTreeNode<
         }
     }    
     get descendants(){
-        const descendants:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>[] = []
+        const descendants:FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId>[] = []
         if(this._children){
             for(let node of this._children){
                 descendants.push(node)
@@ -55,7 +56,7 @@ export class FlexTreeNode<
         return descendants
     }
     get ancestors(){
-        const ancestors:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>[] = []
+        const ancestors:FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId>[] = []
         let parent = this._parent
         while(parent){
             ancestors.splice(0,0,parent)
@@ -114,9 +115,9 @@ export class FlexTreeNode<
      * @param path 
      * @param ofe 
      */
-    getByPath(path:string,options?:{byField?:string,delimiter?:string}):FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId> | undefined{
+    getByPath(path:string,options?:{byField?:string,delimiter?:string}):FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId> | undefined{
         const {byField,delimiter} = Object.assign({byField:this._tree.manager.keyFields.name,delimiter:"/"},options)
-        let [entryNode,entryPath] = getRelNodePath(this as any,path,delimiter) as  [FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId> ,string]
+        let [entryNode,entryPath] = getRelNodePath(this as any,path,delimiter) as  [FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId> ,string]
         for(let subpath of entryPath.split(delimiter)){
             if(subpath=='') continue
             if(entryNode.children){
@@ -130,12 +131,12 @@ export class FlexTreeNode<
                 return undefined
             }
         }
-        return entryNode as FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId> 
+        return entryNode as FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId> 
     }
     /**
     * 获取该节点下id=nodeId的节点实例
     */
-    get(nodeId:NodeId,includeDescendants:boolean=false):FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId> | undefined{
+    get(nodeId:NodeId,includeDescendants:boolean=false):FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId> | undefined{
         if(this.id===nodeId) return this
         if(this._children){
             for(let node of this._children){
@@ -155,8 +156,8 @@ export class FlexTreeNode<
      * @param fn 
      * @returns 
      */
-    find(condition:(node:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>)=>boolean,includeDescendants:boolean=true):FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>[] {
-        const nodes:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>[] = []
+    find(condition:(node:FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId>)=>boolean,includeDescendants:boolean=true):FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId>[] {
+        const nodes:FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId>[] = []
         if(this._children){
             for(let node of this._children){
                 if(condition(node)){
@@ -179,14 +180,14 @@ export class FlexTreeNode<
         }
         Object.assign(this._node,nodes[0])          // 更新节点数据
 
-        const pnodes:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>[] = [this]
-        let preNode:FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId> = this
+        const pnodes:FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId>[] = [this]
+        let preNode:FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId> = this
 
         for(let node of nodes){  
             if(node.id == this._id) continue              
             if(node.level == preNode.level){
                 const parent = pnodes[pnodes.length-1]
-                const nodeObj = new FlexTreeNode<Data,KeyFields,TreeNode,NodeId,TreeId>(node,parent,this as any)
+                const nodeObj = new FlexTreeNode<Fields,KeyFields,TreeNode,NodeId,TreeId>(node,parent,this as any)
                 parent.children!.push(nodeObj) 
                 preNode = nodeObj
             }else if(node.level > preNode.level  ){
@@ -221,22 +222,56 @@ export class FlexTreeNode<
             }
         }  
     } 
+
+
     /**
-     * 向上移动节点
-     * 
-     * 由于向上移动节点会导致树的左右值发生变化，因此需要重新加载树
-     * 
-     * - 移动节点只是在同级移动,此时仅同级/后代节点的leftValue和rightValue变化,因此此时只需要重新加载该节点及后代节点即可
-     * - 向上移动至上父节点之上,则会影响父级/后代节点的leftValue和rightValue变化
+     * 导出当前节点及其后代节点
      */
-    moveUp(){
-        if(this._parent){
-             
+    export<Format extends FlexTreeExportOptions['format'] = 'nested',
+        Returns = Format extends 'nested' ? FlexTreeExportNestedNodes<Fields,KeyFields,TreeNode,NodeId> : any
+    >(options?:FlexTreeExportOptions<Fields,KeyFields,NodeId,TreeId>):Returns{
+        const  opts = Object.assign({
+            format:"nested",
+            childrenField:'children',
+            pdiField:'pid',
+            fields:[],
+            level:0                     // 限定节点的级别
+        },options) as Required<FlexTreeExportOptions<Fields,KeyFields,NodeId,TreeId>>        
+        const {format,childrenField,pidField,level,fields}  = opts 
+
+        if(fields.length>0){
+            // 导出一定会包括主键id
+            if(fields.includes(this._tree.manager.keyFields.id)){
+                fields.push(this._tree.manager.keyFields.id)
+            }
+            // 移除treeId字段
+            const index  = fields.findIndex(name=>name==this._tree.manager.keyFields.treeId)
+            if(index>=0) fields.splice(index,1)
         }
+
+        // 提取节点数据
+        function pickNodeData(data:any){            
+            const {leftValue,rightValue,level,...rest} = data
+            if(fields.length>0){
+                return pick(data,fields as string[]) as any 
+            }else{
+                return Object.assign({},data)
+            }
+        }
+        let results:Returns 
+        if(format=='pid'){   
+                   
+                // @ts-ignore   
+            results =  {}   
+        }else{
+            results = pickNodeData(this._node)
+            if(this._children){           
+                // @ts-ignore     
+                results[childrenField] = this._children.map(n=>n.export(options)) 
+            }       
+        } 
+        return results 
     }
-
-
-
     toString(){
         return `${this.name}(${this._id})`
     }

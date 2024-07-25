@@ -1,4 +1,5 @@
 import type { FlexTreeManager } from "./manager";
+import { ValueOf } from "type-fest"
 
 export type NonUndefined<T> = T extends undefined ? never : T;
 
@@ -43,6 +44,9 @@ export type CustomTreeKeyFields = {                                             
     rightValue?: string
 } 
 
+
+
+
 export type DefaultTreeKeyFields = {
     id        : ['id',number],
     treeId    : ['treeId',number]
@@ -59,6 +63,7 @@ export type DefaultTreeKeyNameFields = {
     leftValue : 'leftValue',
     rightValue: 'rightValue'
 }
+ 
 
 export type PickKeyFieldType<
     KeyFields extends Record<string,string | [string,any]>,
@@ -111,3 +116,28 @@ export type IJsonTree<Data extends Record<string,any>=Record<string,any>,IdType=
     rightValue?: number 
     children?: IJsonTree[]
 } & Data
+
+
+
+
+// 两种导出格式, nested: 层级嵌套结构,使用children表示子节点集; pid: 使用pid表示父节点id
+export type FlexTreeExportOptions<
+    Fields extends Record<string,any>={},
+    KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,    
+    NodeId = NonUndefined<KeyFields['id']>[1],
+    TreeId = NonUndefined<KeyFields['treeId']>[1]
+> = {
+    format?: 'nested' | 'pid'
+    childrenField?:string
+    pidField?:string
+    level?:number                   // 限定导出的级别  
+    fields?:(keyof IFlexTreeNode<Fields,KeyFields>)[]
+}
+
+export type FlexTreeExportNestedNodes<
+    Fields extends Record<string,any>={},
+    KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
+    TreeNode extends IFlexTreeNode<Fields,KeyFields> = IFlexTreeNode<Fields,KeyFields>,
+    NodeId = NonUndefined<KeyFields['id']>[1]> = TreeNode & {
+    children?:FlexTreeExportNestedNodes<Fields,KeyFields,TreeNode,NodeId>[]
+}

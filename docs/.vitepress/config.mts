@@ -17,9 +17,11 @@ export default defineConfig({
     ],
 
     sidebar: [
-      { text: '关于', link: '/guide/about' },
-      { text: '安装', link: '/guide/install' },
-      { text: '快速入门', link: '/guide/get-starts' }, 
+      { text: '关于', link: '/intro/about' },
+      { text: '快速入门', link: '/intro/get-starts' }, 
+      { text: '工作原理', link: '/intro/principle' },                
+      { text: '常见问题', link: '/intro/question' },
+      { text: '更新历史', link: '/intro/history' },
       { 
         text: '指南',
         items:[
@@ -27,8 +29,19 @@ export default defineConfig({
           { text: '访问树', link: '/guide/get' },
           { text: '更新树', link: '/guide/update'},
           { text: '移动树', link: '/guide/move'},
+          { text: '节点关系', link: '/guide/relation'},
+          { text: '校验', link: '/guide/verify'},
           { text: '多树表', link: '/guide/multitree'},
-          { text: '数据库驱动', link: '/guide/update'},          
+          { text: '校验', link: '/guide/verify'},
+          { text: '导入导出', link: '/guide/import_export'},
+          { text: '数据库', link: '/guide/driver'},          
+        ]    
+      },
+      { 
+        text: '数据库适配',
+        items:[
+          { text: 'Sqlite', link: '/drivers/sqlite' },
+          { text: 'Prisma', link: '/drivers/prisma' },        
         ]    
       },
     ],

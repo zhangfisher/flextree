@@ -6,9 +6,9 @@ import sqlString from "sqlString"
 
 
 export class FindNodeMixin<
-    Data extends Record<string,any>={},
+    Fields extends Record<string,any>={},
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Data,KeyFields> = IFlexTreeNode<Data,KeyFields>,
+    TreeNode extends IFlexTreeNode<Fields,KeyFields> = IFlexTreeNode<Fields,KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
     TreeId = NonUndefined<KeyFields['treeId']>[1]
 >{ 
@@ -23,7 +23,7 @@ export class FindNodeMixin<
      * findNode({name:"A",level:1})  根据组合AND条件查找节点
      * 
      */
-    async findNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | Partial<TreeNode>):Promise<TreeNode>{
+    async findNode(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | Partial<TreeNode>):Promise<TreeNode>{
         let nodes:TreeNode[]=[]
         if(typeof(node) == 'object'){
             nodes = await this.findNodes(node as Partial<TreeNode>)
@@ -44,7 +44,7 @@ export class FindNodeMixin<
      * findNodes({name:"A",level:1})  根据组合AND条件查找节点
      * 
      */
-    async findNodes(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,condition: Partial<TreeNode>):Promise<TreeNode[]>{
+    async findNodes(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,condition: Partial<TreeNode>):Promise<TreeNode[]>{
         const keys = Object.keys(condition)
         if(keys.length == 0) throw new FlexTreeError('Invalid condition')
         const sql = this._sql(`select * from ${this.tableName}

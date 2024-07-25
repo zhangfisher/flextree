@@ -28,7 +28,7 @@ import { FindNodeMixin } from "./mixins/find.mixin";
 import { RootNodeMixin } from "./mixins/root.mixin";
 import { RelationMixin } from "./mixins/relation.mixin";
 import { UpdateNodeMixin } from "./mixins/update.mixin";
-import { VerifyTreeMixin } from "./mixins/verify.mixin";
+import { VerifyTreeMixin } from "./mixins/verify.mixin"; 
 
 export interface FlexTreeManagerOptions<TreeIdType = number> {
 	treeId?: TreeIdType; // 使用支持单表多树时需要提供
@@ -59,7 +59,7 @@ export interface FlexTreeManager<
 		RootNodeMixin<Data, KeyFields, TreeNode, NodeId, TreeId>,
 		RelationMixin<Data, KeyFields, TreeNode, NodeId, TreeId>,
 		UpdateNodeMixin<Data, KeyFields, TreeNode, NodeId, TreeId>,
-		VerifyTreeMixin<Data, KeyFields, TreeNode, NodeId, TreeId>
+		VerifyTreeMixin<Data, KeyFields, TreeNode, NodeId, TreeId> 
 		{}
 
 /**
@@ -84,7 +84,7 @@ export interface FlexTreeManager<
 	RootNodeMixin,
 	RelationMixin,
 	UpdateNodeMixin,
-	VerifyTreeMixin
+	VerifyTreeMixin 
 )
 export class FlexTreeManager<
 	Data extends Record<string, any> = {},

@@ -5,9 +5,9 @@ import { escapeSqlString } from '../utils/escapeSqlString';
 
 
 export class AddNodeMixin<
-    Data extends Record<string,any>={},
+    Fields extends Record<string,any>={},
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Data,KeyFields> = IFlexTreeNode<Data,KeyFields>,
+    TreeNode extends IFlexTreeNode<Fields,KeyFields> = IFlexTreeNode<Fields,KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
     TreeId = NonUndefined<KeyFields['treeId']>[1]
 >{  
@@ -20,7 +20,7 @@ export class AddNodeMixin<
      * @param fields 
      * @returns 
      */
-    protected _addLastChilds(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,relNode:TreeNode,nodes:Partial<TreeNode>[],fields:string[]){ 
+    protected _addLastChilds(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,relNode:TreeNode,nodes:Partial<TreeNode>[],fields:string[]){ 
         const values = nodes.map((node,i)=>{
             let row = [
                 relNode[this.keyFields.level] + 1,
@@ -52,7 +52,7 @@ export class AddNodeMixin<
      * 将nodes添加到relNode的子节点集的最前面
      * 
      */
-    protected  _addFirstChilds(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,relNode:TreeNode,nodes:Partial<TreeNode>[],fields:string[]){ 
+    protected  _addFirstChilds(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,relNode:TreeNode,nodes:Partial<TreeNode>[],fields:string[]){ 
         const values = nodes.map((node,i)=>{
             let row = [
                 relNode[this.keyFields.level] + 1,
@@ -80,7 +80,7 @@ export class AddNodeMixin<
         ]
 
     }
-    protected  _addNextSiblings(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,relNode:TreeNode,nodes:Partial<TreeNode>[],fields:string[]){ 
+    protected  _addNextSiblings(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,relNode:TreeNode,nodes:Partial<TreeNode>[],fields:string[]){ 
         const values = nodes.map((node,i)=>{
             let row = [
                 relNode[this.keyFields.level],
@@ -107,7 +107,7 @@ export class AddNodeMixin<
             `)
         ]
     }
-    protected  _addPreviousSiblings(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,relNode:TreeNode,nodes:Partial<TreeNode>[],fields:string[]){ 
+    protected  _addPreviousSiblings(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,relNode:TreeNode,nodes:Partial<TreeNode>[],fields:string[]){ 
         const values = nodes.map((node,i)=>{
             let row = [
                 relNode[this.keyFields.level],
@@ -163,7 +163,7 @@ export class AddNodeMixin<
      * @param pos            添加的位置，默认为最后一个子节点
      * 
      */
-    async addNodes(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodes:Partial<TreeNode>[],atNode?:NodeId | TreeNode | null, pos:FlexNodeRelPosition = FlexNodeRelPosition.LastChild){
+    async addNodes(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,nodes:Partial<TreeNode>[],atNode?:NodeId | TreeNode | null, pos:FlexNodeRelPosition = FlexNodeRelPosition.LastChild){
         this._assertWriteable()
 
         if(nodes.length == 0) return

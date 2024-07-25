@@ -8,9 +8,9 @@ import { isValidNode } from "../utils/isValidNode"
 
 
 export class GetNodeMixin<
-    Data extends Record<string,any>={},
+    Fields extends Record<string,any>={},
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Data,KeyFields> = IFlexTreeNode<Data,KeyFields>,
+    TreeNode extends IFlexTreeNode<Fields,KeyFields> = IFlexTreeNode<Fields,KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
     TreeId = NonUndefined<KeyFields['treeId']>[1]
 >{ 
@@ -25,7 +25,7 @@ export class GetNodeMixin<
      * - 如果node是字符串或数字，则根据ID获取节点信息
      * 
      */
-    async getNodeData(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,param:any){
+    async getNodeData(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,param:any){
         let node:TreeNode        
         // 如果输入的是节点对象已经包含了节点信息，可以直接使用
         if(param==undefined){   // 未指定目标节点，则添加到根节点
@@ -52,7 +52,7 @@ export class GetNodeMixin<
      *   - level: 限定返回的层级,0表示不限制,1表示只返回根节点，2表示返回根节点和其子节点, 依次类推
      * @returns 
      */
-    async getNodes(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,options?:{level?:number}):Promise<TreeNode[]>{
+    async getNodes(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,options?:{level?:number}):Promise<TreeNode[]>{
         const { level } = Object.assign({level:0},options)
         const sql =this._sql(`SELECT * FROM ${this.tableName} 
             WHERE {__TREE_ID__} ${this.keyFields.leftValue}>0 AND ${this.keyFields.rightValue}>0
@@ -66,7 +66,7 @@ export class GetNodeMixin<
      * 根据id获取节点
      * @param nodeId 
      */
-    async getNode(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId):Promise<TreeNode | undefined>{ 
+    async getNode(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId):Promise<TreeNode | undefined>{ 
         const sql = this._sql(`SELECT * FROM ${this.tableName} 
             WHERE {__TREE_ID__} (${this.keyFields.id}=${escapeSqlString(nodeId)})`)
         const result = await this.onExecuteReadSql(sql)
@@ -84,7 +84,7 @@ export class GetNodeMixin<
      * @param this 
      * @param node 
      */
-    async getChild(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | TreeNode, index:number=1):Promise<TreeNode | undefined>{ 
+    async getChild(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,node:NodeId | TreeNode, index:number=1):Promise<TreeNode | undefined>{ 
         const relNodeId = escapeSqlString(isLikeNode(node,this.keyFields) ? (node as any)[this.keyFields.id] : node)
         const sql = this._sql(`SELECT Node.* FROM ${this.tableName}  Node
             JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
@@ -110,7 +110,7 @@ export class GetNodeMixin<
      *  - level:        限制返回的级别
      *  - includeSelf:  返回结果是否包括自身
      */
-    async getDescendants(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode,options?:{level?:number,includeSelf?:boolean}):Promise<IFlexTreeNode[]>{
+    async getDescendants(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode,options?:{level?:number,includeSelf?:boolean}):Promise<IFlexTreeNode[]>{
         const { level,includeSelf} =Object.assign({includeSelf:false,level:0},options)
         const relNode = await this.getNodeData(nodeId)
         const relNodeId =escapeSqlString(relNode[this.keyFields.id])
@@ -145,7 +145,7 @@ export class GetNodeMixin<
     /**
      * 获取后代节点数量
      */
-    async getDescendantCount(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode,options?:{level?:number}){ 
+    async getDescendantCount(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode,options?:{level?:number}){ 
         const { level} =Object.assign({level:0},options)
         const relNode = await this.getNodeData(nodeId)
         const relNodeId =escapeSqlString(relNode[this.keyFields.id])
@@ -168,7 +168,7 @@ export class GetNodeMixin<
      * @param nodeId 
      * @returns 
      */
-    async getChildren(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode){
+    async getChildren(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode){
         return await this.getDescendants(nodeId,{level:1})
     }
 
@@ -177,7 +177,7 @@ export class GetNodeMixin<
      * @param nodeId 
      * @param options 
      */
-    async getAncestors(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode,options?:{includeSelf?:boolean}){
+    async getAncestors(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode,options?:{includeSelf?:boolean}){
         const { includeSelf } = Object.assign({includeSelf:false},options)
 
         const relNode = await this.getNodeData(nodeId)
@@ -201,7 +201,7 @@ export class GetNodeMixin<
      *  获取祖先节点数量(不包括自身)
      * @param nodeId
      */
-    async getAncestorsCount(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId){
+    async getAncestorsCount(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId){
         const sql = this._sql(`SELECT COUNT(*) FROM ${this.tableName} Node
             JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${escapeSqlString(nodeId)}
             WHERE {__TREE_ID__} 
@@ -218,7 +218,7 @@ export class GetNodeMixin<
      * @param nodeId 
      * @returns 
      */
-    async getParent(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode):Promise<TreeNode>{ 
+    async getParent(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode):Promise<TreeNode>{ 
         const relNode = await this.getNodeData(nodeId)
         const relNodeId =escapeSqlString(relNode[this.keyFields.id])
         const sql = this._sql(`SELECT Node.* FROM ${this.tableName} Node
@@ -257,7 +257,7 @@ export class GetNodeMixin<
      * @param node 
      * @param options 
      */
-    async getSiblings(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode,options?:{includeSelf?:boolean}){
+    async getSiblings(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode,options?:{includeSelf?:boolean}){
         const { includeSelf } = Object.assign({includeSelf:false},options)
         const relNode = await this.getNodeData(nodeId)
         const relNodeId = escapeSqlString(relNode[this.keyFields.id])
@@ -300,7 +300,7 @@ export class GetNodeMixin<
      * @param nodeId 
      * @param options 
      */
-    async getNextSibling(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode){
+    async getNextSibling(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode){
         
         const relNode = await this.getNodeData(nodeId)
         const relNodeId = escapeSqlString(relNode[this.keyFields.id])
@@ -321,7 +321,7 @@ export class GetNodeMixin<
      * @param nodeId 
      * @param options 
      */
-    async getPreviousSibling(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode){
+    async getPreviousSibling(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>,nodeId:NodeId | TreeNode){
 
         const relNode = await this.getNodeData(nodeId)
         const relNodeId = escapeSqlString(relNode[this.keyFields.id])
@@ -344,7 +344,7 @@ export class GetNodeMixin<
      * 一棵树仅有一个根节点,所以只需要获取leftValue=1的节点即可 
      * 
      */
-    async getRoot(this:FlexTreeManager<Data,KeyFields,TreeNode,NodeId,TreeId>){
+    async getRoot(this:FlexTreeManager<Fields,KeyFields,TreeNode,NodeId,TreeId>){
         const sql = this._sql(`SELECT * FROM ${this.tableName} 
                         WHERE {__TREE_ID__} ${this.keyFields.leftValue}=1`)
         return (await this.getOneNode(sql))!

@@ -1,7 +1,8 @@
-import {  CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNode, NonUndefined } from "./types" 
+import {  CustomTreeKeyFields, DefaultTreeKeyFields, FlexTreeExportOptions, IFlexTreeNode, NonUndefined } from "./types" 
 import  {  FlexTreeManager,type FlexTreeManagerOptions } from "./manager";
 import { FlexTreeNode } from "./node"
 import { FlexTreeNotFoundError,FlexTreeInvalidError } from "./errors" 
+import { pick } from "flex-tools/object/pick"
 
 import {RequiredDeep } from "type-fest"
 
