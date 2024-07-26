@@ -1,5 +1,5 @@
 
-import { CustomTreeKeyFields, DefaultTreeKeyFields, FlexTreeExportNestedFormat, FlexTreeExportOptions, FlexTreeExportPidFormat, IFlexTreeNode, NonUndefined } from './types';
+import { CustomTreeKeyFields, DefaultTreeKeyFields, FlexTreeExportJsonFormat, FlexTreeExportJsonOptions, FlexTreeExportListFormat, FlexTreeExportListOptions, IFlexTreeNode, NonUndefined } from './types';
 import type { FlexTree} from "./tree"
 import { FlexTreeInvalidError, FlexTreeNodeNotFoundError, FlexTreeNotFoundError } from './errors';
 import { filterObject } from "./utils/filterObject";
@@ -223,80 +223,86 @@ export class FlexTreeNode<
         }  
     } 
 
-
+    private toNodeData(data:any,fields:string[],includeKeyFields:boolean = false){    
+        let result:Record<string,any> ={}
+        if(fields.length>0){
+            result =  pick(data,fields as string[]) as any 
+        }else{
+            if(includeKeyFields){
+                result =  Object.assign({},data)
+            }else{
+                result =  Object.assign({},omit(data,[
+                    this._tree.manager.keyFields.leftValue,
+                    this._tree.manager.keyFields.rightValue,
+                    this._tree.manager.keyFields.level,
+                    this._tree.manager.keyFields.treeId,
+                ],true))
+            }
+        }
+        // @ts-ignore
+        result[this._tree.manager.keyFields.id] = data[this._tree.manager.keyFields.id]
+        return result
+    }
+ 
     /**
      * 导出当前节点及其后代节点
      * 
-     * export({format:"nested",
-     *  fields:["name","level","leftValue","rightValue"]          // 导出指定字段
-     * })
+     * 
+     * 
      * 
      */
-    export<Format extends FlexTreeExportOptions['format'] = 'nested',        
-        OPTIONS extends FlexTreeExportOptions<Fields,KeyFields,NodeId,TreeId> = FlexTreeExportOptions<Fields,KeyFields,NodeId,TreeId>,        
-        Returns = Format extends 'nested' ? FlexTreeExportNestedFormat<Fields,KeyFields,TreeNode,NodeId> 
-                                            : FlexTreeExportPidFormat<Fields,KeyFields,TreeNode,NodeId,TreeId,OPTIONS>
-    >(options?:OPTIONS):Returns{
-        const  opts = Object.assign({
-            format              : "nested",
-            childrenField       : 'children',
-            pidField            : 'pid',
+    toJson(options?:FlexTreeExportJsonOptions<Fields,KeyFields>):FlexTreeExportJsonFormat<Fields,KeyFields>{
+        const  opts = Object.assign({ 
+            childrenField       : 'children', 
             fields              : [],
             level               : 0,                // 限定节点的级别,level=0表示不限定,level=1表示只导出当前节点
             includeKeyFields    : false                    
-        },options) as Required<FlexTreeExportOptions<Fields,KeyFields,NodeId,TreeId>>        
-        const {format,childrenField,pidField,includeKeyFields,level,fields}  = opts 
+        },options) as Required<FlexTreeExportJsonOptions<Fields,KeyFields>>        
+        const {childrenField,includeKeyFields,level,fields}  = opts 
         // 当指字了fields时,确保包含id字段,不包括treeId字段
         if(fields.length>0){       
             const index  = fields.findIndex(name=>name==this._tree.manager.keyFields.treeId)// 移除treeId字段
             if(index>=0) fields.splice(index,1)
-        }     
-        // 提取节点数据
-        const pickNodeData=(data:any)=>{            
-            let result:Record<string,any> ={}
-            if(fields.length>0){
-                result =  pick(data,fields as string[]) as any 
-            }else{
-                if(includeKeyFields){
-                    result =  Object.assign({},data)
-                }else{
-                    result =  Object.assign({},omit(data,[
-                        this._tree.manager.keyFields.leftValue,
-                        this._tree.manager.keyFields.rightValue,
-                        this._tree.manager.keyFields.level,
-                        this._tree.manager.keyFields.treeId,
-                    ],true))
-                }
-            }
-            // @ts-ignore
-            result[this._tree.manager.keyFields.id] = data[this._tree.manager.keyFields.id]
-            return result
-        }
+        }      
 
-        let results:Returns 
-        if(format=='pid'){  
+        const results = this.toNodeData(this._node,fields as string[],includeKeyFields) as any
+        if(this._children && (level==0 || ( level>1) )){           
+            if(level>1) opts.level = opts.level - 1 
+            // @ts-ignore     
+            results[childrenField] = this._children.map(n=>n.toJson(opts)) 
+        }  
+        return results as FlexTreeExportJsonFormat<Fields,KeyFields>
+    } 
+    /**
+     * 按照树的顺序返回节点列表
+     * 通过pid字段关联父节点，通过order字段排序
+     * 
+     */
+    toList(options?:FlexTreeExportListOptions<Fields,KeyFields>):FlexTreeExportListFormat<Fields,KeyFields>{
+        const  opts = Object.assign({ 
+            pidField            : 'pid', 
+            fields              : [],
+            level               : 0,                // 限定节点的级别,level=0表示不限定,level=1表示只导出当前节点
+            includeKeyFields    : false                    
+        },options) as Required<FlexTreeExportListOptions<Fields,KeyFields>>        
+        const {includeKeyFields,pidField,level,fields}  = opts 
             // @ts-ignore 
-            results = []
-            const curNodedata = pickNodeData(this._node)
-            curNodedata[pidField] =this.parent ? this.parent.id : 0
-            // @ts-ignore
-            results.push(curNodedata)
-            if(this._children){
-                for(let node of this._children){     
-                    const children = node.export(opts) as any [] 
-                    // @ts-ignore
-                    results.push(...children)
-                }
+        let results:FlexTreeExportListFormat<Fields,KeyFields>= []
+        const curNodedata = this.toNodeData(this._node,fields as string[],includeKeyFields) 
+        // @ts-ignore
+        curNodedata[pidField] =this.parent ? this.parent.id : 0
+        // @ts-ignore
+        results.push(curNodedata)
+        if(this._children && (level==0 || ( level>1) )){
+            const curLevel = opts.level
+            if(curLevel>1) opts.level = curLevel - 1 
+            for(let node of this._children){     
+                const children = node.toList(opts) as any [] 
+                // @ts-ignore
+                results.push(...children)
             }
-        }else{
-            results = pickNodeData(this._node) as Returns
-            if(this._children && (level==0 || ( level>1) )){           
-                if(level>1) opts.level = opts.level - 1 
-                // @ts-ignore     
-                results[childrenField] = this._children.map(n=>n.export(opts)) 
-            }       
-        } 
-        return results as Returns
+        }
+        return results
     }
     toString(){
         return `${this.name}(${this._id})`
