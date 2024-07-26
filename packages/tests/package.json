@@ -5,16 +5,18 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "flextree":"workspace:*",
-    "@flextree/sqlite":"workspace:*"
+    "@flextree/sqlite": "workspace:*",
+    "better-sqlite3": "^11.1.2",
+    "flextree": "workspace:*"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
     "vitest": "^2.0.4"
   }
 }

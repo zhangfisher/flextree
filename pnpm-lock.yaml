@@ -168,10 +168,16 @@ importers:
       '@flextree/sqlite':
         specifier: workspace:*
         version: link:../sqlite
+      better-sqlite3:
+        specifier: ^11.1.2
+        version: 11.1.2
       flextree:
         specifier: workspace:*
         version: link:../core
     devDependencies:
+      '@types/better-sqlite3':
+        specifier: ^7.6.11
+        version: 7.6.11
       vitest:
         specifier: ^2.0.4
         version: 2.0.4(@types/node@20.14.12)(@vitest/ui@2.0.4)
