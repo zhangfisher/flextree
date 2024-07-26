@@ -3,7 +3,7 @@ import type { ReturnPromiseType } from '../common'
 import { createDemoTree, createFlexTree, dumpTree } from '../common'
 
 describe('访问树节点实例', () => {
-	let tree: ReturnPromiseType<typeof createFlexTree>
+    let tree: ReturnPromiseType<typeof createFlexTree>
     beforeEach(async () => {
         tree = await createFlexTree()
         await createDemoTree(tree.manager)
@@ -87,7 +87,7 @@ describe('访问树节点实例', () => {
         expect(siblings[3].name).toBe('A-5')
     })
     test('访问节点的祖先节点', async () => {
-		const a12 = tree.find(node => node.name === 'A-1-2')[0]
+        const a12 = tree.find(node => node.name === 'A-1-2')[0]
 
         const ancestors = a12.ancestors!
         expect(ancestors.length).toBe(3)
@@ -96,7 +96,7 @@ describe('访问树节点实例', () => {
         expect(ancestors[2].name).toBe('A-1')
     })
     test('访问节点的后代节点', async () => {
-		const a = tree.find(node => node.name === 'A')[0]
+        const a = tree.find(node => node.name === 'A')[0]
 
         const descendants = a.descendants!
         for (const node of descendants) {

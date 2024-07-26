@@ -8,11 +8,11 @@ export type FlexTreeOptions<TreeIdType = number> = FlexTreeManagerOptions<TreeId
 export type FlexTreeStatus = 'initial' | 'loading' | 'loaded' | 'error'
 
 export class FlexTree<
-	Fields extends Record<string, any> = object,
-	KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-	TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
-	NodeId = NonUndefined<KeyFields['id']>[1],
-	TreeId = NonUndefined<KeyFields['treeId']>[1],
+    Fields extends Record<string, any> = object,
+    KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
+    TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
+    NodeId = NonUndefined<KeyFields['id']>[1],
+    TreeId = NonUndefined<KeyFields['treeId']>[1],
 > {
     private _options: RequiredDeep<FlexTreeOptions<KeyFields['treeId']>>
     private _treeId: TreeId
@@ -56,15 +56,15 @@ export class FlexTree<
     }
 
     /**
-   * 当节点后更新时调用
-   */
+     * 当节点后更新时调用
+     */
     private onAfterWrite() {
         this.load()
     }
 
     /**
-   * 加载树到内存中
-   */
+     * 加载树到内存中
+     */
     async load() {
         if (this._status === 'loading') {
             return
@@ -86,16 +86,16 @@ export class FlexTree<
                 if (node.level === preNode.level) {
                     const parent = pnodes[pnodes.length - 1]
                     const nodeObj = new FlexTreeNode(node, parent, this as any)
-					parent.children!.push(nodeObj)
-					preNode = nodeObj
+                    parent.children!.push(nodeObj)
+                    preNode = nodeObj
                 } else if (node.level > preNode.level) {
                     if (node.level === preNode.level + 1) {
                         const nodeObj = new FlexTreeNode(node, preNode, this as any)
-						preNode.children!.push(nodeObj)
-						preNode = nodeObj
-						if (node.rightValue - node.leftValue > 1) {
+                        preNode.children!.push(nodeObj)
+                        preNode = nodeObj
+                        if (node.rightValue - node.leftValue > 1) {
 						    pnodes.push(preNode)
-						}
+                        }
                     } else {
                         throw new FlexTreeInvalidError(`Invalid tree structure`)
                     }
@@ -104,12 +104,12 @@ export class FlexTree<
                         const parent = pnodes[pnodes.length - 1]
                         if (parent && node.level === parent.level + 1) {
                             const nodeObj = new FlexTreeNode(node, parent, this as any)
-							parent.children!.push(nodeObj)
-							preNode = nodeObj
-							if (node.rightValue - node.leftValue > 1) {
+                            parent.children!.push(nodeObj)
+                            preNode = nodeObj
+                            if (node.rightValue - node.leftValue > 1) {
 							    pnodes.push(preNode)
-							}
-							break
+                            }
+                            break
                         } else if (pnodes.length === 0) {
                             break
                         } else {
@@ -137,8 +137,8 @@ export class FlexTree<
     }
 
     /**
-   * 删除指定的节点
-   */
+     * 删除指定的节点
+     */
     async delete(nodeId: NodeId | ((node: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>) => boolean)) {
         if (typeof nodeId == 'function') {
             const nodes = this.find(node => (nodeId as any)(node)).map(node => node.id)
@@ -153,8 +153,8 @@ export class FlexTree<
     }
 
     /**
-   * 根据节点id获取节点实例
-   */
+     * 根据节点id获取节点实例
+     */
     get(nodeId: NodeId) {
         if (nodeId === this._root?.id) {
             return this._root
@@ -164,10 +164,10 @@ export class FlexTree<
     }
 
     /**
-   *
-   * @param condition
-   * @returns 返回满足条件的节点列表
-   */
+     *
+     * @param condition
+     * @returns 返回满足条件的节点列表
+     */
     find(condition: (node: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>) => boolean): FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>[] {
         return this._root!.find(condition, true)
     }

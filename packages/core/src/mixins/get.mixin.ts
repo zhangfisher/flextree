@@ -6,11 +6,11 @@ import { isLikeNode } from '../utils/isLikeNode'
 import { isValidNode } from '../utils/isValidNode'
 
 export class GetNodeMixin<
-	Fields extends Record<string, any> = object,
-	KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-	TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
-	NodeId = NonUndefined<KeyFields['id']>[1],
-	TreeId = NonUndefined<KeyFields['treeId']>[1],
+    Fields extends Record<string, any> = object,
+    KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
+    TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
+    NodeId = NonUndefined<KeyFields['id']>[1],
+    TreeId = NonUndefined<KeyFields['treeId']>[1],
 > {
     /**
      *

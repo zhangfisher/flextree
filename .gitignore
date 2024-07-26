@@ -65,3 +65,5 @@ templates/*/node_modules
 packages/core/__tests__/*.db
 
 packages/core/__tests__/**/*.db
+
+.turbo

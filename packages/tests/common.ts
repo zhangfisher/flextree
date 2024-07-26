@@ -1,9 +1,8 @@
 import path from 'node:path'
 import Database from 'better-sqlite3'
-import type { IFlexTreeNode } from '../src/index'
-import { FlexTreeManager, FlexTreeVerifyError } from '../src/index'
-import SqliteDriver from '../../sqlite/src/index'
-import { FlexTree } from '../src/tree'
+import type { IFlexTreeNode } from 'flextree'
+import { FlexTreeManager,FlexTree, FlexTreeVerifyError } from 'flextree'
+import SqliteDriver from '@flextree/sqlite' 
 
 export async function createTreeTable(driver: SqliteDriver) {
     await driver.exec([`

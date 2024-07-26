@@ -24,35 +24,35 @@ import { UpdateNodeMixin } from './mixins/update.mixin'
 import { VerifyTreeMixin } from './mixins/verify.mixin'
 
 export interface FlexTreeManagerOptions<TreeIdType = number> {
-	treeId?: TreeIdType // 使用支持单表多树时需要提供
-	fields?: {
-		id?: string
-		name?: string
-		treeId?: string
-		level?: string
-		leftValue?: string
-		rightValue?: string
-	}
-	driver: IDatabaseDriver
+    treeId?: TreeIdType // 使用支持单表多树时需要提供
+    fields?: {
+        id?: string
+        name?: string
+        treeId?: string
+        level?: string
+        leftValue?: string
+        rightValue?: string
+    }
+    driver: IDatabaseDriver
 }
 
 export interface FlexTreeManager<
-	Fields extends Record<string, any> = object,
-	KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-	TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
-	NodeId = NonUndefined<KeyFields['id']>[1],
-	TreeId = NonUndefined<KeyFields['treeId']>[1],
+    Fields extends Record<string, any> = object,
+    KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
+    TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
+    NodeId = NonUndefined<KeyFields['id']>[1],
+    TreeId = NonUndefined<KeyFields['treeId']>[1],
 > extends MoveNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-	DeleteNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-	AddNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-	IsNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-	SqlMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-	GetNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-	FindNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-	RootNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-	RelationMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-	UpdateNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-	VerifyTreeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>
+    DeleteNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+    AddNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+    IsNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+    SqlMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+    GetNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+    FindNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+    RootNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+    RelationMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+    UpdateNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+    VerifyTreeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>
 {}
 
 /**
@@ -81,13 +81,13 @@ export interface FlexTreeManager<
 )
 // eslint-disable-next-line ts/no-unsafe-declaration-merging
 export class FlexTreeManager<
-	Fields extends Record<string, any> = object,
-	KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-	// eslint-disable-next-line unused-imports/no-unused-vars
-	TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
-	// eslint-disable-next-line unused-imports/no-unused-vars
-	NodeId = NonUndefined<KeyFields['id']>[1],
-	TreeId = NonUndefined<KeyFields['treeId']>[1],
+    Fields extends Record<string, any> = object,
+    KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
+    // eslint-disable-next-line unused-imports/no-unused-vars
+    TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
+    // eslint-disable-next-line unused-imports/no-unused-vars
+    NodeId = NonUndefined<KeyFields['id']>[1],
+    TreeId = NonUndefined<KeyFields['treeId']>[1],
 > {
     private _options: RequiredDeep<FlexTreeManagerOptions<TreeId>>
     private _isWriting = false

@@ -7,11 +7,11 @@ import { filterObject } from './utils/filterObject'
 import { getRelNodePath } from './utils/getRelNodePath'
 
 export class FlexTreeNode<
-	Fields extends Record<string, any> = object,
-	KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-	TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
-	NodeId = NonUndefined<KeyFields['id']>[1],
-	TreeId = NonUndefined<KeyFields['treeId']>[1],
+    Fields extends Record<string, any> = object,
+    KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
+    TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
+    NodeId = NonUndefined<KeyFields['id']>[1],
+    TreeId = NonUndefined<KeyFields['treeId']>[1],
 > {
     private _id: NodeId
     private _tree: FlexTree<Fields, KeyFields, TreeNode, NodeId, TreeId>
@@ -126,7 +126,7 @@ export class FlexTreeNode<
     async update(data: Partial<TreeNode>) {
         const nodeData = filterObject(data, (k) => {
             return !(k in this._tree.manager.keyFields)
-				|| k === this._tree.manager.keyFields.name
+                || k === this._tree.manager.keyFields.name
         })
         nodeData[this._tree.manager.keyFields.id] = this._id
         await this._tree.manager.write(async () => {
@@ -242,16 +242,16 @@ export class FlexTreeNode<
             if (node.level === preNode.level) {
                 const parent = pnodes[pnodes.length - 1]
                 const nodeObj = new FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>(node, parent, this as any)
-				parent.children!.push(nodeObj)
-				preNode = nodeObj
+                parent.children!.push(nodeObj)
+                preNode = nodeObj
             } else if (node.level > preNode.level) {
                 if (node.level === preNode.level + 1) {
                     const nodeObj = new FlexTreeNode(node, preNode, this as any)
-					preNode.children!.push(nodeObj)
-					preNode = nodeObj
-					if (node.rightValue - node.leftValue > 1) {
+                    preNode.children!.push(nodeObj)
+                    preNode = nodeObj
+                    if (node.rightValue - node.leftValue > 1) {
 					    pnodes.push(preNode)
-					}
+                    }
                 } else {
                     throw new FlexTreeInvalidError(`Invalid tree structure`)
                 }
@@ -260,12 +260,12 @@ export class FlexTreeNode<
                     const parent = pnodes[pnodes.length - 1]
                     if (parent && node.level === parent.level + 1) {
                         const nodeObj = new FlexTreeNode(node, parent, this as any)
-						parent.children!.push(nodeObj)
-						preNode = nodeObj
-						if (node.rightValue - node.leftValue > 1) {
+                        parent.children!.push(nodeObj)
+                        preNode = nodeObj
+                        if (node.rightValue - node.leftValue > 1) {
 						    pnodes.push(preNode)
-						}
-						break
+                        }
+                        break
                     } else if (pnodes.length === 0) {
                         break
                     } else {

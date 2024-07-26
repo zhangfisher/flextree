@@ -5,11 +5,11 @@ import { FlexTreeNodeError } from '../errors'
 import { escapeSqlString } from '../utils/escapeSqlString'
 
 export class RootNodeMixin<
-	Fields extends Record<string, any> = object,
-	KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-	TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
-	NodeId = NonUndefined<KeyFields['id']>[1],
-	TreeId = NonUndefined<KeyFields['treeId']>[1],
+    Fields extends Record<string, any> = object,
+    KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
+    TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
+    NodeId = NonUndefined<KeyFields['id']>[1],
+    TreeId = NonUndefined<KeyFields['treeId']>[1],
 > {
     /**
      *

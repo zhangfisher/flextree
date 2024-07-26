@@ -2,11 +2,11 @@ import type { FlexTreeManager } from '../manager'
 import type { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNode, NonUndefined } from '../types'
 
 export class SqlMixin<
-	Fields extends Record<string, any> = object,
-	KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-	TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
-	NodeId = NonUndefined<KeyFields['id']>[1],
-	TreeId = NonUndefined<KeyFields['treeId']>[1],
+    Fields extends Record<string, any> = object,
+    KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
+    TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
+    NodeId = NonUndefined<KeyFields['id']>[1],
+    TreeId = NonUndefined<KeyFields['treeId']>[1],
 > {
     /**
      * 执行读取操作
@@ -48,7 +48,7 @@ export class SqlMixin<
         // 在一表多树时,需要增加额外的树判定
         if (this.treeId) {
             const treeId = typeof (this.treeId) == 'string' ? `'${this.treeId}'` : this.treeId
-            sql = sql.params({ __TREE_ID__: `${this.keyFields.treeId}=${treeId} AND ` || '' })
+            sql = sql.params({ __TREE_ID__: `${this.keyFields.treeId}=${treeId} AND ` })
         } else {
             sql = sql.params({ __TREE_ID__: '' })
         }

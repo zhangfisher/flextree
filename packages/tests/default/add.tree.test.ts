@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
-import type { FlexTreeManager } from '../src/index'
-import { FlexNodeRelPosition, FlexTreeNodeError, NextSibling, PreviousSibling } from '../src/index'
-import type { DemoFlexTreeManager } from './common'
-import { createTreeManager, dumpTree } from './common'
+import type { FlexTreeManager } from 'flextree'
+import { FlexNodeRelPosition, FlexTreeNodeError, NextSibling, PreviousSibling } from 'flextree'
+import type { DemoFlexTreeManager } from '../common'
+import { createTreeManager, dumpTree } from '../common'
 
 describe('添加树节点', () => {
     describe('创建根节点', () => {

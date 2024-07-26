@@ -8,13 +8,13 @@ export default defineConfig({
         outline: {
             label: '目录',
             level: [2, 5],
-		},
+        },
         // https://vitepress.dev/reference/default-theme-config
         nav: [
             { text: '首页', link: '/' },
             { text: '指南', link: '/guide' },
             { text: 'API', link: '/api' },
-		],
+        ],
 
         sidebar: [
             { text: '关于', link: '/intro/about' },
@@ -35,26 +35,26 @@ export default defineConfig({
                     { text: '校验', link: '/guide/verify' },
                     { text: '导入导出', link: '/guide/import_export' },
                     { text: '数据库', link: '/guide/driver' },
-                ]
+                ],
             },
             {
                 text: '数据库适配',
                 items: [
                     { text: 'Sqlite', link: '/drivers/sqlite' },
                     { text: 'Prisma', link: '/drivers/prisma' },
-                ]
+                ],
             },
         ],
 
         socialLinks: [
             { icon: 'github', link: 'https://github.com/zhangfisher/flextree' },
-		]
+        ],
     },
     vue: {
         template: {
             compilerOptions: {
                 whitespace: 'preserve',
-			}
-        }
-    }
+            },
+        },
+    },
 })

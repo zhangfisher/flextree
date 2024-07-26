@@ -1,31 +1,32 @@
 {
-	"name": "flextree-prisma-example",
-	"type": "module",
-	"version": "1.0.0",
-	"private": "true",
-	"description": "",
-	"author": "",
-	"license": "ISC",
-	"keywords": [],
-	"main": "src/index.ts",
-	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1",
-		"db:generate": "prisma generate",
-		"db:sync": "prisma db push",
-		"dev": "ts-node --experimentalSpecifierResolution node ./src/index.ts"
-	},
-	"dependencies": {
-		"@flextree/prisma": "workspace:*",
-		"@prisma/client": "5.17.0",
-		"flextree": "workspace:*",
-		"prisma": "^5.17.0"
-	},
-	"devDependencies": {
-		"@types/node": "^20.14.12",
-		"ts-node": "^10.9.2",
-		"typescript": "^5.5.4"
-	},
-	"prisma": {
-		"seed": "ts-node prisma/seed.ts"
-	}
+    "name": "flextree-prisma-example",
+    "type": "module",
+    "version": "1.0.0",
+    "private": "true",
+    "description": "",
+    "author": "",
+    "license": "ISC",
+    "keywords": [],
+    "main": "src/index.ts",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "db:generate": "prisma generate",
+        "db:sync": "prisma db push",
+        "dev": "ts-node --experimentalSpecifierResolution node ./src/index.ts"
+    },
+    "dependencies": {
+        "@flextree/prisma": "workspace:*",
+        "@prisma/client": "5.17.0",
+        "flextree": "workspace:*",
+        "prisma": "^5.17.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.14.12",
+        "ts-node": "^10.9.2",
+        "tsx": "^4.16.2",
+        "typescript": "^5.5.4"
+    },
+    "prisma": {
+        "seed": "ts-node prisma/seed.ts"
+    }
 }
