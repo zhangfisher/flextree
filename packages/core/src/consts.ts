@@ -1,4 +1,4 @@
-import { FlexNodeRelPosition } from "./types";
+import { FlexNodeRelPosition } from './types'
 
 export const FirstChild = FlexNodeRelPosition.FirstChild
 export const LastChild = FlexNodeRelPosition.LastChild

@@ -4,17 +4,16 @@ import type { Theme } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
 import './style.css'
 import { LiteTree } from '@lite-tree/vue'
-import "@lite-tree/icons/filetypes.css"
-
+import '@lite-tree/icons/filetypes.css'
 
 export default {
-  extends: DefaultTheme,
-  Layout: () => {
-    return h(DefaultTheme.Layout, null, {
-      // https://vitepress.dev/guide/extending-default-theme#layout-slots
-    })
-  },
-  enhanceApp({ app, router, siteData }) {
-    app.component('LiteTree', LiteTree)
-  }
+    extends: DefaultTheme,
+    Layout: () => {
+        return h(DefaultTheme.Layout, null, {
+            // https://vitepress.dev/guide/extending-default-theme#layout-slots
+        })
+    },
+    enhanceApp({ app, router, siteData }) {
+        app.component('LiteTree', LiteTree)
+    }
 } satisfies Theme

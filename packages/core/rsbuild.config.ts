@@ -1,12 +1,12 @@
-import { defineConfig } from '@rsbuild/core';
+import { defineConfig } from '@rsbuild/core'
 
 export default defineConfig({
-    source:{
-        entry:{
-            index:"./src/index.ts"
-        }
+    source: {
+        entry: {
+            index: './src/index.ts',
+		}
     },
-    output:{
+    output: {
         target: 'node',
     },
-});
+})

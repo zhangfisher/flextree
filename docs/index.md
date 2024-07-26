@@ -5,7 +5,7 @@ layout: home
 hero:
   name: "FlexTree"
   text: "树数据库存储库"
-  tagline: 基于左右值算法 
+  tagline: 基于左右值算法
   actions:
     - theme: brand
       text: 快速开始
@@ -22,4 +22,3 @@ features:
   - title: 功能丰富
     details: 支持多种树操作，如增删改查、遍历、移动、查询等
 ---
-

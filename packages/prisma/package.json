@@ -1,30 +1,26 @@
 {
-  "name": "@flextree/prisma",
-  "version": "1.0.0",
-  "description": "flextree database driver for prisma",
-  "main": "src/index.ts",
-  "type": "module",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@prisma/client": "^5.17.0",
-    "@types/better-sqlite3": "^7.6.11",
-    "flextree": "workspace:^",
-    "prisma": "^5.17.0",
-    "tsup": "^8.1.0",
-    "typescript": "^5.5.4"
-  },
-  "dependencies": {
-    "better-sqlite3": "^11.1.2",
-    "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.7"
-  },
-  "peerDependencies": {
-    "@prisma/client": "^5.17.0",
-    "prisma": "^5.17.0"
-  }
+	"name": "@flextree/prisma",
+	"type": "module",
+	"version": "1.0.0",
+	"description": "prisma driver for flextree",
+	"author": "wxzhang@126.com",
+	"license": "ISC",
+	"keywords": [],
+	"main": "src/index.ts",
+	"scripts": {
+		"build": "tsup"
+	},
+	"peerDependencies": {
+		"@prisma/client": "^5.17.0",
+		"flextree": "workspace:^",
+		"prisma": "^5.17.0"
+	},
+	"devDependencies": {
+		"@prisma/client": "^5.17.0",
+		"@types/better-sqlite3": "^7.6.11",
+		"flextree": "workspace:^",
+		"prisma": "^5.17.0",
+		"tsup": "^8.1.0",
+		"typescript": "^5.5.4"
+	}
 }

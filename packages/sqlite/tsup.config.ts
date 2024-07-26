@@ -9,10 +9,9 @@ export default defineConfig({
     outDir: 'dist',
     minify: true,
     noExternal: [
-        "flex-tools",
-        "mitt",
-        "ts-mixer",
-        "sqlstring"
-    ]
-
+        'flex-tools',
+        'mitt',
+        'ts-mixer',
+        'sqlstring',
+    ],
 })
