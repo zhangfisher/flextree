@@ -226,7 +226,7 @@ describe("导出树", () => {
         test("导出A节点为List格式时",async ()=>{
             let nodes = tree.getByPath("A")!.toList()
             let nodeCount = await tree.manager.getDescendantCount(nodes[0].id)
-
+            expect(nodes.length).toBe(nodeCount + 1)
             expect(nodes[0].name).toBe("A")
             expect(nodes[0].pid).toBe(tree.root!.id)    
 
