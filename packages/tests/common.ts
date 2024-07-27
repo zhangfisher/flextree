@@ -2,9 +2,9 @@ import path from 'node:path'
 import Database from 'better-sqlite3'
 import type { IFlexTreeNode } from 'flextree'
 import { FlexTreeManager,FlexTree, FlexTreeVerifyError } from 'flextree'
-import SqliteDriver from '@flextree/sqlite' 
+import SqliteAdapter from '@flextree/sqlite' 
 
-export async function createTreeTable(driver: SqliteDriver) {
+export async function createTreeTable(driver: SqliteAdapter) {
     await driver.exec([`
         CREATE TABLE IF NOT EXISTS  tree (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -18,7 +18,7 @@ export async function createTreeTable(driver: SqliteDriver) {
         );
     `])
 }
-export async function createMultiTreeTable(driver: SqliteDriver) {
+export async function createMultiTreeTable(driver: SqliteAdapter) {
     await driver.exec([`
         CREATE TABLE IF NOT EXISTS  tree (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,25 +33,25 @@ export async function createMultiTreeTable(driver: SqliteDriver) {
         );
     `])
 }
-async function clearAllTables(driver: SqliteDriver) {
+async function clearAllTables(driver: SqliteAdapter) {
     await driver.exec([`DELETE FROM tree`])
 }
 
 export async function createTreeManager(treeId?: any) {
-    const sqliteDriver = new SqliteDriver()
-    await sqliteDriver.open()
+    const sqliteAdapter = new SqliteAdapter()
+    await sqliteAdapter.open()
     if (treeId) {
-        await createMultiTreeTable(sqliteDriver)
+        await createMultiTreeTable(sqliteAdapter)
     } else {
-        await createTreeTable(sqliteDriver)
+        await createTreeTable(sqliteAdapter)
     }
-    await clearAllTables(sqliteDriver)
+    await clearAllTables(sqliteAdapter)
     return new FlexTreeManager<{
         title: string
         size: number
     }>('tree', {
 	    treeId,
-        driver: sqliteDriver,
+        adapter: sqliteAdapter,
     })
 }
 
@@ -65,7 +65,7 @@ export type DemoFlexTree = FlexTree<{
 }>
 
 export async function createFlexTree(treeId?: any) {
-    const sqliteDriver = new SqliteDriver()
+    const sqliteDriver = new SqliteAdapter()
     await sqliteDriver.open()
     if (treeId) {
         await createMultiTreeTable(sqliteDriver)
@@ -78,7 +78,7 @@ export async function createFlexTree(treeId?: any) {
         size: number
     }>('tree', {
 	    treeId,
-	    driver: sqliteDriver,
+	    adapter: sqliteDriver,
     })
     return tree
 }

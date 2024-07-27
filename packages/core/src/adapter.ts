@@ -4,7 +4,7 @@
 
 import type * as manager from './manager'
 
-export interface IDatabaseDriver {
+export interface IDatabaseAdapter {
     // 当数据库打开准备就绪时
     ready: boolean
     // 绑定树管理器

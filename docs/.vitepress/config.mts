@@ -34,14 +34,14 @@ export default defineConfig({
                     { text: '多树表', link: '/guide/multitree' },
                     { text: '校验', link: '/guide/verify' },
                     { text: '导入导出', link: '/guide/import_export' },
-                    { text: '数据库', link: '/guide/driver' },
+                    { text: '数据库', link: '/guide/adapters' },
                 ],
             },
             {
                 text: '数据库适配',
                 items: [
-                    { text: 'Sqlite', link: '/drivers/sqlite' },
-                    { text: 'Prisma', link: '/drivers/prisma' },
+                    { text: 'Sqlite', link: '/adapters/sqlite' },
+                    { text: 'Prisma', link: '/adapters/prisma' },
                 ],
             },
         ],

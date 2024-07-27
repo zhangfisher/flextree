@@ -83,27 +83,15 @@ importers:
         specifier: ^6.0.4
         version: 6.0.4
     devDependencies:
-      '@flextree/sqlite':
-        specifier: workspace:^
-        version: link:../sqlite
       '@swc/core':
         specifier: ^1.7.2
         version: 1.7.2(@swc/helpers@0.5.11)
-      '@types/better-sqlite3':
-        specifier: ^7.6.11
-        version: 7.6.11
       '@types/sqlstring':
         specifier: ^2.3.2
         version: 2.3.2
       '@vitest/coverage-v8':
         specifier: ^2.0.4
         version: 2.0.4(vitest@2.0.4(@types/node@20.14.12)(@vitest/ui@2.0.4))
-      '@vitest/ui':
-        specifier: ^2.0.4
-        version: 2.0.4(vitest@2.0.4)
-      better-sqlite3:
-        specifier: ^11.1.2
-        version: 11.1.2
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@swc/core@1.7.2(@swc/helpers@0.5.11))(@types/node@20.14.12)(typescript@5.5.4)
@@ -119,9 +107,6 @@ importers:
       typescript:
         specifier: ^5.5.4
         version: 5.5.4
-      vitest:
-        specifier: ^2.0.4
-        version: 2.0.4(@types/node@20.14.12)(@vitest/ui@2.0.4)
 
   packages/prisma:
     devDependencies:
@@ -770,91 +755,109 @@ packages:
     resolution: {integrity: sha512-C/zbRYRXFjWvz9Z4haRxcTdnkPt1BtCkz+7RtBSuNmKzMzp3ZxdM28Mpccn6pt28/UWUCTXa+b0Mx1k3g6NOMA==}
     cpu: [arm]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm-gnueabihf@4.19.0':
     resolution: {integrity: sha512-2Rn36Ubxdv32NUcfm0wB1tgKqkQuft00PtM23VqLuCUR4N5jcNWDoV5iBC9jeGdgS38WK66ElncprqgMUOyomw==}
     cpu: [arm]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm-musleabihf@4.18.0':
     resolution: {integrity: sha512-l3m9ewPgjQSXrUMHg93vt0hYCGnrMOcUpTz6FLtbwljo2HluS4zTXFy2571YQbisTnfTKPZ01u/ukJdQTLGh9A==}
     cpu: [arm]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-arm-musleabihf@4.19.0':
     resolution: {integrity: sha512-gJuzIVdq/X1ZA2bHeCGCISe0VWqCoNT8BvkQ+BfsixXwTOndhtLUpOg0A1Fcx/+eA6ei6rMBzlOz4JzmiDw7JQ==}
     cpu: [arm]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-arm64-gnu@4.18.0':
     resolution: {integrity: sha512-rJ5D47d8WD7J+7STKdCUAgmQk49xuFrRi9pZkWoRD1UeSMakbcepWXPF8ycChBoAqs1pb2wzvbY6Q33WmN2ftw==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm64-gnu@4.19.0':
     resolution: {integrity: sha512-0EkX2HYPkSADo9cfeGFoQ7R0/wTKb7q6DdwI4Yn/ULFE1wuRRCHybxpl2goQrx4c/yzK3I8OlgtBu4xvted0ug==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm64-musl@4.18.0':
     resolution: {integrity: sha512-be6Yx37b24ZwxQ+wOQXXLZqpq4jTckJhtGlWGZs68TgdKXJgw54lUUoFYrg6Zs/kjzAQwEwYbp8JxZVzZLRepQ==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-arm64-musl@4.19.0':
     resolution: {integrity: sha512-GlIQRj9px52ISomIOEUq/IojLZqzkvRpdP3cLgIE1wUWaiU5Takwlzpz002q0Nxxr1y2ZgxC2obWxjr13lvxNQ==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-powerpc64le-gnu@4.18.0':
     resolution: {integrity: sha512-hNVMQK+qrA9Todu9+wqrXOHxFiD5YmdEi3paj6vP02Kx1hjd2LLYR2eaN7DsEshg09+9uzWi2W18MJDlG0cxJA==}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-powerpc64le-gnu@4.19.0':
     resolution: {integrity: sha512-N6cFJzssruDLUOKfEKeovCKiHcdwVYOT1Hs6dovDQ61+Y9n3Ek4zXvtghPPelt6U0AH4aDGnDLb83uiJMkWYzQ==}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-riscv64-gnu@4.18.0':
     resolution: {integrity: sha512-ROCM7i+m1NfdrsmvwSzoxp9HFtmKGHEqu5NNDiZWQtXLA8S5HBCkVvKAxJ8U+CVctHwV2Gb5VUaK7UAkzhDjlg==}
     cpu: [riscv64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-riscv64-gnu@4.19.0':
     resolution: {integrity: sha512-2DnD3mkS2uuam/alF+I7M84koGwvn3ZVD7uG+LEWpyzo/bq8+kKnus2EVCkcvh6PlNB8QPNFOz6fWd5N8o1CYg==}
     cpu: [riscv64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-s390x-gnu@4.18.0':
     resolution: {integrity: sha512-0UyyRHyDN42QL+NbqevXIIUnKA47A+45WyasO+y2bGJ1mhQrfrtXUpTxCOrfxCR4esV3/RLYyucGVPiUsO8xjg==}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-s390x-gnu@4.19.0':
     resolution: {integrity: sha512-D6pkaF7OpE7lzlTOFCB2m3Ngzu2ykw40Nka9WmKGUOTS3xcIieHe82slQlNq69sVB04ch73thKYIWz/Ian8DUA==}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-gnu@4.18.0':
     resolution: {integrity: sha512-xuglR2rBVHA5UsI8h8UbX4VJ470PtGCf5Vpswh7p2ukaqBGFTnsfzxUBetoWBWymHMxbIG0Cmx7Y9qDZzr648w==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-gnu@4.19.0':
     resolution: {integrity: sha512-HBndjQLP8OsdJNSxpNIN0einbDmRFg9+UQeZV1eiYupIRuZsDEoeGU43NQsS34Pp166DtwQOnpcbV/zQxM+rWA==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-musl@4.18.0':
     resolution: {integrity: sha512-LKaqQL9osY/ir2geuLVvRRs+utWUNilzdE90TpyoX0eNqPzWjRm14oMEE+YLve4k/NAqCdPkGYDaDF5Sw+xBfg==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-x64-musl@4.19.0':
     resolution: {integrity: sha512-HxfbvfCKJe/RMYJJn0a12eiOI9OOtAUF4G6ozrFUK95BNyoJaSiBjIOHjZskTUffUrB84IPKkFG9H9nEvJGW6A==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-win32-arm64-msvc@4.18.0':
     resolution: {integrity: sha512-7J6TkZQFGo9qBKH0pk2cEVSRhJbL6MtfWxth7Y5YmZs57Pi+4x6c2dStAUvaQkHQLnEQv1jzBUW43GvZW8OFqA==}
@@ -984,24 +987,28 @@ packages:
     engines: {node: '>=10'}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@swc/core-linux-arm64-musl@1.7.2':
     resolution: {integrity: sha512-4FhQmYbj8SCmir4pHRLSn8IIFmRKHTL3eZFtOpm26RLME7rXL7Yt33DpzIeTRoHFIesI5NEfaR38WU5mY7P1pA==}
     engines: {node: '>=10'}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@swc/core-linux-x64-gnu@1.7.2':
     resolution: {integrity: sha512-Loz10Hy6z5mBIAOe6OInOVsYu+PVxyknCB3thtr7QH+uqEz6dcXhU2ERrO2Lf4dsTsFs/Wb80rv8zTSwB8dpsw==}
     engines: {node: '>=10'}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@swc/core-linux-x64-musl@1.7.2':
     resolution: {integrity: sha512-8p8qNWaLcTa+qHX4NSv1KNm8BQ6zPoLXuOBo9DtOEqc+K60IISGKPCAS7TJlCcv0q20JnmxZ/cEWW5Qo4TR4XQ==}
     engines: {node: '>=10'}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@swc/core-win32-arm64-msvc@1.7.2':
     resolution: {integrity: sha512-eNWAYOalBlFrhv/IVSQ1dxu7qIGuhxlUJZTYa8jsgLnKt93vAFd2cjLtKZ85k1OibBnq9PkKQyo4NKVr4hBavw==}
@@ -3211,7 +3218,8 @@ snapshots:
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
-  '@polka/url@1.0.0-next.25': {}
+  '@polka/url@1.0.0-next.25':
+    optional: true
 
   '@prisma/client@5.17.0(prisma@5.17.0)':
     optionalDependencies:
@@ -3593,6 +3601,7 @@ snapshots:
       sirv: 2.0.4
       tinyrainbow: 1.2.0
       vitest: 2.0.4(@types/node@20.14.12)(@vitest/ui@2.0.4)
+    optional: true
 
   '@vitest/utils@1.6.0':
     dependencies:
@@ -4118,7 +4127,8 @@ snapshots:
     dependencies:
       reusify: 1.0.4
 
-  fflate@0.8.2: {}
+  fflate@0.8.2:
+    optional: true
 
   file-uri-to-path@1.0.0: {}
 
@@ -4131,7 +4141,8 @@ snapshots:
       locate-path: 5.0.0
       path-exists: 4.0.0
 
-  flatted@3.3.1: {}
+  flatted@3.3.1:
+    optional: true
 
   flex-tools@1.4.5:
     dependencies:
@@ -4446,7 +4457,8 @@ snapshots:
       pkg-types: 1.1.1
       ufo: 1.5.3
 
-  mrmime@2.0.0: {}
+  mrmime@2.0.0:
+    optional: true
 
   ms@2.1.2: {}
 
@@ -4793,6 +4805,7 @@ snapshots:
       '@polka/url': 1.0.0-next.25
       mrmime: 2.0.0
       totalist: 3.0.1
+    optional: true
 
   slash@3.0.0: {}
 
@@ -4944,7 +4957,8 @@ snapshots:
     dependencies:
       is-number: 7.0.0
 
-  totalist@3.0.1: {}
+  totalist@3.0.1:
+    optional: true
 
   tr46@1.0.1:
     dependencies:

@@ -24,19 +24,14 @@
         "ts-mixer": "^6.0.4"
     },
     "devDependencies": {
-        "@flextree/sqlite": "workspace:^",
         "@swc/core": "^1.7.2",
-        "@types/better-sqlite3": "^7.6.11",
         "@types/sqlstring": "^2.3.2",
         "@vitest/coverage-v8": "^2.0.4",
-        "@vitest/ui": "^2.0.4",
-        "better-sqlite3": "^11.1.2",
         "ts-node": "^10.9.2",
         "tsd": "^0.31.1",
         "tsup": "^8.2.3",
         "type-fest": "^4.23.0",
-        "typescript": "^5.5.4",
-        "vitest": "^2.0.4"
+        "typescript": "^5.5.4"
     },
     "tsd": {
         "directory": "__tests__"

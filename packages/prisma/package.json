@@ -1,12 +1,22 @@
 {
-    "name": "@flextree/prisma",
+    "name": "flextree-prisma-adapter",
     "type": "module",
     "version": "1.0.0",
-    "description": "prisma driver for flextree",
+    "description": "prisma adapter for flextree",
     "author": "wxzhang@126.com",
     "license": "ISC",
-    "keywords": [],
-    "main": "src/index.ts",
+    "keywords": ["flextree"],
+    "main": "src/index.ts",    
+    "publishConfig": {
+      "access": "public",
+      "main": "dist/index.js",
+      "module": "dist/index.js", 
+      "types": "dist/index.d.ts",
+      "exports": {
+          "import": "./dist/index.js",
+          "require": "./dist/index.cjs"            
+      }
+    },
     "scripts": {
         "build": "tsup"
     },

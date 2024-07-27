@@ -1,8 +1,9 @@
-import type { FlexTreeManager, IDatabaseDriver } from 'flextree'
-import Database from 'better-sqlite3'
+import type { FlexTreeManager, IDatabaseAdapter } from 'flextree'
+import Database from 'better-sqlite3' 
 
-export default class SqliteDriver implements IDatabaseDriver {
-    _db?: Database.Database
+export type SqliteDatabase = Database.Database
+export default class SqliteAdapter implements IDatabaseAdapter {
+    _db?: SqliteDatabase
     _options: Database.Options
     _ready: boolean = false
     _filename?: string
@@ -13,7 +14,7 @@ export default class SqliteDriver implements IDatabaseDriver {
     }
 
     get ready() { return this._ready }
-    get db() { return this._db! }
+    get db() { return this._db! as SqliteDatabase }
     get treeManager() { return this._treeManager! }
     get tableName() { return this.treeManager.tableName }
     bind(treeManager: FlexTreeManager) {
