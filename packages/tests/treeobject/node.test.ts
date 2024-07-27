@@ -101,6 +101,6 @@ describe('访问树节点实例', () => {
         const descendants = a.descendants!
         for (const node of descendants) {
             expect(node.name.startsWith('A')).toBe(true)
-        }
+        } 
     })
 })

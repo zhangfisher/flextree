@@ -1,4 +1,5 @@
 import path from 'node:path'
+import fs from "node:fs"
 import Database from 'better-sqlite3'
 import type { IFlexTreeNode } from 'flextree'
 import { FlexTreeManager,FlexTree, FlexTreeVerifyError } from 'flextree'
@@ -147,7 +148,11 @@ export async function createDemoTree(tree: DemoFlexTreeManager, options?: { leve
  * @param srcDb
  */
 export async function dumpTree(srcDb: any, dbFile: string = 'tree.db') {
-    const dbFilename = path.join(__dirname, `./dumps/${dbFile}`)
+    const dumpDir = path.join(__dirname, '../dumps')
+    if (!fs.existsSync(dumpDir)) {
+        fs.mkdirSync(dumpDir)
+    }
+    const dbFilename = path.join(dumpDir, dbFile)
     const destDb = new Database(dbFilename)
     await destDb.exec(`
         CREATE TABLE IF NOT EXISTS tree (        

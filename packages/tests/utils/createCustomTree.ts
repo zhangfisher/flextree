@@ -1,7 +1,7 @@
+import fs from 'node:fs'
 import path from 'node:path'
 import Database from 'better-sqlite3'
-import type { IFlexTreeNode } from 'flextree'
-import { FlexTreeManager,FlexTree, FlexTreeVerifyError } from 'flextree'
+import { FlexTreeManager,FlexTree } from 'flextree'
 import SqliteAdapter from '@flextree/sqlite' 
 
 export async function createTreeTable(driver: SqliteAdapter) {
@@ -146,14 +146,14 @@ export async function createCustomDemoTree(tree: CustomDemoFlexTreeManager, opti
             // level=1:   id=100,200,300,400,500,600,700
             await tree.addNodes(names.map((name, index) => {
                 count++
-                return { name, id: (index + 1) * 100, treeId, title: `${name}-title`, size: Math.floor(Math.random() * 1000) }
+                return {  pk: (index + 1) * 100, tree:treeId, title: name, size: Math.floor(Math.random() * 1000) }
             }))
             async function createNodes(pid: number, pname: string, lv: number) {
                 const nodes = Array.from({ length: 5 }).fill(0).map<any>((_, i) => {
                     count++
                     const name = `${pname}-${i + 1}`
                     return {
-                        name,
+                        title:name,
                         pk: Number.parseInt(`${pid}${Number(i) + 1}`),
                         tree:treeId,
                         size: Math.floor(Math.random() * 1000),
@@ -162,7 +162,7 @@ export async function createCustomDemoTree(tree: CustomDemoFlexTreeManager, opti
                 await tree.addNodes(nodes, pid)
                 if (lv < level) {
                     for (const node of nodes) {
-                        await createNodes(node.id, node.name, lv + 1)
+                        await createNodes(node.pk, node.name, lv + 1) 
                     }
                 }
             }
@@ -183,7 +183,11 @@ export async function createCustomDemoTree(tree: CustomDemoFlexTreeManager, opti
  * @param srcDb
  */
 export async function dumpCustomTree(srcDb: any, dbFile: string = 'tree.db') {
-    const dbFilename = path.join(__dirname, `./dumps/custom.${dbFile}`)
+    const dumpDir = path.join(__dirname, '../dumps')
+    if (!fs.existsSync(dumpDir)) {
+        fs.mkdirSync(dumpDir)
+    }
+    const dbFilename = path.join(dumpDir, `custom.${dbFile}`) 
     const destDb = new Database(dbFilename)
     await destDb.exec(`
         CREATE TABLE IF NOT EXISTS tree (        

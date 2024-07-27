@@ -24,7 +24,6 @@ export class FlexTree<
         this._manager = new FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>(tableName, options)
         this._treeId = this._manager.treeId
         this._options = this._manager.options as RequiredDeep<FlexTreeOptions<KeyFields['treeId']>>
-        this._manager.on('afterWrite', this.onAfterWrite.bind(this))
     }
 
     get id() {
@@ -56,57 +55,57 @@ export class FlexTree<
     }
 
     /**
-     * 当节点后更新时调用
-     */
-    private onAfterWrite() {
-        this.load()
-    }
-
-    /**
      * 加载树到内存中
      */
     async load() {
         if (this._status === 'loading') {
-            return
+            throw new FlexTreeInvalidError(`Tree is loading`)
         }
         this._status = 'loading'
         // 加载根节点
         try {
-            const nodes = await this.manager.getNodes()
+            const nodes = (await this.manager.getNodes()) as unknown as TreeNode[]
             if (!nodes || nodes.length === 0) {
                 throw new FlexTreeNotFoundError()
             }
             this._root = new FlexTreeNode(nodes[0], undefined, this as any)
             const pnodes: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>[] = [this._root]
-            let preNode = this._root
+            let preNode:FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> = this._root 
+
+            const keyFields = this.manager.keyFields
             for (const node of nodes) {
-                if (node.level === 0) {
+                const nodeLevel = node[keyFields.level]
+                const nodeLeftValue = node[keyFields.leftValue]
+                const nodeRightValue = node[keyFields.rightValue]                
+
+                if (nodeLevel=== 0) {
                     continue
                 }
-                if (node.level === preNode.level) {
+                const pNodeLevel = preNode.level
+                if (nodeLevel === pNodeLevel) {
                     const parent = pnodes[pnodes.length - 1]
                     const nodeObj = new FlexTreeNode(node, parent, this as any)
                     parent.children!.push(nodeObj)
-                    preNode = nodeObj
-                } else if (node.level > preNode.level) {
-                    if (node.level === preNode.level + 1) {
-                        const nodeObj = new FlexTreeNode(node, preNode, this as any)
+                    preNode = nodeObj  
+                } else if (nodeLevel > pNodeLevel) {
+                    if (nodeLevel === pNodeLevel + 1) {
+                        const nodeObj = new FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>(node, preNode, this as any)
                         preNode.children!.push(nodeObj)
                         preNode = nodeObj
-                        if (node.rightValue - node.leftValue > 1) {
+                        if (nodeRightValue - nodeLeftValue > 1) {
 						    pnodes.push(preNode)
                         }
                     } else {
                         throw new FlexTreeInvalidError(`Invalid tree structure`)
                     }
-                } else if (node.level < preNode.level) {
+                } else if (nodeLevel < pNodeLevel) {
                     while (true) {
                         const parent = pnodes[pnodes.length - 1]
-                        if (parent && node.level === parent.level + 1) {
+                        if (parent && nodeLevel === parent.level + 1) {
                             const nodeObj = new FlexTreeNode(node, parent, this as any)
                             parent.children!.push(nodeObj)
                             preNode = nodeObj
-                            if (node.rightValue - node.leftValue > 1) {
+                            if (nodeRightValue - nodeLeftValue > 1) {
 							    pnodes.push(preNode)
                             }
                             break
@@ -119,8 +118,9 @@ export class FlexTree<
                 }
             }
             this._status = 'loaded'
-        } catch {
+        } catch(e) {
             this._status = 'error'
+            throw e
         }
     }
 

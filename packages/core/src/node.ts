@@ -18,12 +18,14 @@ export class FlexTreeNode<
     private _node: IFlexTreeNode<Fields, KeyFields>
     private _children?: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>[]
     private _parent: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> | undefined
+    private _keyFields
     constructor(node: TreeNode, parent: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> | undefined, tree: FlexTree<Fields, KeyFields, TreeNode, NodeId, TreeId>) {
         this._id = node[tree.manager.keyFields.id]
         this._tree = tree
         this._parent = parent
         this._node = node
-        if (node.rightValue - node.leftValue > 1) {
+        this._keyFields = tree.manager.keyFields
+        if (node[this._keyFields.rightValue] - node[this._keyFields.leftValue] > 1) {
             this._children = []
         }
     }
@@ -31,35 +33,24 @@ export class FlexTreeNode<
     get id(): NodeId {
         return this._id
     }
-
     get name() {
-        return this._node.name
+        return this._node[this._keyFields.name]
     }
-
-    set name(value: string) {
-        this._node.name = value
-    }
-
     get level() {
-        return this._node.level
+        return this._node[this._keyFields.level]
     }
-
     get leftValue() {
-        return this._node.leftValue
+        return this._node[this._keyFields.leftValue]
     }
-
-    get rightalue() {
-        return this._node.rightValue
+    get rightValue() {
+        return this._node[this._keyFields.rightValue]
     }
-
     get treeId() {
-        return this._node.rightValue
+        return this._node[this._keyFields.treeId]
     }
-
     get tree() {
         return this._tree
     }
-
     get data() {
         return this._node as TreeNode
     }
@@ -67,7 +58,6 @@ export class FlexTreeNode<
     get root() {
         return this._tree.root
     }
-
     get parent() {
         return this._parent
     }
@@ -125,10 +115,10 @@ export class FlexTreeNode<
      */
     async update(data: Partial<TreeNode>) {
         const nodeData = filterObject(data, (k) => {
-            return !(k in this._tree.manager.keyFields)
-                || k === this._tree.manager.keyFields.name
+            return !(k in this._keyFields)
+                || k === this._keyFields.name
         })
-        nodeData[this._tree.manager.keyFields.id] = this._id
+        nodeData[this._keyFields.id] = this._id
         await this._tree.manager.write(async () => {
             await this._tree.manager.update(nodeData)
         })
@@ -367,6 +357,6 @@ export class FlexTreeNode<
     }
 
     toString() {
-        return `${this.name}(${this._id})`
+        return `${this.name}(${this.id})`
     }
 }
