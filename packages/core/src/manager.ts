@@ -94,7 +94,7 @@ export class FlexTreeManager<
     private _tableName: string
     private _treeId: any
     private _fields: RequiredDeep<NonUndefined<FlexTreeManagerOptions['fields']>>
-    private _driver: IDatabaseAdapter
+    private _adapter: IDatabaseAdapter
     private _ready: boolean = false // 当driver准备就绪时,ready为true时,才允许执行读写操作
     private _emitter = mitt<FlexTreeEvents>()
     private _lastUpdateAt = 0
@@ -119,8 +119,8 @@ export class FlexTreeManager<
         }
         this._fields = this._options.fields
         this._treeId = this.options.treeId
-        this._driver = this.options.adapter
-        this._driver.bind(this as FlexTreeManager)
+        this._adapter = this.options.adapter
+        this._adapter.bind(this as FlexTreeManager)
     }
 
     get options() {
@@ -135,7 +135,7 @@ export class FlexTreeManager<
         return this._tableName
     }
 
-    get driver() {
+    get adapter() {
         return this._options.adapter!
     }
 
@@ -172,7 +172,7 @@ export class FlexTreeManager<
     }
 
     async ready() {
-        if (this._driver && this._ready) {
+        if (this._adapter && this._ready) {
             return true
         }
         return false
@@ -180,16 +180,16 @@ export class FlexTreeManager<
 
     async assertDriverReady() {
         try {
-            if (!this._driver) {
+            if (!this._adapter) {
                 throw new FlexTreeDriverError()
             }
-            if (!this._driver.ready) {
-                await this._driver.open()
+            if (!this._adapter.ready) {
+                await this._adapter.open()
             }
         } catch (e: any) {
             throw new FlexTreeDriverError(e.message)
         }
-        if (!this._driver.ready) {
+        if (!this._adapter.ready) {
             throw new FlexTreeDriverError()
         }
     }

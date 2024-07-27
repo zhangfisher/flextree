@@ -29,7 +29,7 @@ export async function createMultiTreeTable(driver: SqliteAdapter) {
             rightValue INTEGER,            
             title VARCHAR(60),
             size INTEGER
-            UNIQUE(treeId, leftValue)
+            UNIQUE(treeId, left)
         );
     `])
 }

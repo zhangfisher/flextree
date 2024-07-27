@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
-import type { DemoFlexTreeManager } from '../common'
-import { createDemoTree, createTreeManager, dumpTree, verifyTree } from '../common'
+import type { DemoFlexTreeManager } from '../utils/createTree'
+import { createDemoTree, createTreeManager, dumpTree, verifyTree } from '../utils/createTree'
 
 describe('删除树节点', () => {
     let tree: DemoFlexTreeManager
@@ -10,7 +10,7 @@ describe('删除树节点', () => {
     })
     afterEach(async () => {
         expect(await verifyTree(tree)).toBe(true)
-        await dumpTree(tree.driver.db, 'delete.db')
+        await dumpTree(tree.adapter.db, 'delete.db')
     })
     test('依次删除所有子节点', async () => {
         // 删除A_1
@@ -95,7 +95,7 @@ describe('删除树节点', () => {
         })
         nodes = await tree.getNodes()
         expect(nodes.length).toBe(oldCount - deleteCount)
-        const rows = await tree.driver.getRows('select * from tree where leftValue<0 and rightValue<0')
+        const rows = await tree.adapter.getRows('select * from tree where leftValue<0 and rightValue<0')
         expect(rows.length).toBe(deleteCount)
     })
 })

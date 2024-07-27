@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import type { FlexTreeManager } from 'flextree'
 import { FlexNodeRelPosition, FlexTreeNodeError, NextSibling, PreviousSibling } from 'flextree'
-import type { DemoFlexTreeManager } from '../common'
-import { createTreeManager, dumpTree } from '../common'
+import type { DemoFlexTreeManager } from '../utils/createTree'
+import { createTreeManager, dumpTree } from '../utils/createTree'
 
 describe('添加树节点', () => {
     describe('创建根节点', () => {
@@ -11,7 +11,7 @@ describe('添加树节点', () => {
             tree = await createTreeManager()
         })
         afterEach(async () => {
-            await dumpTree(tree.driver.db, 'create.root.db')
+            await dumpTree(tree.adapter.db, 'create.root.db')
         })
         test('单树表中创建根节点', async () => {
             await tree.write(async () => await tree.createRoot({ name: 'root' }))
@@ -42,7 +42,7 @@ describe('添加树节点', () => {
         })
 
         afterEach(async () => {
-            await dumpTree(tree.driver.db, 'create.lastchild.db')
+            await dumpTree(tree.adapter.db, 'create.lastchild.db')
         })
         test('在根节点下创建最后的子节点', async () => {
             await tree.write(async () => {
@@ -196,7 +196,7 @@ describe('添加树节点', () => {
             await tree.write(async () => await tree.createRoot({ name: 'root' }))
         })
         afterEach(async () => {
-            await dumpTree(tree.driver.db, 'create.firstchild.db')
+            await dumpTree(tree.adapter.db, 'create.firstchild.db')
         })
         test('在根节点依次添加子节点到最前面', async () => {
             await tree.write(async () => {
@@ -337,7 +337,7 @@ describe('添加树节点', () => {
         })
 
         afterEach(async () => {
-            await dumpTree(tree.driver.db, 'create.next.sibling.db')
+            await dumpTree(tree.adapter.db, 'create.next.sibling.db')
         })
         test('一性能添加多个兄弟节点', async () => {
             await tree.write(async () => {
@@ -501,7 +501,7 @@ describe('添加树节点', () => {
             })
         })
         afterEach(async () => {
-            await dumpTree(tree.driver.db, 'create.previous.sibling.db')
+            await dumpTree(tree.adapter.db, 'create.previous.sibling.db')
         })
         test('一性次添加多个节点到X节点前', async () => {
             await tree.write(async () => {

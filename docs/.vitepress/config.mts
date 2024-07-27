@@ -26,7 +26,7 @@ export default defineConfig({
                 text: '指南',
                 items: [
                     { text: '管理器', link: '/guide/manager' },
-                    { text: '访问树', link: '/guide/get' },
+                    { text: '查询树', link: '/guide/query' },
                     { text: '更新树', link: '/guide/update' },
                     { text: '移动树', link: '/guide/move' },
                     { text: '节点关系', link: '/guide/relation' },

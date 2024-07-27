@@ -6,7 +6,7 @@ const prisma = new PrismaClient()
 
 async function main() {
     const tree = new FlexTreeManager('fs', {
-        driver: new PrismaDriver(prisma),
+        adapter: new PrismaDriver(prisma),
     })
     // 所有涉及到修改树的操作需要放在write方法里面执行
     await tree.write(async () => {

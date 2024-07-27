@@ -16,7 +16,7 @@ const tree = new FlexTreeManager("tree",{
 
 创建一个`FlexTreeManager`对象，至少需要传入两个参数：
 
-- `name`：数据库表名称,即树存储在哪一个表中。
+- `tableName`：数据库表名称,即树存储在哪一个表中。
 - `adapter`: 访问数据库的适配器，`FlexTree`提供了`sqlite`、`prisma`等适配器。
 
 
@@ -40,4 +40,6 @@ class FlexTreeManager{
 | `options.treeId` | string | 无 | 可选，当多树表时指定 |
 | `options.adapter` | IDatabaseDriver | 无 | 必须的，访问数据库的适配器 |
 | `options.keyFields` | KeyFields | | 可选的，自定义树节点的关键字段名称 |
+
+
 

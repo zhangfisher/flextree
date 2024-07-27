@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { FlexTreeNodeRelation } from 'flextree'
-import type { DemoFlexTreeManager } from '../common'
-import { createDemoTree, createTreeManager, dumpTree, verifyTree } from '../common'
+import type { DemoFlexTreeManager } from '../utils/createTree'
+import { createDemoTree, createTreeManager, dumpTree, verifyTree } from '../utils/createTree'
 
 describe('查询节点关系', () => {
     let tree: DemoFlexTreeManager
@@ -11,7 +11,7 @@ describe('查询节点关系', () => {
         await verifyTree(tree)
     })
     afterEach(async () => {
-        await dumpTree(tree.driver.db, 'relation.db')
+        await dumpTree(tree.adapter.db, 'relation.db')
     })
     test('返回自己关系', async () => {
         const a1 = await tree.findNode({ name: 'A-1' })

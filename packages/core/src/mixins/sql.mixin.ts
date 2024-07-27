@@ -15,7 +15,7 @@ export class SqlMixin<
      */
     async onExecuteReadSql(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, sql: string): Promise<any> {
         await this.assertDriverReady()
-        return await this.driver.getRows(sql)
+        return await this.adapter.getRows(sql)
     }
 
     /**
@@ -25,17 +25,17 @@ export class SqlMixin<
      */
     async onExecuteSql(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, sqls: string[]): Promise<any> {
         await this.assertDriverReady()
-        return await this.driver.exec(sqls)
+        return await this.adapter.exec(sqls)
     }
 
     async onExecuteWriteSql(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, sqls: string[]): Promise<any> {
         await this.assertDriverReady()
-        return await this.driver.exec(sqls)
+        return await this.adapter.exec(sqls)
     }
 
     async onGetScalar(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, sql: string): Promise<any> {
         await this.assertDriverReady()
-        return await this.driver.getScalar(sql)
+        return await this.adapter.getScalar(sql)
     }
 
     /**
@@ -65,6 +65,6 @@ export class SqlMixin<
     }
 
     protected async getScalar<T = number>(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, sql: string): Promise<T> {
-        return await this.driver.getScalar(sql) as T
+        return await this.adapter.getScalar(sql) as T
     }
 }

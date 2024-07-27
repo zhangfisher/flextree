@@ -22,3 +22,14 @@ model Fs {
   rightValue Int?
   size     Int?  
 }
+
+model Org {
+  id        Int    @id @default(autoincrement())
+  title     String?
+  tree      Int?
+  level     Int?
+  lft       Int?
+  rgt       Int?
+  manager   String?  
+}
+ 

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
-import type { ReturnPromiseType } from '../common'
-import { createDemoTree, createFlexTree, dumpTree } from '../common'
+import type { ReturnPromiseType } from '../utils/createTree'
+import { createDemoTree, createFlexTree, dumpTree } from '../utils/createTree'
 
 describe('访问树节点实例', () => {
     let tree: ReturnPromiseType<typeof createFlexTree>
@@ -10,7 +10,7 @@ describe('访问树节点实例', () => {
         await tree.load()
     })
     afterEach(async () => {
-        await dumpTree(tree.manager.driver.db, 'create.root.db')
+        await dumpTree(tree.manager.adapter.db, 'create.root.db')
     })
 
     test('同步节点数据', async () => {

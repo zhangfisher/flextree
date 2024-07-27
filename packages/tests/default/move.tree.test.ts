@@ -4,8 +4,8 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { FirstChild, LastChild, NextSibling, PreviousSibling } from 'flextree'
 import { FlexTreeNodeInvalidOperationError } from 'flextree'
-import type { DemoFlexTreeManager } from '../common'
-import { createDemoTree, createTreeManager, dumpTree, verifyTree } from '../common'
+import type { DemoFlexTreeManager } from '../utils/createTree'
+import { createDemoTree, createTreeManager, dumpTree, verifyTree } from '../utils/createTree'
 
 describe('移动树节点', () => {
     let tree: DemoFlexTreeManager
@@ -44,7 +44,7 @@ describe('移动树节点', () => {
         c3 = nodes.find(n => n.name === 'C-3')!
     })
     afterEach(async () => {
-        await dumpTree(tree.driver.db, 'move.db')
+        await dumpTree(tree.adapter.db, 'move.db')
     })
 
     describe('判断是否允许移动节点到指定位置', () => {

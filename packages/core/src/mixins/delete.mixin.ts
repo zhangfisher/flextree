@@ -63,7 +63,7 @@ export class DeleteNodeMixin<
         if (typeof (onExecuteBefore) == 'function') {
             if (onExecuteBefore(sqls) === false) { return }
         }
-        return await this.driver.exec(sqls)
+        return await this.adapter.exec(sqls)
     }
 
     /**

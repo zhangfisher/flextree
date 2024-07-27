@@ -12,7 +12,9 @@
         "test": "echo \"Error: no test specified\" && exit 1",
         "db:generate": "prisma generate",
         "db:sync": "prisma db push",
-        "dev": "ts-node --experimentalSpecifierResolution node ./src/index.ts"
+        "dev": "ts-node --experimentalSpecifierResolution node ./src/index.ts",
+        "dev:custom": "ts-node --experimentalSpecifierResolution node ./src/custom.ts"
+
     },
     "dependencies": {
         "@flextree/prisma": "workspace:*",

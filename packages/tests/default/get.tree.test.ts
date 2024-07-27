@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
-import type { DemoFlexTreeManager } from '../common'
-import { createDemoTree, createTreeManager, dumpTree } from '../common'
+import type { DemoFlexTreeManager } from '../utils/createTree'
+import { createDemoTree, createTreeManager, dumpTree } from '../utils/createTree'
 
 describe('访问树', () => {
     let tree: DemoFlexTreeManager
@@ -10,7 +10,7 @@ describe('访问树', () => {
         nodeCount = await createDemoTree(tree)
     })
     afterEach(async () => {
-        await dumpTree(tree.driver.db, 'get.db')
+        await dumpTree(tree.adapter.db, 'get.db')
     })
     test('检查根节点是否存在', async () => {
         expect(await tree.hasRoot()).toBe(true)

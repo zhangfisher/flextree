@@ -112,14 +112,14 @@ await sqliteAdapter.exec(`
 
 接下来，我们创建一个组织架构树管理器`OrgManager`，用于管理组织架构树。
 
-```ts
+```ts {7-9}
 import { FlexTreeManager } from 'flextree';
 import SqliteAdapter from 'flextree-sqlite-adapter';
 
 const sqliteAdapter = new SqliteAdapter("org.db")
 await sqliteAdapter.open()
 
-const orgManager = new FlexTreeManager({
+const orgManager = new FlexTreeManager("org",{
     adapter: sqliteAdapter     
 })
 ```
