@@ -156,7 +156,7 @@ export class FlexTreeNode<
                 continue
             }
             if (entryNode.children) {
-                const index = entryNode.children.findIndex((n: any) => n[byField] === subpath)
+                const index = entryNode.children.findIndex((n: any) => n.data[byField] === subpath)
                 if (index >= 0) {
                     entryNode = entryNode.children[index]
                 } else {

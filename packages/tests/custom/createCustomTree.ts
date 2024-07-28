@@ -162,7 +162,7 @@ export async function createCustomDemoTree(tree: CustomDemoFlexTreeManager, opti
                 await tree.addNodes(nodes, pid)
                 if (lv < level) {
                     for (const node of nodes) {
-                        await createNodes(node.pk, node.name, lv + 1) 
+                        await createNodes(node.pk, node.title, lv + 1) 
                     }
                 }
             }

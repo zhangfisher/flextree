@@ -10,7 +10,7 @@ describe('自定义-添加树节点', () => {
             tree = await createCustomTreeManager()
         })
         afterEach(async () => {
-            await dumpCustomTree(tree.adapter.db, 'create.root.db')
+            await dumpCustomTree(tree.adapter.db, 'add.db')
         })
         test('单树表中创建根节点', async () => {
             await tree.write(async () => await tree.createRoot({ title: 'root' }))

@@ -11,7 +11,8 @@ import type { NonUndefined } from '../types'
 
 export function isLikeNode(node: any, fieldNames: Required<NonUndefined<FlexTreeManagerOptions['fields']>>): boolean {
     if (!isPlainObject(node)) { return false }
-    if (Object.keys(fieldNames).some(key => !(key in node))) { return false }
+    const keys = [ 'id', 'name', 'leftValue', 'rightValue', 'level' ]
+    if (keys.some(key => !((fieldNames as any)[key] in node))) { return false }
     if (!node[fieldNames.id]) { return false }
     if (node[fieldNames.leftValue] <= 0) { return false }
     if (node[fieldNames.rightValue] <= 0) { return false }
