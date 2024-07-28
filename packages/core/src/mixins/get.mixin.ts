@@ -301,7 +301,7 @@ export class GetNodeMixin<
         const relNodeId = escapeSqlString(relNode[this.keyFields.id])
 
         const sql = this._sql(`SELECT Node.* FROM ${this.tableName} Node
-            JOIN ${this.tableName} RelNode ON RelNode.id = ${relNodeId}             
+            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}             
             WHERE {__TREE_ID__}  
                 (
                     Node.${this.keyFields.leftValue} = RelNode.${this.keyFields.rightValue}+1  
@@ -320,7 +320,7 @@ export class GetNodeMixin<
         const relNodeId = escapeSqlString(relNode[this.keyFields.id])
 
         const sql = this._sql(`SELECT Node.* FROM ${this.tableName} Node
-            JOIN ${this.tableName} RelNode ON RelNode.id = ${relNodeId}             
+            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}             
             WHERE {__TREE_ID__}  
                 (
                     Node.${this.keyFields.rightValue} = RelNode.${this.keyFields.leftValue}-1  
