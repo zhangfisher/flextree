@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
-import type { ReturnPromiseType } from '../utils/createTree'
-import { createDemoTree, createFlexTree, dumpTree } from '../utils/createTree'
+import type { ReturnPromiseType } from './createTree'
+import { createDemoTree, createFlexTree, dumpTree } from './createTree'
 
 describe('导出树', () => {
     let tree: ReturnPromiseType<typeof createFlexTree>

@@ -62,16 +62,16 @@ export class IsNodeMixin<
         if (!node[this.keyFields.id]) {
             return false
         }
-        if (!(typeof (node[this.keyFields.leftValue]) == 'number' && node[this.keyFields.leftValue] >= 1)) {
+        if (!(typeof (node[this.keyFields.leftValue]) === 'number' && node[this.keyFields.leftValue] >= 1)) {
             return false
         }
-        if (!(typeof (node[this.keyFields.rightValue]) == 'number' && node[this.keyFields.rightValue] >= 1)) {
+        if (!(typeof (node[this.keyFields.rightValue]) === 'number' && node[this.keyFields.rightValue] >= 1)) {
             return false
         }
         if (node[this.keyFields.leftValue] >= node[this.keyFields.rightValue]) {
             return false
         }
-        if (!(typeof (node.level) == 'number' || node.level >= 0)) {
+        if (!(typeof (node.level) === 'number' || node.level >= 0)) {
             return false
         }
         return true

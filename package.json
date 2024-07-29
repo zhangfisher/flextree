@@ -11,7 +11,7 @@
 		"coverage": "vitest --coverage",
 		"build":"turbo build --filter=!tests",
         "lint": "oxlint -c oxlintrc.json --ignore-path .eslintignore",
-        "lint:fix": "oxlint -c oxlintrc.json --ignore-path .eslintignore --fix",
+        "lint:fix": "oxlint -c oxlintrc.json  --fix --ignore-path .eslintignore",
         "docs:dev": "vitepress dev docs",
         "docs:build": "vitepress build docs",
         "docs:preview": "vitepress preview docs"

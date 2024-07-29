@@ -23,7 +23,7 @@ export class FindNodeMixin<
      */
     async findNode(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, node: NodeId | Partial<TreeNode>): Promise<TreeNode> {
         let nodes: TreeNode[] = []
-        if (typeof (node) == 'object') {
+        if (typeof (node) === 'object') {
             nodes = await this.findNodes(node as Partial<TreeNode>)
         } else {
             nodes = await this.findNodes({ [this.keyFields.id]: node } as Partial<TreeNode>)

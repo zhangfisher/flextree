@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
-import type { DemoFlexTreeManager } from '../utils/createTree'
-import { createDemoTree, createTreeManager, dumpTree } from '../utils/createTree'
+import type { DemoFlexTreeManager } from './createTree'
+import { createDemoTree, createTreeManager, dumpTree } from './createTree'
 
 describe('访问树', () => {
     let tree: DemoFlexTreeManager

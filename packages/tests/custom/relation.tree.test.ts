@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { FlexTreeNodeRelation } from 'flextree'
-import type { DemoFlexTreeManager } from '../utils/createTree'
-import { createDemoTree, createTreeManager, dumpTree, verifyTree } from '../utils/createTree'
+import type { DemoFlexTreeManager } from '../default/createTree'
+import { createDemoTree, createTreeManager, dumpTree, verifyTree } from '../default/createTree'
 
 describe('查询节点关系', () => {
     let tree: DemoFlexTreeManager

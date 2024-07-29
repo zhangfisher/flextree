@@ -5,6 +5,22 @@ import type { FlexTree } from './tree'
 import { FlexTreeInvalidError, FlexTreeNodeNotFoundError, FlexTreeNotFoundError } from './errors'
 import { filterObject } from './utils/filterObject'
 import { getRelNodePath } from './utils/getRelNodePath'
+import { isNull } from './utils/isNull'
+import { createArrayProxy } from './utils/createArrayProxy'
+
+/**
+ * 节点状态
+ * 
+ * 
+ * - not-loaded: 未加载,如果实例化时未加载节点数据，则状态为not-loaded
+ * - loaded:  已加载
+ *     当节点存在子节点时，必须是所有子节点均已加载才表示loaded
+ * 
+ * 
+ * 
+ */
+export type FlexTreeNodeStatus = 'not-loaded' | 'loading' | 'loaded' | 'error'
+
 
 export class FlexTreeNode<
     Fields extends Record<string, any> = object,
@@ -13,40 +29,39 @@ export class FlexTreeNode<
     NodeId = NonUndefined<KeyFields['id']>[1],
     TreeId = NonUndefined<KeyFields['treeId']>[1],
 > {
-    private _id: NodeId
     private _tree: FlexTree<Fields, KeyFields, TreeNode, NodeId, TreeId>
-    private _node: IFlexTreeNode<Fields, KeyFields>
+    private _node: TreeNode | undefined
     private _children?: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>[]
     private _parent: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> | undefined
-    private _keyFields
-    constructor(node: TreeNode, parent: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> | undefined, tree: FlexTree<Fields, KeyFields, TreeNode, NodeId, TreeId>) {
-        this._id = node[tree.manager.keyFields.id]
+    private _keyFields 
+    private _status:FlexTreeNodeStatus= 'not-loaded'
+    constructor(node: TreeNode | undefined, parent: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> | undefined, tree: FlexTree<Fields, KeyFields, TreeNode, NodeId, TreeId>) {
         this._tree = tree
         this._parent = parent
-        this._node = node
         this._keyFields = tree.manager.keyFields
-        if (node[this._keyFields.rightValue] - node[this._keyFields.leftValue] > 1) {
-            this._children = []
-        }
+        this.updateSelf(node)    
     }
 
+    get status(){
+        return this._status
+    }
     get id(): NodeId {
-        return this._id
+        return  this._node?.[this._keyFields.id]
     }
     get name() {
-        return this._node[this._keyFields.name]
+        return this._node?.[this._keyFields.name]
     }
     get level() {
-        return this._node[this._keyFields.level]
+        return this._node?.[this._keyFields.level]
     }
     get leftValue() {
-        return this._node[this._keyFields.leftValue]
+        return this._node?.[this._keyFields.leftValue]
     }
     get rightValue() {
-        return this._node[this._keyFields.rightValue]
+        return this._node?.[this._keyFields.rightValue]
     }
     get treeId() {
-        return this._node[this._keyFields.treeId]
+        return this._node?.[this._keyFields.treeId]
     }
     get tree() {
         return this._tree
@@ -94,12 +109,28 @@ export class FlexTreeNode<
     }
 
     /**
-     * 从数据库中同步数据
+     * 当所有子节点加载完成时，更新节点状态
+     * 
+     *  最后一个节点的rightValue等于其父节点的rightValue - 1
+     * 
+     * @param index 
+     * @param node 
+     */
+    private onAddChildren(index:number,node:FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>){
+        if(this._status === 'loading'){            
+            if(node.rightValue + 1  === this.rightValue ){
+                this._status = 'loaded'
+            }            
+        }
+    }
+    /**
+     * 从数据库中同步节点数据
+     * 
      */
     async sync(includeDescendants: boolean = false) {
-        const node = await this._tree.manager.getNode(this._id)
+        const node = await this._tree.manager.getNode(this.id)
         if (!node) {
-            throw new FlexTreeNodeNotFoundError(`Node ${this._id} not found`)
+            throw new FlexTreeNodeNotFoundError(`Node ${this.id} not found`)
         }
         this._node = node
         if (this._children && includeDescendants) {
@@ -118,11 +149,11 @@ export class FlexTreeNode<
             return !(k in this._keyFields)
                 || k === this._keyFields.name
         })
-        nodeData[this._keyFields.id] = this._id
+        nodeData[this._keyFields.id] = this.id
         await this._tree.manager.write(async () => {
             await this._tree.manager.update(nodeData)
         })
-        Object.assign(this._node, nodeData)
+        if(this._node) Object.assign(this._node, nodeData)
     }
 
     /**
@@ -212,58 +243,88 @@ export class FlexTreeNode<
         return nodes
     }
 
+    private updateSelf(node:TreeNode | undefined){        
+        if(isNull(this._node)){
+            this._node = node
+        }else{            
+            Object.assign(this._node!, node) // 更新节点数据
+        }
+        const leftValue = this._node![this._keyFields.leftValue]
+        const rightValue = this._node![this._keyFields.rightValue]    
+        if (rightValue - leftValue > 1) { // 有子节点
+            this._children = [] 
+        }else if(rightValue - leftValue === 1){ 
+            this._status = 'loaded'
+        }
+    }
+    
     /**
      *  加载节点及子节点并创建节点实例
      */
     async load() {
-        const nodes = (await this.tree.manager.getDescendants(this._id, { includeSelf: true })) as unknown as TreeNode[]
-        if (!nodes || nodes.length === 0) {
-            throw new FlexTreeNotFoundError()
+        if(this._status === 'loading'){
+            throw new FlexTreeInvalidError(`Node ${this.id} is loading`)
         }
-        Object.assign(this._node, nodes[0]) // 更新节点数据
-
-        const pnodes: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>[] = [this]
-        let preNode: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> = this as any
-
-        for (const node of nodes) {
-            if (node.id === this._id) {
-                continue
+        try{
+            // 1. 加载所有后代节点
+            const nodes = (await this.tree.manager.getDescendants(this.id, { 
+                includeSelf: true,
+                level: this._tree.options.lazyLoad ? 1 : 0,   // 当懒加载时，只加载一级节点
+            })) as unknown as TreeNode[]
+            if (!nodes || nodes.length === 0) {
+                throw new FlexTreeNotFoundError()
             }
-            if (node.level === preNode.level) {
-                const parent = pnodes[pnodes.length - 1]
-                const nodeObj = new FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>(node, parent, this as any)
-                parent.children!.push(nodeObj)
-                preNode = nodeObj
-            } else if (node.level > preNode.level) {
-                if (node.level === preNode.level + 1) {
-                    const nodeObj = new FlexTreeNode(node, preNode, this as any)
-                    preNode.children!.push(nodeObj)
-                    preNode = nodeObj
-                    if (node.rightValue - node.leftValue > 1) {
-					    pnodes.push(preNode)
-                    }
-                } else {
-                    throw new FlexTreeInvalidError(`Invalid tree structure`)
+            // 2. 加载自身节点数据
+            this.updateSelf(nodes[0])    
+
+            const pnodes: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>[] = [this]
+            let preNode: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> = this as any
+            // 3. 加载所有后代节点 ，懒加载时只会加载子节点
+            for (const node of nodes) {
+                if (node[this._keyFields.id] === this.id) {
+                    continue
                 }
-            } else if (node.level < preNode.level) {
-                while (true) {
+                if (node.level === preNode.level) {
                     const parent = pnodes[pnodes.length - 1]
-                    if (parent && node.level === parent.level + 1) {
-                        const nodeObj = new FlexTreeNode(node, parent, this as any)
-                        parent.children!.push(nodeObj)
+                    const nodeObj = new FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>(node, parent, this._tree)
+                    parent.children!.push(nodeObj)
+                    preNode = nodeObj
+                } else if (node.level > preNode.level) {
+                    if (node.level === preNode.level + 1) {
+                        const nodeObj = new FlexTreeNode(node, preNode, this._tree)
+                        preNode.children!.push(nodeObj)
                         preNode = nodeObj
                         if (node.rightValue - node.leftValue > 1) {
-						    pnodes.push(preNode)
+                            pnodes.push(preNode)
                         }
-                        break
-                    } else if (pnodes.length === 0) {
-                        break
                     } else {
-                        pnodes.pop()
+                        throw new FlexTreeInvalidError(`Invalid tree structure`)
+                    }
+                } else if (node.level < preNode.level) {
+                    while (true) {
+                        const parent = pnodes[pnodes.length - 1]
+                        if (parent && node.level === parent.level + 1) {
+                            const nodeObj = new FlexTreeNode(node, parent, this._tree)
+                            parent.children!.push(nodeObj)
+                            preNode = nodeObj
+                            if (node.rightValue - node.leftValue > 1) {
+                                pnodes.push(preNode)
+                            }
+                            break
+                        } else if (pnodes.length === 0) {
+                            break
+                        } else {
+                            pnodes.pop()
+                        }
                     }
                 }
             }
+            this._status = 'loaded'
+        }catch(e:any){
+            this._status = 'error'
+            throw e
         }
+        
     }
 
     private toNodeData(data: any, fields: string[], includeKeyFields: boolean = false) {
@@ -275,10 +336,10 @@ export class FlexTreeNode<
                 result = Object.assign({}, data)
             } else {
                 result = Object.assign({}, omit(data, [
-                    this._tree.manager.keyFields.leftValue,
-                    this._tree.manager.keyFields.rightValue,
-                    this._tree.manager.keyFields.level,
-                    this._tree.manager.keyFields.treeId,
+                    this._keyFields.leftValue,
+                    this._keyFields.rightValue,
+                    this._keyFields.level,
+                    this._keyFields.treeId,                    
                 ], true))
             }
         }
@@ -289,10 +350,6 @@ export class FlexTreeNode<
 
     /**
      * 导出当前节点及其后代节点
-     *
-     *
-     *
-     *
      */
     toJson(options?: FlexTreeExportJsonOptions<Fields, KeyFields>): FlexTreeExportJsonFormat<Fields, KeyFields> {
         const opts = Object.assign({

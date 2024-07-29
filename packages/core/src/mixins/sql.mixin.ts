@@ -47,7 +47,7 @@ export class SqlMixin<
     protected _sql(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, sql: string) {
         // 在一表多树时,需要增加额外的树判定
         if (this.treeId) {
-            const treeId = typeof (this.treeId) == 'string' ? `'${this.treeId}'` : this.treeId
+            const treeId = typeof (this.treeId) === 'string' ? `'${this.treeId}'` : this.treeId
             sql = sql.params({ __TREE_ID__: `${this.keyFields.treeId}=${treeId} AND ` })
         } else {
             sql = sql.params({ __TREE_ID__: '' })

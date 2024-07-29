@@ -4,8 +4,8 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { FirstChild, LastChild, NextSibling, PreviousSibling } from 'flextree'
 import { FlexTreeNodeInvalidOperationError } from 'flextree'
-import type { DemoFlexTreeManager } from '../utils/createTree'
-import { createDemoTree, createTreeManager, dumpTree, verifyTree } from '../utils/createTree'
+import type { DemoFlexTreeManager } from './createTree'
+import { createDemoTree, createTreeManager, dumpTree, verifyTree } from './createTree'
 
 describe('移动树节点', () => {
     let tree: DemoFlexTreeManager

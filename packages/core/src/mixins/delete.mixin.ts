@@ -60,7 +60,7 @@ export class DeleteNodeMixin<
                 ${this.keyFields.rightValue}>${rightValue}
             `),
         )
-        if (typeof (onExecuteBefore) == 'function') {
+        if (typeof (onExecuteBefore) === 'function') {
             if (onExecuteBefore(sqls) === false) { return }
         }
         return await this.adapter.exec(sqls)

@@ -4,7 +4,7 @@ layout: home
 
 hero:
   name: "FlexTree"
-  text: "树数据库存储库"
+  text: "面向数据库的树存储组件"
   tagline: 基于左右值算法
   actions:
     - theme: brand

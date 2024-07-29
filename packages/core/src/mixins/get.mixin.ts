@@ -4,6 +4,7 @@ import { FlexTreeError, FlexTreeNodeNotFoundError, FlexTreeNotExists } from '../
 import { escapeSqlString } from '../utils/escapeSqlString'
 import { isLikeNode } from '../utils/isLikeNode'
 import { isValidNode } from '../utils/isValidNode'
+import { isNull } from '../utils/isNull'
 
 export class GetNodeMixin<
     Fields extends Record<string, any> = object,
@@ -24,7 +25,7 @@ export class GetNodeMixin<
     async getNodeData(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, param: any) {
         let node: TreeNode
         // 如果输入的是节点对象已经包含了节点信息，可以直接使用
-        if (param == null) { // 未指定目标节点，则添加到根节点
+        if (isNull(param)) { // 未指定目标节点，则添加到根节点
             node = await this.getRoot() as TreeNode
             if (!node) { throw new FlexTreeNotExists() }
         } else if (isLikeNode(param, this.keyFields)) {
@@ -96,14 +97,18 @@ export class GetNodeMixin<
     }
 
     /**
+     * 
      * 获取指定节点的所有后代
      *
-     * @param nodeId                              节点ID或节点数据对象
+     * @param nodeId                              节点ID或节点数据对象,如果nodeId=undefined,则返回所有节点,相当于getNodes()
      * @param {object} options                    选项
      * @param {number}  [options.level]           限制返回的级别
      * @param {boolean} [options.includeSelf]     返回结果是否包括自身
      */
-    async getDescendants(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, nodeId: NodeId | TreeNode, options?: { level?: number, includeSelf?: boolean }): Promise<IFlexTreeNode<Fields, KeyFields>[]> {
+    async getDescendants(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, nodeId?: NodeId | TreeNode, options?: { level?: number, includeSelf?: boolean }): Promise<IFlexTreeNode<Fields, KeyFields>[]> {
+        if(isNull(nodeId)) {
+            return await this.getNodes(options)
+        }
         const { level, includeSelf } = Object.assign({ includeSelf: false, level: 0 }, options)
         const relNode = await this.getNodeData(nodeId)
         const relNodeId = escapeSqlString(relNode[this.keyFields.id])
