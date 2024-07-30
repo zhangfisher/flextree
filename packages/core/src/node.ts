@@ -244,20 +244,18 @@ export class FlexTreeNode<
     }
 
     private updateSelf(node:TreeNode | undefined){        
-        if(isNull(this._node)){
-            this._node = node
-        }else{            
-            Object.assign(this._node!, node) // 更新节点数据
-        }
-        const leftValue = this._node![this._keyFields.leftValue]
-        const rightValue = this._node![this._keyFields.rightValue]    
-        if (rightValue - leftValue > 1) { // 有子节点
-            this._children = [] 
-        }else if(rightValue - leftValue === 1){ 
-            this._status = 'loaded'
-        }
+        if(!isNull(node)){ 
+            this._node = Object.assign({},this._node!, node) // 更新节点数据
+            const leftValue = this._node![this._keyFields.leftValue]
+            const rightValue = this._node![this._keyFields.rightValue]    
+            if (rightValue - leftValue > 1) { // 有子节点
+                this._children = [] 
+            }else if(rightValue - leftValue === 1){ 
+                this._status = 'loaded'
+            }
+        }    
     }
-    
+
     /**
      *  加载节点及子节点并创建节点实例
      */
@@ -266,17 +264,18 @@ export class FlexTreeNode<
             throw new FlexTreeInvalidError(`Node ${this.id} is loading`)
         }
         try{
+            const maxLevel = this._tree.options.lazy ? 1 : 0    // 当懒加载时，只加载一级节点
             // 1. 加载所有后代节点
             const nodes = (await this.tree.manager.getDescendants(this.id, { 
                 includeSelf: true,
-                level: this._tree.options.lazyLoad ? 1 : 0,   // 当懒加载时，只加载一级节点
+                level: maxLevel,   // 当懒加载时，只加载一级节点
             })) as unknown as TreeNode[]
             if (!nodes || nodes.length === 0) {
                 throw new FlexTreeNotFoundError()
             }
             // 2. 加载自身节点数据
             this.updateSelf(nodes[0])    
-
+            
             const pnodes: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>[] = [this]
             let preNode: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> = this as any
             // 3. 加载所有后代节点 ，懒加载时只会加载子节点
@@ -284,30 +283,34 @@ export class FlexTreeNode<
                 if (node[this._keyFields.id] === this.id) {
                     continue
                 }
-                if (node.level === preNode.level) {
+                const nodeLevel = node[this._keyFields.level]
+                const nodeLeftValue = node[this._keyFields.leftValue]
+                const nodeRightValue = node[this._keyFields.rightValue]
+
+                if (nodeLevel === preNode.level) {
                     const parent = pnodes[pnodes.length - 1]
                     const nodeObj = new FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>(node, parent, this._tree)
                     parent.children!.push(nodeObj)
                     preNode = nodeObj
-                } else if (node.level > preNode.level) {
-                    if (node.level === preNode.level + 1) {
+                } else if (nodeLevel > preNode.level) {
+                    if (nodeLevel === preNode.level + 1) {
                         const nodeObj = new FlexTreeNode(node, preNode, this._tree)
                         preNode.children!.push(nodeObj)
                         preNode = nodeObj
-                        if (node.rightValue - node.leftValue > 1) {
+                        if (nodeRightValue - nodeLeftValue  > 1 && (maxLevel==0 || (maxLevel>0 && nodeLevel < maxLevel)) ) {
                             pnodes.push(preNode)
                         }
                     } else {
                         throw new FlexTreeInvalidError(`Invalid tree structure`)
                     }
-                } else if (node.level < preNode.level) {
+                } else if (nodeLevel < preNode.level) {
                     while (true) {
                         const parent = pnodes[pnodes.length - 1]
-                        if (parent && node.level === parent.level + 1) {
+                        if (parent && nodeLevel === parent.level + 1) {
                             const nodeObj = new FlexTreeNode(node, parent, this._tree)
                             parent.children!.push(nodeObj)
                             preNode = nodeObj
-                            if (node.rightValue - node.leftValue > 1) {
+                            if (nodeRightValue - nodeLeftValue > 1 && (maxLevel==0 || (maxLevel>0 && nodeLevel< maxLevel)) ) {
                                 pnodes.push(preNode)
                             }
                             break
@@ -414,6 +417,6 @@ export class FlexTreeNode<
     }
 
     toString() {
-        return `${this.name}(${this.id})`
+        return `${this.name}<${this.id}>`
     }
 }

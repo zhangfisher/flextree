@@ -17,7 +17,7 @@
 
     },
     "dependencies": {
-        "@flextree/prisma": "workspace:*",
+        "flextree-prisma-adapter": "workspace:*",
         "@prisma/client": "5.17.0",
         "flextree": "workspace:*",
         "prisma": "^5.17.0"

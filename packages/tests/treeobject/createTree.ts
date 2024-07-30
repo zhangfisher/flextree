@@ -1,9 +1,9 @@
 import path from 'node:path'
 import fs from "node:fs"
 import Database from 'better-sqlite3'
-import type { IFlexTreeNode } from 'flextree'
+import type { FlexTreeOptions, IFlexTreeNode } from 'flextree'
 import { FlexTreeManager,FlexTree, FlexTreeVerifyError } from 'flextree'
-import SqliteAdapter from '@flextree/sqlite' 
+import SqliteAdapter from 'flextree-sqlite-adapter' 
 
 export async function createTreeTable(driver: SqliteAdapter) {
     await driver.exec([`
@@ -65,7 +65,7 @@ export type DemoFlexTree = FlexTree<{
     size: number
 }>
 
-export async function createFlexTree(treeId?: any) {
+export async function createFlexTree(treeId?: any, options?:Partial<FlexTreeOptions>) {
     const sqliteDriver = new SqliteAdapter()
     await sqliteDriver.open()
     if (treeId) {
@@ -77,10 +77,10 @@ export async function createFlexTree(treeId?: any) {
     const tree = new FlexTree<{
         title: string
         size: number
-    }>('tree', {
+    }>('tree', Object.assign({
 	    treeId,
 	    adapter: sqliteDriver,
-    })
+    },options))
     return tree
 }
 /**

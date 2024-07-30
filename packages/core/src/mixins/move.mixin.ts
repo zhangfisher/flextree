@@ -293,6 +293,9 @@ export class MoveNodeMixin<
 
     /**
      * 节点上移
+     * 
+     * 当移动的节点没有前一个兄弟节点时，将节点移动到父节点的下一个兄弟节点
+     * 
      * @param node
      */
     async moveUpNode(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, node: NodeId | TreeNode) {
@@ -302,10 +305,10 @@ export class MoveNodeMixin<
         if (preNode) {
             await this.moveNode(srcNode.id, preNode.id, FlexNodeRelPosition.PreviousSibling)
         } else {
-            preNode = await this.getParent(srcNode.id)
-            if (preNode) {
+            const parentNode = await this.getParent(srcNode.id)
+            if (parentNode) {
                 try {
-                    await this.moveNode(srcNode.id, preNode.id, FlexNodeRelPosition.NextSibling)
+                    await this.moveNode(srcNode.id, parentNode.id, FlexNodeRelPosition.PreviousSibling)
                 } catch {
                     throw new FlexTreeNodeInvalidOperationError()
                 }
@@ -328,10 +331,10 @@ export class MoveNodeMixin<
         if (nextNode) {
             await this.moveNode(srcNode.id, nextNode.id, FlexNodeRelPosition.NextSibling)
         } else {
-            nextNode = await this.getParent(srcNode.id)
-            if (nextNode) {
+            const parentNode = await this.getParent(srcNode.id)
+            if (parentNode) {
                 try {
-                    await this.moveNode(srcNode.id, nextNode.id, FlexNodeRelPosition.NextSibling)
+                    await this.moveNode(srcNode.id, parentNode.id, FlexNodeRelPosition.NextSibling)
                 } catch {
                     throw new FlexTreeNodeInvalidOperationError()
                 }

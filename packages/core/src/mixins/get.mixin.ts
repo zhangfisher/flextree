@@ -79,7 +79,7 @@ export class GetNodeMixin<
      * @param this
      * @param node
      */
-    async getChild(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, node: NodeId | TreeNode, index: number = 1): Promise<TreeNode | undefined> {
+    async getNthChild(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, node: NodeId | TreeNode, index: number = 1): Promise<TreeNode | undefined> {
         const relNodeId = escapeSqlString(isLikeNode(node, this.keyFields) ? (node as any)[this.keyFields.id] : node)
         const sql = this._sql(`SELECT Node.* FROM ${this.tableName}  Node
             JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}

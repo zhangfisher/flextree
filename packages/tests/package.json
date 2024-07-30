@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@flextree/sqlite": "workspace:*",
+    "flextree-sqlite-adapter": "workspace:*",
     "better-sqlite3": "^11.1.2",
     "flextree": "workspace:*"
   },

@@ -18,6 +18,9 @@ importers:
       '@rsbuild/core':
         specifier: 1.0.1-beta.5
         version: 1.0.1-beta.5
+      '@vitest/coverage-v8':
+        specifier: ^2.0.4
+        version: 2.0.4(vitest@1.6.0(@types/node@20.14.12))
       oxlint:
         specifier: ^0.6.1
         version: 0.6.1
@@ -42,15 +45,15 @@ importers:
 
   examples/prisma:
     dependencies:
-      '@flextree/prisma':
-        specifier: workspace:*
-        version: link:../../packages/prisma
       '@prisma/client':
         specifier: 5.17.0
         version: 5.17.0(prisma@5.17.0)
       flextree:
         specifier: workspace:*
         version: link:../../packages/core
+      flextree-prisma-adapter:
+        specifier: workspace:*
+        version: link:../../packages/prisma
       prisma:
         specifier: ^5.17.0
         version: 5.17.0
@@ -150,15 +153,15 @@ importers:
 
   packages/tests:
     dependencies:
-      '@flextree/sqlite':
-        specifier: workspace:*
-        version: link:../sqlite
       better-sqlite3:
         specifier: ^11.1.2
         version: 11.1.2
       flextree:
         specifier: workspace:*
         version: link:../core
+      flextree-sqlite-adapter:
+        specifier: workspace:*
+        version: link:../sqlite
     devDependencies:
       '@types/better-sqlite3':
         specifier: ^7.6.11
@@ -654,21 +657,25 @@ packages:
     resolution: {integrity: sha512-120Qbek2yJz59iIzS0bwoM2717UTd6MRggDBgRw70rN0zdzkAZhORSywuC+EPq8U6ltIqYeMfcl+sGq7ZyhPyg==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@oxlint/linux-arm64-musl@0.6.1':
     resolution: {integrity: sha512-wT0T+YOW8Ng2WGcLnWCylEpHwUDRun2HomTNslRed4RQzTWOisyp6hNB8sS6JZlRGYoCGUePgwBy7GM2P0IQYw==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@oxlint/linux-x64-gnu@0.6.1':
     resolution: {integrity: sha512-4qUcfTDXGOrm3/ohiCG09ZvjpCZImg1yI/IaOo25ij9VXLoaWUYJ6vbxY1GqPQegqZhli7fbFXQ5FP6AwjhBtQ==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@oxlint/linux-x64-musl@0.6.1':
     resolution: {integrity: sha512-v0O46xwi0EW+J3QxIZAU1h+2voIsq+BZc6/mPKzkSlnyYSPECBDFOG6IJF/rf7qzsjvIeFqdYB+sGGCxoxM5mg==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@oxlint/win32-arm64@0.6.1':
     resolution: {integrity: sha512-51NQgkd/XDQzAvFHKanjhFyKoPXvomNBHJnQF3iEYKmAGT2+VOOF9N6ism/FTLn+xGdzLBVU51xwRlmpCXt3kQ==}
@@ -908,21 +915,25 @@ packages:
     resolution: {integrity: sha512-UZC2TScOVWVqICiinGWSYdYPAYcn8F/2L+8sbA6NAwSZo0mzH+LaRr6nZRdW2z7y+lELVDQG8UniMxXjoXjVjg==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@rspack/binding-linux-arm64-musl@1.0.0-alpha.5':
     resolution: {integrity: sha512-uvrqKqNmj60eCze5ZLxod3nFyDBtDz+OeoSO3T5GU9VRv8XKtd4xJbmm4Nz3A14GOWWfGgGr1cYwQBIGBZActA==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@rspack/binding-linux-x64-gnu@1.0.0-alpha.5':
     resolution: {integrity: sha512-7P5EnCsQmbLrYnCXJ1P8NF7/FCOpvOHaoNlReDZnut2HRppsUJXMnH3lQucq/sdS3djZ4RdG3sBMcTA3OEALwg==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@rspack/binding-linux-x64-musl@1.0.0-alpha.5':
     resolution: {integrity: sha512-RGj1cZLURjY8RG+t8qG2OB9ruqKQvM0M+JMhwhel57CYW9Ge9zZY+ReEhrdtYjW32KxVvuqtt2e7RhhKibK75w==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@rspack/binding-win32-arm64-msvc@1.0.0-alpha.5':
     resolution: {integrity: sha512-7u/LLEcDcBS5slSsAS9h23sTJNbJ+TUMy7GR91X7ySkqJ0VIR6tzml7+JqFxdPcBGXSszonGbcUupYy3nVzLCQ==}
@@ -3524,6 +3535,24 @@ snapshots:
     dependencies:
       vite: 5.3.4(@types/node@20.14.12)
       vue: 3.4.33(typescript@5.5.4)
+
+  '@vitest/coverage-v8@2.0.4(vitest@1.6.0(@types/node@20.14.12))':
+    dependencies:
+      '@ampproject/remapping': 2.3.0
+      '@bcoe/v8-coverage': 0.2.3
+      debug: 4.3.5
+      istanbul-lib-coverage: 3.2.2
+      istanbul-lib-report: 3.0.1
+      istanbul-lib-source-maps: 5.0.6
+      istanbul-reports: 3.1.7
+      magic-string: 0.30.10
+      magicast: 0.3.4
+      std-env: 3.7.0
+      test-exclude: 7.0.1
+      tinyrainbow: 1.2.0
+      vitest: 1.6.0(@types/node@20.14.12)
+    transitivePeerDependencies:
+      - supports-color
 
   '@vitest/coverage-v8@2.0.4(vitest@2.0.4(@types/node@20.14.12)(@vitest/ui@2.0.4))':
     dependencies:

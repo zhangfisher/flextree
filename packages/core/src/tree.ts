@@ -5,7 +5,7 @@ import { FlexTreeNode,type FlexTreeNodeStatus  } from './node'
 import { FlexTreeInvalidError, FlexTreeNotFoundError } from './errors'
 
 export type FlexTreeOptions<TreeIdType = number> = FlexTreeManagerOptions<TreeIdType> & {
-    lazyLoad?: boolean                      // 是否懒加载树
+    lazy?: boolean                      // 是否懒加载树
 }
 export type FlexTreeStatus = FlexTreeNodeStatus
 
@@ -59,103 +59,19 @@ export class FlexTree<
         if(!this._root){
             return 'not-loaded'
         }else{
-            this._root.status
+            return this._root.status
         }
-    }
-    /**
-     * 加载根节点
-     */
-    private async loadRoot(){
-        const nodes = (await this.manager.getNodes()) as unknown as TreeNode[]
-        if (!nodes || nodes.length === 0) {
-        throw new FlexTreeNotFoundError()
-        }
-        this._root = new FlexTreeNode(nodes[0], undefined, this as any)
     }
     /**
      * 加载树到内存中
      */
     async load() {
-        if (this._status === 'loading') {
-            throw new FlexTreeInvalidError(`Tree is loading`)
-        }
-        this._root = new FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>(undefined, undefined, this )
-        
+        this._root = new FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>(undefined, undefined, this )        
         await this._root.load()
-        this._status = 'loaded'
-
-
-        // this._root?.load()
-        // if (this._status === 'loading') {
-        //     throw new FlexTreeInvalidError(`Tree is loading`)
-        // }
-        // this._status = 'loading'
-        // // 加载根节点
-        // try {
-        //     const nodes = (await this.manager.getNodes()) as unknown as TreeNode[]
-        //     if (!nodes || nodes.length === 0) {
-        //         throw new FlexTreeNotFoundError()
-        //     }
-        //     this._root = new FlexTreeNode(nodes[0], undefined, this as any)
-        //     const pnodes: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>[] = [this._root]
-        //     let preNode:FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> = this._root 
-
-        //     const keyFields = this.manager.keyFields
-        //     for (const node of nodes) {
-        //         const nodeLevel = node[keyFields.level]
-        //         const nodeLeftValue = node[keyFields.leftValue]
-        //         const nodeRightValue = node[keyFields.rightValue]                
-
-        //         if (nodeLevel=== 0) {
-        //             continue
-        //         }
-        //         const pNodeLevel = preNode.level
-        //         if (nodeLevel === pNodeLevel) {
-        //             const parent = pnodes[pnodes.length - 1]
-        //             const nodeObj = new FlexTreeNode(node, parent, this as any)
-        //             parent.children!.push(nodeObj)
-        //             preNode = nodeObj  
-        //         } else if (nodeLevel > pNodeLevel) {
-        //             if (nodeLevel === pNodeLevel + 1) {
-        //                 const nodeObj = new FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>(node, preNode, this as any)
-        //                 preNode.children!.push(nodeObj)
-        //                 preNode = nodeObj
-        //                 if (nodeRightValue - nodeLeftValue > 1) {
-		// 				    pnodes.push(preNode)
-        //                 }
-        //             } else {
-        //                 throw new FlexTreeInvalidError(`Invalid tree structure`)
-        //             }
-        //         } else if (nodeLevel < pNodeLevel) {
-        //             while (true) {
-        //                 const parent = pnodes[pnodes.length - 1]
-        //                 if (parent && nodeLevel === parent.level + 1) {
-        //                     const nodeObj = new FlexTreeNode(node, parent, this as any)
-        //                     parent.children!.push(nodeObj)
-        //                     preNode = nodeObj
-        //                     if (nodeRightValue - nodeLeftValue > 1) {
-		// 					    pnodes.push(preNode)
-        //                     }
-        //                     break
-        //                 } else if (pnodes.length === 0) {
-        //                     break
-        //                 } else {
-        //                     pnodes.pop()
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     this._status = 'loaded'
-        // } catch(e) {
-        //     this._status = 'error'
-        //     throw e
-        // }
     }
-
     getByPath(path: string, options?: { byField?: string, delimiter?: string }): FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> | undefined {
         return this.root?.getByPath(path, options)
     }
-
     async update(path: string, data: Partial<TreeNode>) {
         const node = this.getByPath(path)
         if (!node) {
@@ -163,23 +79,6 @@ export class FlexTree<
         }
         await node.update(data)
     }
-
-    /**
-     * 删除指定的节点
-     */
-    async delete(nodeId: NodeId | ((node: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>) => boolean)) {
-        if (typeof nodeId === 'function') {
-            const nodes = this.find(node => (nodeId as any)(node)).map(node => node.id)
-            await this.manager.write(async () => {
-                for (const id of nodes) {
-                    await this.manager.deleteNode(id)
-                }
-            })
-        } else {
-            await this.manager.deleteNode(nodeId)
-        }
-    }
-
     /**
      * 根据节点id获取节点实例
      */

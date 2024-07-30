@@ -41,5 +41,71 @@ class FlexTreeManager{
 | `options.adapter` | IDatabaseDriver | 无 | 必须的，访问数据库的适配器 |
 | `options.keyFields` | KeyFields | | 可选的，自定义树节点的关键字段名称 |
 
+## 泛型参数
 
+
+`FlexTreeManager`支持两个泛型参数：
+
+```ts
+export class FlexTreeManager<
+    Fields extends Record<string, any> = object,
+    KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields
+>
+```
+
+- `Fields`
+
+默认情况下，树具有`id`,`name`、`leftValue`、`rightValue`、`treeId`等关键字段，因此您通过`treeManager`对象实例操作树时，可以直接使用这些字段,并具有类型提示。
+
+但是在实际应用场景中，我们的每个树节点除了这些关键字段外，还会声明其他字段，可以通过`Fields`泛型参数来指定，以便可以获取到对应的类型提示。
+
+
+```ts {4-6,12-14}
+import { FlexTreeManager } from "felxtree"
+
+const tree = new FlexTreeManager<{
+    size:number,
+    color:string
+    icon:string
+}>("tree",{ ...})
+
+const node = await tree.getNode(1)
+
+// node具有类型提示
+node.size // number
+node.color // string
+node.icon // string
+
+
+```
+
+- `KeyFields`
+
+默认情况下，树具有`id`,`name`、`leftValue`、`rightValue`、`treeId`等关键字段，如果您需要自定义这些关键字段名称，可以通过`KeyFields`泛型参数来指定。
+
+```ts  
+    const tree = new FlexTreeManager<{ 
+        size: number
+    },
+    {
+        id:['pk',number],
+        treeId:['tree',number],
+        name:"title",
+        leftValue:'lft',
+        rightValue:'rgt'
+    }>('org', {
+        adapter: new PrismaAdapter(prisma),
+        fields:{
+            id:'pk',
+            treeId:'tree',
+            name:'title',
+            leftValue:'lft',
+            rightValue:"rgt"
+        }
+    })
+```
+
+- 可以只指定部分关键字段名称，未指定的字段名称将使用默认值。
+- `KeyFields`泛型参数的类型为`CustomTreeKeyFields`，默认值为`DefaultTreeKeyFields`。
+ 
 

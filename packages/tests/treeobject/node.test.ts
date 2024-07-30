@@ -13,8 +13,7 @@ describe('访问树节点实例', () => {
         await dumpTree(tree.manager.adapter.db, 'create.root.db')
     })
 
-    test('同步节点数据', async () => {
-        await tree.load()
+    test('同步节点数据', async () => { 
         const root = tree.root!
         expect(root.name).toBe('root')
         await tree.manager.write(async () => {

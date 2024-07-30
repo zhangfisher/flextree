@@ -705,7 +705,7 @@ describe('移动树节点', () => {
             expect(f54.leftValue).toBe(f55.leftValue + 2)
             expect(await verifyTree(tree)).toBe(true)
         })
-        test('向上移动一个节点直到变成其父节点的下一个兄弟节点', async () => {
+        test('向上移动一个节点直到变成其父节点的上一个兄弟节点', async () => {
             let f55 = await tree.findNode({ name: 'F-5-5' })
             await tree.write(async () => {
                 await tree.moveUpNode(f55.id) // 4
@@ -724,7 +724,7 @@ describe('移动树节点', () => {
             expect(fChildren[3].name).toBe('F-5-4')
 
             expect(f55.level).toBe(f5.level)
-            expect(f55.leftValue).toBe(f5.rightValue + 1)
+            expect(f55.rightValue+1).toBe(f5.leftValue)
             expect(await verifyTree(tree)).toBe(true)
         })
         test('f-5-5连续向上移动直至根节点', async () => {

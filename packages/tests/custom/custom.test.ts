@@ -4,7 +4,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { CustomDemoFlexTreeManager, createCustomDemoTree, createCustomFlexTree, createCustomTreeManager, dumpCustomTree } from "../utils/createCustomTree";
+import { CustomDemoFlexTreeManager, createCustomDemoTree, createCustomFlexTree, createCustomTreeManager, dumpCustomTree } from "./createCustomTree";
 
 
 describe("自定义关键字段名称",async ()=>{

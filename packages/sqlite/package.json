@@ -1,5 +1,5 @@
 {
-    "name": "flextree-sqlite-driver",
+    "name": "flextree-sqlite-adapter",
     "type": "module",
     "version": "1.0.0",
     "description": "sqlite driver for flextree",

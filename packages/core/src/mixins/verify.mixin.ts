@@ -26,14 +26,14 @@ export class VerifyTreeMixin<
                         throw new FlexTreeVerifyError(`level error ${node[this.keyFields.name]}(${node[this.keyFields.id]})`)
                     } else if (!(node[this.keyFields.leftValue] > pnode[this.keyFields.leftValue])) {
                         throw new FlexTreeVerifyError(`leftValue error ${node[this.keyFields.name]}(${node[this.keyFields.id]})`)
-                    } else if (!(node[this.keyFields.rightValue]< pnode[this.keyFields.leftValue])) {
+                    } else if (!(node[this.keyFields.rightValue]< pnode[this.keyFields.rightValue])) {
                         throw new FlexTreeVerifyError(`rightValue error ${node[this.keyFields.name]}(${node[this.keyFields.id]})`)
                     }
                     // 子节点结束
-                    if (node[this.keyFields.rightValue]+ 1 === pnode[this.keyFields.leftValue]) {
+                    if (node[this.keyFields.rightValue]+ 1 === pnode[this.keyFields.rightValue]) {
                         let preNode = pnodes.pop()
                         if (pnodes.length > 0) {
-                            while (preNode![this.keyFields.rightValue] + 1 === pnodes[pnodes.length - 1]?.[this.keyFields.leftValue]) {
+                            while (preNode![this.keyFields.rightValue] + 1 === pnodes[pnodes.length - 1]?.[this.keyFields.rightValue]) {
                                 preNode = pnodes.pop()
                                 if (pnodes.length === 0) {
                                     break

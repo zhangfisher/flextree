@@ -24,7 +24,6 @@ export class UpdateNodeMixin<
      * @param node
      */
     async update(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, node: Partial<TreeNode> | Partial<TreeNode>[]) {
-        this._assertWriteable()
         const nodes = Array.isArray(node) ? node : [node]
         const sqls: string[] = nodes.map((node) => {
             const id = escapeSqlString(node[this.keyFields.id])

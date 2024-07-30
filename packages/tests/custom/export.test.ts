@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import type { ReturnPromiseType } from '../default/createTree'
-import { createDemoTree, createFlexTree, dumpTree } from '../default/createTree'
 import { createCustomDemoTree, createCustomFlexTree, dumpCustomTree } from './createCustomTree'
 
 describe('自定义关键字段-导出树', () => {
