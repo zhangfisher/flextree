@@ -11,12 +11,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "flextree-sqlite-adapter": "workspace:*",
     "better-sqlite3": "^11.1.2",
-    "flextree": "workspace:*"
+    "flextree": "workspace:*",
+    "flextree-sqlite-adapter": "workspace:*"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",
+    "@vitest/coverage-v8": "^2.0.4",
     "vitest": "^2.0.4"
   }
 }

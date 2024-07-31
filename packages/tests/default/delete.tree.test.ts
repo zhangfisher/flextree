@@ -10,7 +10,7 @@ describe('删除树节点', () => {
     })
     afterEach(async () => {
         expect(await verifyTree(tree)).toBe(true)
-        await dumpTree(tree.adapter.db, 'delete.db')
+        //await dumpTree(tree.adapter.db, 'delete.db')
     })
     test('依次删除所有子节点', async () => {
         // 删除A_1

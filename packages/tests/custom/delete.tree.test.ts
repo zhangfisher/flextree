@@ -8,7 +8,7 @@ describe('自定义关键字段-删除树节点', () => {
         await createCustomDemoTree(tree, { level: 2 })
     })
     afterEach(async () => {
-        await dumpCustomTree(tree.adapter.db, 'delete.db')
+       // await dumpCustomTree(tree.adapter.db, 'delete.db')
     })
     test('自定义关键字段-依次删除所有子节点', async () => {
         // 删除A_1

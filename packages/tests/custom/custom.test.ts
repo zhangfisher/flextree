@@ -15,7 +15,7 @@ describe("自定义关键字段名称",async ()=>{
     })
 
     afterEach(async ()=>{
-        await dumpCustomTree(tree.adapter.db)
+        //await dumpCustomTree(tree.adapter.db)
     })
 
     test("使用管理器访问节点",async ()=>{

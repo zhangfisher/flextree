@@ -11,7 +11,7 @@ describe('添加树节点', () => {
             tree = await createTreeManager()
         })
         afterEach(async () => {
-            await dumpTree(tree.adapter.db, 'create.root.db')
+            //await dumpTree(tree.adapter.db, 'create.root.db')
         })
         test('单树表中创建根节点', async () => {
             await tree.write(async () => await tree.createRoot({ name: 'root' }))

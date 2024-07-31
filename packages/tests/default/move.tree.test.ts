@@ -44,7 +44,7 @@ describe('移动树节点', () => {
         c3 = nodes.find(n => n.name === 'C-3')!
     })
     afterEach(async () => {
-        await dumpTree(tree.adapter.db, 'move.db')
+       // await dumpTree(tree.adapter.db, 'move.db')
     })
 
     describe('判断是否允许移动节点到指定位置', () => {

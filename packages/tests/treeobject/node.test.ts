@@ -10,7 +10,7 @@ describe('访问树节点实例', () => {
         await tree.load()
     })
     afterEach(async () => {
-        await dumpTree(tree.manager.adapter.db, 'create.root.db')
+      //  await dumpTree(tree.manager.adapter.db, 'create.root.db')
     })
 
     test('同步节点数据', async () => { 
@@ -69,9 +69,8 @@ describe('访问树节点实例', () => {
 
     test('在节点后代中根据id获取节点实例', async () => {
         const a = tree.find(node => node.name === 'A')[0]
-        const a11 = tree.find(node => node.name === 'A-1-1')[0]
-        expect(a.get(a11.id)).toBe(undefined)
-        expect(a.get(a11.id, true)).toBe(a11)
+        const a11 = tree.find(node => node.name === 'A-1-1')[0] 
+        expect(a.get(a11.id)).toBe(a11)
     })
 
     test('访问节点的兄弟节点', async () => {

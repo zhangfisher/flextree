@@ -9,7 +9,7 @@ describe('访问树对象实例', () => {
         await createDemoTree(tree.manager)
     })
     afterEach(async () => {
-        await dumpTree(tree.manager.adapter.db, 'create.root.db')
+        //await dumpTree(tree.manager.adapter.db, 'create.root.db')
     })
 
     test('加载树到树对象实例中', async () => {

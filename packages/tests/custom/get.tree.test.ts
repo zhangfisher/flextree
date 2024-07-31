@@ -9,7 +9,7 @@ describe('自定义关键字段-访问树', () => {
         nodeCount = await createCustomDemoTree(tree)
     })
     afterEach(async () => {
-        await dumpCustomTree(tree.adapter.db, 'get.db')
+        //await dumpCustomTree(tree.adapter.db, 'get.db')
     })
     test('自定义关键字段-检查根节点是否存在', async () => {
         expect(await tree.hasRoot()).toBe(true)

@@ -14,7 +14,7 @@ describe('懒加载访问树对象实例', () => {
         await createDemoTree(tree.manager)        
     })
     afterEach(async () => {
-        await dumpTree(tree.manager.adapter.db, 'lazy.db')
+        //await dumpTree(tree.manager.adapter.db, 'lazy.db')
     })
 
     test('默认加载状态', async () => { 

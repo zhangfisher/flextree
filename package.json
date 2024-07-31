@@ -12,14 +12,16 @@
     },
     "keywords": [],
     "scripts": {
-        "test": "vitest",
-        "coverage": "vitest --ui --coverage",
+        "test": "vitest --pool=threads",
+        "coverage": "vitest --coverage",
         "build": "turbo build --filter=!tests",
         "lint": "oxlint -c oxlintrc.json --ignore-path .eslintignore",
         "lint:fix": "oxlint -c oxlintrc.json  --fix --ignore-path .eslintignore",
         "docs:dev": "vitepress dev docs",
         "docs:build": "vitepress build docs",
-        "docs:preview": "vitepress preview docs"
+        "docs:preview": "vitepress preview docs",
+        "changeset": "changeset",
+        "release": "changeset version && changeset publish"
     },
     "dependencies": {
         "@lite-tree/vue": "^1.1.4"
@@ -34,7 +36,7 @@
         "turbo": "^2.0.9",
         "typescript": "^5.5.4",
         "vitepress": "^1.3.1",
-        "vitest": "^1.6.0"
+        "vitest": "^2.0.4"
     },
     "packageManager": "pnpm@9.1.2",
     "workspaces": [

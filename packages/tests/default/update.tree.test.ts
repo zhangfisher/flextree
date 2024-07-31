@@ -10,7 +10,7 @@ describe('更新节点', () => {
         await verifyTree(tree)
     })
     afterEach(async () => {
-        await dumpTree(tree.adapter.db, 'update.db')
+       // await dumpTree(tree.adapter.db, 'update.db')
     })
     test('更新根节点', async () => {
         let root = await tree.getRoot()

@@ -10,7 +10,7 @@ describe('访问树', () => {
         nodeCount = await createDemoTree(tree)
     })
     afterEach(async () => {
-        await dumpTree(tree.adapter.db, 'get.db')
+        //await dumpTree(tree.adapter.db, 'get.db')
     })
     test('检查根节点是否存在', async () => {
         expect(await tree.hasRoot()).toBe(true)

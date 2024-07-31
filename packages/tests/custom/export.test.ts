@@ -10,7 +10,7 @@ describe('自定义关键字段-导出树', () => {
         await tree.load()
     })
     afterEach(async () => {
-        await dumpCustomTree(tree.manager.adapter.db, 'export.db')
+       // await dumpCustomTree(tree.manager.adapter.db, 'export.db')
     })
     describe('自定义关键字段-toJson导出树', () => {
         test('导出整棵树为JSON嵌套格式', async () => {

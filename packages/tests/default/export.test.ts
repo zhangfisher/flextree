@@ -10,7 +10,7 @@ describe('导出树', () => {
         await tree.load()
     })
     afterEach(async () => {
-        await dumpTree(tree.manager.adapter.db, 'export.db')
+       // await dumpTree(tree.manager.adapter.db, 'export.db')
     })
     describe('toJson导出树', () => {
         test('导出整棵树为JSON嵌套格式', async () => {
