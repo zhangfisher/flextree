@@ -1,26 +1,28 @@
 {
     "name": "flextree-prisma-adapter",
     "type": "module",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "prisma adapter for flextree",
     "author": "wxzhang@126.com",
     "license": "ISC",
-    "keywords": ["flextree"],
+    "keywords": [
+        "flextree"
+    ],
     "homepage": "https://zhangfisher.github.io/flextree/",
     "repository": {
         "type": "git",
         "url": "git@github.com:zhangfisher/flextree.git"
     },
-    "main": "src/index.ts",    
+    "main": "src/index.ts",
     "publishConfig": {
-      "access": "public",
-      "main": "dist/index.js",
-      "module": "dist/index.js", 
-      "types": "dist/index.d.ts",
-      "exports": {
-          "import": "./dist/index.js",
-          "require": "./dist/index.cjs"            
-      }
+        "access": "public",
+        "main": "dist/index.js",
+        "module": "dist/index.js",
+        "types": "dist/index.d.ts",
+        "exports": {
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        }
     },
     "scripts": {
         "build": "tsup"

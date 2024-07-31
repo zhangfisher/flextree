@@ -1,7 +1,7 @@
 {
     "name": "flextree-sqlite-adapter",
     "type": "module",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "sqlite driver for flextree",
     "author": "zhangfisher",
     "homepage": "https://zhangfisher.github.io/flextree/",
@@ -13,11 +13,11 @@
     "publishConfig": {
         "access": "public",
         "main": "dist/index.js",
-        "module": "dist/index.js", 
+        "module": "dist/index.js",
         "types": "dist/index.d.ts",
         "exports": {
             "import": "./dist/index.js",
-            "require": "./dist/index.cjs"            
+            "require": "./dist/index.cjs"
         }
     },
     "keywords": [
