@@ -153,9 +153,7 @@ const orgManager = new FlexTreeManager("org",{
 ## Step 5: Add tree nodes
 
 Then we can start adding nodes to the organization tree.
-
-
-然后我们就可以开始向组织架构树中添加节点了。 
+ 
 
 ```ts
 // create root node
@@ -190,8 +188,7 @@ above, we have created a complete tree, and we can access the tree in two ways.
 - `FlexTreeManager`
 - `FlexTree`
 
-
-### 获取节点
+### Get nodes
 
 ```ts
 // get all nodes
