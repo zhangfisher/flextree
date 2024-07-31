@@ -1,7 +1,7 @@
-import type { DefaultTreeKeyFields, FlexTreeManager, IDatabaseAdapter, IFlexTreeNode } from 'flextree'
+import type { DefaultTreeKeyFields, FlexTreeManager, IFlexTreeAdapter, IFlexTreeNode } from 'flextree'
 import type { PrismaClient } from '@prisma/client'
 
-export default class PrismaAdapter implements IDatabaseAdapter {
+export default class PrismaAdapter implements IFlexTreeAdapter {
     ready: boolean = true
     db: PrismaClient
     _treeManager?: FlexTreeManager
