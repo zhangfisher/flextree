@@ -1,5 +1,5 @@
 
-[Home](https:/github.com/zhangfisher/flextree) | [简体中文](./readme_cn.md)  
+[Home](https://zhangfisher.github.io/flextree/) | [简体中文](./readme_cn.md)  
 
 `FlexTree` is a tree storage and management component based on the `left-right` algorithm, which provides efficient tree structure storage and access, and supports a variety of tree operations such as add, delete, modify, query, traversal, and movement.
 

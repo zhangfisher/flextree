@@ -6,6 +6,11 @@
     "author": "wxzhang@126.com",
     "license": "ISC",
     "keywords": ["flextree"],
+    "homepage": "https://zhangfisher.github.io/flextree/",
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:zhangfisher/flextree.git"
+    },
     "main": "src/index.ts",    
     "publishConfig": {
       "access": "public",

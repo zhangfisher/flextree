@@ -4,11 +4,22 @@
     "description": "Tree storage library based on left-right value algorithm",
     "author": "wxzhang",
     "license": "MIT",
+    "homepage": "https://zhangfisher.github.io/flextree/",
     "repository": {
         "type": "git",
         "url": "git@github.com:zhangfisher/flextree.git"
     },
-    "keywords": [],
+    "keywords": ["flextree","tree storage"],    
+    "publishConfig": {
+        "access": "public",
+        "main": "dist/index.js",
+        "module": "dist/index.js", 
+        "types": "dist/index.d.ts",
+        "exports": {
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"            
+        }
+    },
     "type": "module",
     "main": "src/index.ts",
     "scripts": {

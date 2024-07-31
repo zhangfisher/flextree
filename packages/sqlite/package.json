@@ -3,7 +3,12 @@
     "type": "module",
     "version": "1.0.0",
     "description": "sqlite driver for flextree",
-    "author": "",
+    "author": "zhangfisher",
+    "homepage": "https://zhangfisher.github.io/flextree/",
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:zhangfisher/flextree.git"
+    },
     "license": "MIT",
     "publishConfig": {
         "access": "public",

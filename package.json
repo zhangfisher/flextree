@@ -5,6 +5,11 @@
     "description": "A quick tree database access tool library based on Left Right Value Algorithm",
     "author": "wxzhang",
     "license": "MIT",
+    "homepage": "https://zhangfisher.github.io/flextree/",
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:zhangfisher/flextree.git"
+    },
     "keywords": [],
     "scripts": {
         "test": "vitest",

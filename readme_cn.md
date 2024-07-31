@@ -1,4 +1,4 @@
-[官网](https:/github.com/zhangfisher/flextree) | [English](./readme.md) 
+[官网](https://zhangfisher.github.io/flextree/) | [English](./readme.md) 
 
 `FlexTree`是`Nodejs`下一个基于左右值算法的树结构库，它提供了一种简单的方式来存储和操作树形结构数据。
 `FlexTree`提供了简单而丰富的`API`让你可以轻松的操作树，如增删改查、遍历、移动、查询等。
