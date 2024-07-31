@@ -5,8 +5,7 @@ import type { FlexTree } from './tree'
 import { FlexTreeInvalidError, FlexTreeNodeNotFoundError, FlexTreeNotFoundError } from './errors'
 import { filterObject } from './utils/filterObject'
 import { getRelNodePath } from './utils/getRelNodePath'
-import { isNull } from './utils/isNull'
-import { createArrayProxy } from './utils/createArrayProxy'
+import { isNull } from './utils/isNull' 
 
 /**
  * 节点状态
@@ -107,22 +106,7 @@ export class FlexTreeNode<
         }
         return ancestors
     }
-
-    /**
-     * 当所有子节点加载完成时，更新节点状态
-     * 
-     *  最后一个节点的rightValue等于其父节点的rightValue - 1
-     * 
-     * @param index 
-     * @param node 
-     */
-    private onAddChildren(index:number,node:FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>){
-        if(this._status === 'loading'){            
-            if(node.rightValue + 1  === this.rightValue ){
-                this._status = 'loaded'
-            }            
-        }
-    }
+ 
     /**
      * 从数据库中同步节点数据
      * 
@@ -203,7 +187,7 @@ export class FlexTreeNode<
     /**
      * 获取该节点下id=nodeId的节点实例
      */
-    get(nodeId: NodeId, includeDescendants: boolean = false): FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> | undefined {
+    get(nodeId: NodeId): FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> | undefined {
         if (this.id === nodeId) {
             return this
         }
@@ -212,12 +196,10 @@ export class FlexTreeNode<
                 if (node.id === nodeId) {
                     return node
                 } else {
-                    if (includeDescendants) {
-                        const n = node.get(nodeId, includeDescendants)
+                        const n = node.get(nodeId)
                         if (n) {
                             return n
                         }
-                    }
                 }
             }
         }
@@ -228,16 +210,14 @@ export class FlexTreeNode<
      * @param condition  条件函数
      * @returns  返回符合条件的节点集合
      */
-    find(condition: (node: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>) => boolean, includeDescendants: boolean = true): FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>[] {
+    find(condition: (node: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>) => boolean): FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>[] {
         const nodes: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>[] = []
         if (this._children) {
             for (const node of this._children) {
                 if (condition(node)) {
                     nodes.push(node)
                 }
-                if (includeDescendants) {
-                    nodes.push(...node.find(condition, includeDescendants))
-                }
+                nodes.push(...node.find(condition))
             }
         }
         return nodes
@@ -297,7 +277,7 @@ export class FlexTreeNode<
                         const nodeObj = new FlexTreeNode(node, preNode, this._tree)
                         preNode.children!.push(nodeObj)
                         preNode = nodeObj
-                        if (nodeRightValue - nodeLeftValue  > 1 && (maxLevel==0 || (maxLevel>0 && nodeLevel < maxLevel)) ) {
+                        if (nodeRightValue - nodeLeftValue  > 1 && (maxLevel===0 || (maxLevel>0 && nodeLevel < maxLevel)) ) {
                             pnodes.push(preNode)
                         }
                     } else {
@@ -310,7 +290,7 @@ export class FlexTreeNode<
                             const nodeObj = new FlexTreeNode(node, parent, this._tree)
                             parent.children!.push(nodeObj)
                             preNode = nodeObj
-                            if (nodeRightValue - nodeLeftValue > 1 && (maxLevel==0 || (maxLevel>0 && nodeLevel< maxLevel)) ) {
+                            if (nodeRightValue - nodeLeftValue > 1 && (maxLevel===0 || (maxLevel>0 && nodeLevel< maxLevel)) ) {
                                 pnodes.push(preNode)
                             }
                             break

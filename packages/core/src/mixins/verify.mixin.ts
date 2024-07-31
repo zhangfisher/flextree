@@ -15,7 +15,16 @@ export class VerifyTreeMixin<
      *
      */
     async verify(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, nodes?: TreeNode[]) {
-        nodes = nodes || await this.getNodes()
+        nodes = nodes || await this.getNodes({
+            // @ts-ignore
+            fields:[
+                this.keyFields.id,
+                this.keyFields.name,
+                this.keyFields.leftValue,
+                this.keyFields.rightValue,
+                this.keyFields.level
+            ]
+        })
         const pnodes: IFlexTreeNode[] = []
         for (let i = 0; i < nodes.length; i++) {
             const node = nodes[i] as IFlexTreeNode

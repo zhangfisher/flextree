@@ -8,7 +8,7 @@ import type { RequiredDeep } from 'type-fest'
 import sqlString from 'sqlString'
 import { mix } from 'ts-mixer'
 import mitt from 'mitt'
-import type { IDatabaseAdapter } from './adapter'
+import type { IFlexTreeAdapter } from './adapter'
 import { FlexTreeDriverError, FlexTreeError, FlexTreeInvalidUpdateError } from './errors'
 import type { CustomTreeKeyFields, DefaultTreeKeyFields, FlexTreeEvents, IFlexTreeNode, NonUndefined } from './types'
 import { MoveNodeMixin } from './mixins/move.mixin'
@@ -33,7 +33,7 @@ export interface FlexTreeManagerOptions<TreeIdType = number> {
         leftValue?: string
         rightValue?: string
     }
-    adapter: IDatabaseAdapter
+    adapter: IFlexTreeAdapter
 }
 
 export interface FlexTreeManager<
@@ -94,7 +94,7 @@ export class FlexTreeManager<
     private _tableName: string
     private _treeId: any
     private _fields: RequiredDeep<NonUndefined<FlexTreeManagerOptions['fields']>>
-    private _adapter: IDatabaseAdapter
+    private _adapter: IFlexTreeAdapter
     private _ready: boolean = false // 当driver准备就绪时,ready为true时,才允许执行读写操作
     private _emitter = mitt<FlexTreeEvents>()
     private _lastUpdateAt = 0

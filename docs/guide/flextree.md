@@ -129,19 +129,19 @@ FlexTreeNode(Root)
     children({color:red}[])                                //* []   
        FlexTreeNode(A)
             children({color:red}[])                        // length=0                
-                {color:#ddd}FlexTreeNode({color:#ddd}A1)       // 未加载                    
-                {color:#ddd}FlexTreeNode({color:#ddd}A2)        // 未加载 
-                {color:#ddd}FlexTreeNode({color:#ddd}A3)         // 未加载
+                {color:#ddd;text-decoration: line-through}FlexTreeNode({color:#ddd}A1)       // 未加载                    
+                {color:#ddd;text-decoration: line-through}FlexTreeNode({color:#ddd}A2)        // 未加载 
+                {color:#ddd;text-decoration: line-through}FlexTreeNode({color:#ddd}A3)         // 未加载
         FlexTreeNode(B)
             children({color:red}[])                        // length=0           
-                {color:#ddd}FlexTreeNode({color:#ddd}B1)       // 未加载                    
-                {color:#ddd}FlexTreeNode({color:#ddd}B2)        // 未加载 
-                {color:#ddd}FlexTreeNode({color:#ddd}B3)         // 未加载
+                {color:#ddd;text-decoration: line-through}FlexTreeNode({color:#ddd}B1)       // 未加载                    
+                {color:#ddd;text-decoration: line-through}FlexTreeNode({color:#ddd}B2)        // 未加载 
+                {color:#ddd;text-decoration: line-through}FlexTreeNode({color:#ddd}B3)         // 未加载
         FlexTreeNode(C)                
             children({color:red}[])                        // length=0           
-                {color:#ddd}FlexTreeNode({color:#ddd}C1)       // 未加载                    
-                {color:#ddd}FlexTreeNode({color:#ddd}C2)        // 未加载 
-                {color:#ddd}FlexTreeNode({color:#ddd}C3)         // 未加载
+                {color:#ddd;text-decoration: line-through}FlexTreeNode({color:#ddd}C1)       // 未加载                    
+                {color:#ddd;text-decoration: line-through}FlexTreeNode({color:#ddd}C2)        // 未加载 
+                {color:#ddd;text-decoration: line-through}FlexTreeNode({color:#ddd}C3)         // 未加载
 </LiteTree>
 
 以上`A`、`B`、`C`三个节点的状态为`not-loaded`，并且其所有子节点和后代节点均未加载。
@@ -167,9 +167,9 @@ FlexTreeNode(Root)
     children({color:red}[])                                //* []   
        FlexTreeNode(A)
             children({color:red}[])                        // length=0                
-                {color:#ddd}FlexTreeNode({color:#ddd}A1)       // 未加载                    
-                {color:#ddd}FlexTreeNode({color:#ddd}A2)        // 未加载 
-                {color:#ddd}FlexTreeNode({color:#ddd}A3)         // 未加载
+                {color:#ddd;text-decoration: line-through}FlexTreeNode({color:#ddd}A1)       // 未加载                    
+                {color:#ddd;text-decoration: line-through}FlexTreeNode({color:#ddd}A2)        // 未加载 
+                {color:#ddd;text-decoration: line-through}FlexTreeNode({color:#ddd}A3)         // 未加载
         FlexTreeNode(B)                                     // loaded
             children({color:red}[])                        // length=3           
                 FlexTreeNode(B1)                        
@@ -177,9 +177,9 @@ FlexTreeNode(Root)
                 FlexTreeNode(B3)          
         FlexTreeNode(C)                
             children({color:red}[])                        // length=0           
-                {color:#ddd}FlexTreeNode({color:#ddd}C1)       // 未加载                    
-                {color:#ddd}FlexTreeNode({color:#ddd}C2)        // 未加载 
-                {color:#ddd}FlexTreeNode({color:#ddd}C3)         // 未加载
+                {color:#ddd;text-decoration: line-through}FlexTreeNode({color:#ddd}C1)       // 未加载                    
+                {color:#ddd;text-decoration: line-through}FlexTreeNode({color:#ddd}C2)        // 未加载 
+                {color:#ddd;text-decoration: line-through}FlexTreeNode({color:#ddd}C3)         // 未加载
 </LiteTree>
   
 :::warning 提示
@@ -188,7 +188,7 @@ FlexTreeNode(Root)
 
 ## 根据路径访问节点
 
-当`FlexTree`或`FlexTreeNode`加载完毕后，可以通过`getByPath`来获取指定路径的节点实例。
+当`FlexTree`或`FlexTreeNode`加载完毕后，可以通过使用`FlexTree`和`FlexTreeNode`对象实例的`getByPath`来获取指定路径的节点实例。
 
 ```ts
 getByPath(
@@ -236,13 +236,100 @@ b1.getByPath('B-1/B-1-1')
 
 - **说明**
 
+    - `FlexTree`和`FlexTreeNode`对象实例均有`getByPath`方法，`FlexTree.getByPath`方法用于在整个树检索，而`FlexTreeNode.getByPath`方法的路径是相对于节点的。
+    - 可以使用相对路径语法,`./`表示当前节点，`../`代表父节点，`../../`代表祖先节点等。
+
+
+## 获取节点
+
+使用`FlexTree`和`FlexTreeNode`对象实例的`get`方法来获取在所在节点及其后代节点中返回指定的实例。
+
+```ts
+get(nodeId: NodeId): FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> | undefined
+```
+- **参数**
+
+| 字段名称 | 数据类型 | 描述 |
+| ----  |  ---- | ---- |
+| `nodeId` | `NodeId` | 节点的唯一标识 | 
+
+- **返回值**
+
+返回指定`nodeId`的`FlexTreeNode`节点实例，如果节点不存在则返回`undefined`。
+
+## 节点状态
+
+当配置`FlexTree.options.lazt=true`启用懒加载时，`FlexTreeNode`节点实例具有状态属性，用于表示节点的加载状态。
+
+```ts
+type FlexTreeNodeStatus = 'not-loaded' | 'loading' | 'loaded' | 'error'
+```
+
+- **状态取值**
+
+| 状态 | 描述 |
+| ----  |  ---- |
+| `not-loaded` | 未加载 |
+| `loading` | 加载中 |
+| `loaded` | 已加载 |
+| `error` | 加载错误 |
  
+## 同步数据
 
-:::warning 提示
-`FlexTree`和`FlexTreeNode`对象实例均有`getByPath`方法，`FlexTree.getByPath`方法用于在整个树检索，而`FlexTreeNode.getByPath`方法的路径是相对于节点的，可以使用相对路径语法等。
-:::
+`FlexTree`或`FlexTreeNode`提供`sync`方法，用于重新从数据库中加载节点数据。
+
+```ts
+async sync(includeDescendants: boolean = false):void
+```
+
+## FlexTree
+
+- **属性**
+
+| 方法名称 | 返回类型 | 描述 |
+| ----  |  ---- | ---- |
+| `root` | `FlexTreeNode` | 返回根节点 |
+| `status` | `string` | 获取树根节点的状态 | 
+| `options` | `FlexTreeOptions` | 获取选项 |
+| `manager` | `FlexTreeManager` | 获取管理器 |
 
 
+- **方法**
+
+| 方法名称 | 返回类型 | 描述 |
+| ----  |  ---- | ---- |
+| `load` | `Promise<void>` | 加载树到内存中 |
+| `getByPath` | `FlexTreeNode` | 根据路径获取节点 |
+| `get` | `FlexTreeNode` | 获取节点 |
+| `find` | `FlexTreeNode[]` | 查找节点 |
+| `toJson` | `TreeNode` | 序列化树为对象 |
+| `toList` | `TreeNode[]` | 序列化树为`pid`数组 |
+| `on` | `void` | 监听事件 |
+| `off` | `void` | 移除事件监听 |
+| `emit` | `void` | 触发事件 |
+| `sync` | `void` | 同步数据 | 
 
 ## FlexNode
 
+
+- **属性**
+
+| 方法名称 | 返回类型 | 描述 |
+| ----  |  ---- | ---- |
+| `root` | `FlexTreeNode` | 返回根节点 |
+| `status` | `string` | 获取树根节点的状态 | 
+| `options` | `FlexTreeOptions` | 获取选项 |
+| `manager` | `FlexTreeManager` | 获取管理器 |
+
+
+- **方法**
+
+| 方法名称 | 返回类型 | 描述 |
+| ----  |  ---- | ---- |
+| `load` | `Promise<void>` | 加载树到内存中 |
+| `getByPath` | `FlexTreeNode` | 根据路径获取节点 |
+| `get` | `FlexTreeNode` | 获取节点 |
+| `find` | `FlexTreeNode[]` | 查找节点 |
+| `toJson` | `TreeNode` | 序列化树为对象 |
+| `toList` | `TreeNode[]` | 序列化树为`pid`数组 | 
+| `sync` | `void` | 同步数据 | 

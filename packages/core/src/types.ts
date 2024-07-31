@@ -110,8 +110,7 @@ export type FlexTreeExportJsonFormat<
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
     TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
->
-= TreeNode &
+> = TreeNode &
 {
     children?: FlexTreeExportJsonFormat<Fields, KeyFields, TreeNode, NodeId>[]
 }

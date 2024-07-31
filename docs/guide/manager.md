@@ -38,7 +38,7 @@ class FlexTreeManager{
 | `tableName` | string | 无 | 必须的，数据库表名称 |
 | `options` | FlexTreeManagerOptions | {} | 可选的，配置选项 |
 | `options.treeId` | string | 无 | 可选，当多树表时指定 |
-| `options.adapter` | IDatabaseDriver | 无 | 必须的，访问数据库的适配器 |
+| `options.adapter` | IFlexTreeAdapter | 无 | 必须的，访问数据库的适配器 |
 | `options.keyFields` | KeyFields | | 可选的，自定义树节点的关键字段名称 |
 
 ## 泛型参数

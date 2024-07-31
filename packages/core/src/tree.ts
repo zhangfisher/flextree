@@ -18,7 +18,6 @@ export class FlexTree<
 > {
     private _options: RequiredDeep<FlexTreeOptions<KeyFields['treeId']>>
     private _treeId: TreeId
-    private _status: FlexTreeStatus = 'not-loaded'
     private _manager: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>
     private _root?: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>
 
@@ -79,6 +78,11 @@ export class FlexTree<
         }
         await node.update(data)
     }
+    async sync() {
+        if (this._root) {
+            await this._root.sync(true)
+        }
+    }
     /**
      * 根据节点id获取节点实例
      */
@@ -86,7 +90,7 @@ export class FlexTree<
         if (nodeId === this._root?.id) {
             return this._root
         } else {
-            return this._root?.get(nodeId, true)
+            return this._root?.get(nodeId)
         }
     }
 
@@ -96,7 +100,7 @@ export class FlexTree<
      * @returns 返回满足条件的节点列表
      */
     find(condition: (node: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>) => boolean): FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>[] {
-        return this._root!.find(condition, true)
+        return this._root!.find(condition)
     }
 
     toJson(options?: FlexTreeExportJsonOptions<Fields, KeyFields>): FlexTreeExportJsonFormat<Fields, KeyFields> {

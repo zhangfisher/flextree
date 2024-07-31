@@ -47,9 +47,10 @@ export class GetNodeMixin<
      * @param {number}  [options.level]            限定返回的层级,0表示不限制,1表示只返回根节点，2表示返回根节点和其子节点, 依次类推
      * @returns TreeNode[]
      */
-    async getNodes(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, options?: { level?: number }): Promise<TreeNode[]> {
-        const { level } = Object.assign({ level: 0 }, options)
-        const sql = this._sql(`SELECT * FROM ${this.tableName} 
+    async getNodes(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, options?: { level?: number,fields?:keyof TreeNode }): Promise<TreeNode[]> {
+        const { level,fields } = Object.assign({ level: 0,fields:[] }, options)
+        const fieldList = fields.length>0 ? fields.map(f=>`${f}`).join(',') : '*'
+        const sql = this._sql(`SELECT ${fieldList} FROM ${this.tableName} 
             WHERE {__TREE_ID__} ${this.keyFields.leftValue}>0 AND ${this.keyFields.rightValue}>0
                 ${level > 0 ? `AND ${this.keyFields.level}<=${level}` : ''}
             ORDER BY ${this.keyFields.leftValue}

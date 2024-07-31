@@ -34,7 +34,11 @@
         设计部
 </LiteTree>
 
-> 以上树的显示采用开源库[LiteTree](https://zhangfisher.github.io/lite-tree/)实现。
+:::warning 提示
+
+本网站采用`vitepress`构建，以上树的显示采用开源库[LiteTree](https://zhangfisher.github.io/lite-tree/)渲染。
+
+:::
 
 
 ## 第1步：安装核心库
@@ -66,7 +70,7 @@ pnpm add flextree-sqlite-adapter
 `flextree-sqlite-driver`是`flextree`的`sqlite3`数据库驱动，基于`sqlite3`数据库存储。
 
 :::warning 提示
-如果你使用的是`MySQL`、`PostgreSQL`等数据库，可以安装对应的驱动，如`flextree-prima-driver`，或者基于`flextree`提供的`IDatabaseDriver`自定义驱动。
+如果你使用的是`MySQL`、`PostgreSQL`等数据库，可以安装对应的驱动，如`flextree-prima-driver`，或者基于`flextree`提供的`IFlexTreeAdapter`自定义驱动。
 :::
 
 

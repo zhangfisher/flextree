@@ -4,12 +4,12 @@ layout: home
 
 hero:
   name: "FlexTree"
-  text: "面向数据库的树存储组件"
-  tagline: 基于左右值算法
+  text: "树数据库存储组件"
+  tagline: Nodejs/TypeScript/基于左右值算法
   actions:
     - theme: brand
       text: 快速开始
-      link: /markdown-examples
+      link: /intro/get-started
     - theme: alt
       text: GitHub
       link: https://github.com/zhangfisher/flextree
