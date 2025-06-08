@@ -1,9 +1,18 @@
 # flextree-prisma-adapter
 
+## 1.0.2
+
+### Patch Changes
+
+-   1cd6626: - [fix] 优化类型
+    -   [feat] 将`node.data`更名为`node.fields`
+-   Updated dependencies [1cd6626]
+    -   flextree@1.0.2
+
 ## 1.0.1
 
 ### Patch Changes
 
-- 6e5ead5: initial release
-- Updated dependencies [6e5ead5]
-  - flextree@1.0.1
+-   6e5ead5: initial release
+-   Updated dependencies [6e5ead5]
+    -   flextree@1.0.1
