@@ -30,8 +30,72 @@ describe("FlexTree类型系统测试", () => {
             >,
 
         ]
+    })
+    test("查找节点类型", () => {
+        type UserType = {
+            age: number
+            sex: 'Male' | 'Female'
+            admin: boolean
+        }
+        const tree = new FlexTree<UserType>('user')
+        const rootNode = tree.find(node => {
+            type FieldNames = keyof typeof node.fields
+            type FieldsCases = [
+                Expect<
+                    Equal<FieldNames,
+                        "id" | "treeId" | "name" | "level" | "leftValue" | "rightValue"
+                        | 'age' | 'sex' | 'admin'>
+                >
+            ]
+            return true
+        })!
 
-
-
+    })
+    test("自定义关键字段类型", () => {
+        type UserType = {
+            pk: string
+            org: string
+            title: string
+            lft: number
+            rgt: number
+            lv: number
+            age: number
+            sex: 'Male' | 'Female'
+            admin: boolean
+        }
+        const tree = new FlexTree<UserType, {
+            name: 'title',
+            leftValue: 'lft',
+            rightValue: 'rgt',
+            level: 'lv',
+            id: ['pk', string],
+            treeId: ['org', string],
+        }>('user')
+        const rootNode = tree.find(node => {
+            type keyFieldCases = [
+                Expect<Equal<typeof node.id, string>>,
+                Expect<Equal<typeof node.treeId, string>>
+            ]
+            type FieldNames = keyof typeof node.fields
+            type FieldsCases = [
+                Expect<
+                    Equal<FieldNames,
+                        "pk" | "org" | "title" | "lv" | "lft" | "rgt"
+                        | 'age' | 'sex' | 'admin'>
+                >
+            ]
+            return true
+        })!
+        const rootNode2 = tree.find(node => {
+            type FieldNames = keyof typeof node.fields
+            type FieldsCases = [
+                Expect<
+                    Equal<FieldNames,
+                        "pk" | "org" | "title" | "lv" | "lft" | "rgt"
+                        | 'age' | 'sex' | 'admin'>
+                >
+            ]
+            return true
+        })!
     })
 })

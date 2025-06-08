@@ -6,7 +6,6 @@ import { FlexTreeInvalidError, FlexTreeNodeNotFoundError, FlexTreeNotFoundError 
 import { filterObject } from './utils/filterObject'
 import { getRelNodePath } from './utils/getRelNodePath'
 import { isNull } from './utils/isNull'
-import { Tree } from 'flex-tools'
 
 /**
  * 节点状态
@@ -26,8 +25,8 @@ export class FlexTreeNode<
     Fields extends Record<string, any> = object,
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
     TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
-    NodeId = NonUndefined<KeyFields['id']>[1],
-    TreeId = NonUndefined<KeyFields['treeId']>[1],
+    NodeId = NonUndefined<TreeNode['id']>,
+    TreeId = NonUndefined<TreeNode['treeId']>,
 > {
     private _tree: FlexTree<Fields, KeyFields, TreeNode, NodeId, TreeId>
     private _node: Expand<TreeNode> | undefined
@@ -49,7 +48,7 @@ export class FlexTreeNode<
         return (this._node as any)?.[this._keyFields.id] as NodeId
     }
     get name() {
-        return (this._node as any)?.[this._keyFields.name] as PickKeyFieldType<KeyFields, 'name', string>
+        return (this._node as any)?.[this._keyFields.name] as string
     }
     get level() {
         return (this._node as any)?.[this._keyFields.level] as number
@@ -61,13 +60,13 @@ export class FlexTreeNode<
         return (this._node as any)?.[this._keyFields.rightValue] as number
     }
     get treeId() {
-        return (this._node as any)?.[this._keyFields.treeId] as PickKeyFieldType<KeyFields, 'treeId', number>
+        return (this._node as any)?.[this._keyFields.treeId] as TreeId
     }
     get tree() {
         return this._tree
     }
     get fields() {
-        return this._node
+        return this._node!
     }
 
     get root() {

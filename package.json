@@ -21,7 +21,8 @@
         "docs:build": "vitepress build docs",
         "docs:preview": "vitepress preview docs",
         "changeset": "changeset",
-        "release": "pnpm build && changeset version && changeset publish"
+        "release": "pnpm build && changeset version && changeset publish",
+        "sync": "cnpm sync flextree flextree-prisma-adapter flextree-sqlite-adapter"
     },
     "dependencies": {
         "@lite-tree/vue": "^1.1.4"
