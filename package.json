@@ -14,7 +14,7 @@
     "scripts": {
         "test": "vitest --pool=threads",
         "coverage": "vitest --coverage",
-        "build": "turbo build --filter=!tests",
+        "build": "turbo build --filter=!flextree-unit-tests",
         "lint": "oxlint -c oxlintrc.json --ignore-path .eslintignore",
         "lint:fix": "oxlint -c oxlintrc.json  --fix --ignore-path .eslintignore",
         "docs:dev": "vitepress dev docs",
