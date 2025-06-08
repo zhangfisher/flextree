@@ -1,4 +1,4 @@
-import sqlString from 'sqlString'
+import sqlstring from 'sqlstring'
 import type { FlexTreeManager } from '../manager'
 import type { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNode, NonUndefined } from '../types'
 import { FlexTreeError, FlexTreeNodeNotFoundError } from '../errors'
@@ -45,8 +45,8 @@ export class FindNodeMixin<
         if (keys.length === 0) { throw new FlexTreeError('Invalid condition') }
         const sql = this._sql(`select * from ${this.tableName}
             where  {__TREE_ID__} ${keys.map((key) => {
-        return `${sqlString.escapeId(key)}=${escapeSqlString(condition[key])}`
-    }).join(' AND ')}
+            return `${sqlstring.escapeId(key)}=${escapeSqlString(condition[key])}`
+        }).join(' AND ')}
         `)
         return await this.onExecuteReadSql(sql)
     }

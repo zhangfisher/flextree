@@ -5,7 +5,7 @@
  */
 import { deepMerge } from 'flex-tools/object/deepMerge'
 import type { RequiredDeep } from 'type-fest'
-import sqlString from 'sqlString'
+import sqlstring from 'sqlstring'
 import { mix } from 'ts-mixer'
 import mitt from 'mitt'
 import type { IFlexTreeAdapter } from './adapter'
@@ -52,8 +52,7 @@ export interface FlexTreeManager<
     RootNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     RelationMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     UpdateNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-    VerifyTreeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>
-{}
+    VerifyTreeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId> { }
 
 /**
  *
@@ -228,7 +227,7 @@ export class FlexTreeManager<
      */
     protected withTreeId(record: Record<string, any>) {
         if (this.isMultiTree) {
-            record[this._fields.treeId] = sqlString.escape(this._treeId)
+            record[this._fields.treeId] = sqlstring.escape(this._treeId)
         }
     }
 

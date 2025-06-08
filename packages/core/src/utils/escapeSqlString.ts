@@ -1,5 +1,5 @@
-import sqlString from 'sqlstring'
+import sqlstring from 'sqlstring'
 
 export function escapeSqlString(value: any) {
-    return sqlString.escape(value)
+    return sqlstring.escape(value)
 }
