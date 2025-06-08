@@ -1,5 +1,11 @@
 # flextree
 
+## 1.0.3
+
+### Patch Changes
+
+-   b63c6b0: 修复 node typescript 类型
+
 ## 1.0.2
 
 ### Patch Changes

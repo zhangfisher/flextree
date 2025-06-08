@@ -1,6 +1,6 @@
 {
     "name": "flextree",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Tree storage library based on left-right value algorithm",
     "author": "wxzhang",
     "license": "MIT",
