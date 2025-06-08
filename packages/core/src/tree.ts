@@ -1,5 +1,5 @@
 import type { RequiredDeep } from 'type-fest'
-import type { CustomTreeKeyFields, DefaultTreeKeyFields, FlexTreeExportJsonFormat, FlexTreeExportJsonOptions, FlexTreeExportListFormat, FlexTreeExportListOptions, IFlexTreeNode, Expand, NonUndefined } from './types'
+import type { CustomTreeKeyFields, DefaultTreeKeyFields, FlexTreeExportJsonFormat, FlexTreeExportJsonOptions, FlexTreeExportListFormat, FlexTreeExportListOptions, IFlexTreeNodeFields, Expand, NonUndefined } from './types'
 import { FlexTreeManager, type FlexTreeManagerOptions } from './manager'
 import { FlexTreeNode, type FlexTreeNodeStatus } from './node'
 import { FlexTreeNotFoundError } from './errors'
@@ -12,17 +12,17 @@ export type FlexTreeStatus = FlexTreeNodeStatus
 export class FlexTree<
     Fields extends Record<string, any> = object,
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
+    NodeFields extends IFlexTreeNodeFields<Fields, KeyFields> = IFlexTreeNodeFields<Fields, KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
-    TreeId = NonUndefined<KeyFields['treeId']>[1],
+    TreeId = NonUndefined<KeyFields['treeId']>[1]
 > {
     private _options: RequiredDeep<FlexTreeOptions<KeyFields['treeId']>>
     private _treeId: TreeId
-    private _manager: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>
-    private _root?: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>
+    private _manager: FlexTreeManager<Fields, KeyFields, NodeFields, NodeId, TreeId>
+    private _root?: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>
 
     constructor(tableName: string, options?: FlexTreeOptions<KeyFields['treeId']>) {
-        this._manager = new FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>(tableName, options)
+        this._manager = new FlexTreeManager<Fields, KeyFields, NodeFields, NodeId, TreeId>(tableName, options)
         this._treeId = this._manager.treeId
         this._options = this._manager.options as RequiredDeep<FlexTreeOptions<KeyFields['treeId']>>
     }
@@ -65,13 +65,13 @@ export class FlexTree<
      * 加载树到内存中
      */
     async load() {
-        this._root = new FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>(undefined, undefined, this)
+        this._root = new FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>(undefined, undefined, this)
         await this._root.load()
     }
-    getByPath(path: string, options?: { byField?: string, delimiter?: string }): FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> | undefined {
+    getByPath(path: string, options?: { byField?: string, delimiter?: string }): FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined {
         return this.root?.getByPath(path, options)
     }
-    async update(path: string, data: Partial<TreeNode>) {
+    async update(path: string, data: Partial<NodeFields>) {
         const node = this.getByPath(path)
         if (!node) {
             throw new FlexTreeNotFoundError(`Node ${path} not found`)
@@ -99,10 +99,18 @@ export class FlexTree<
      * @param condition
      * @returns 返回满足条件的节点列表
      */
-    find(condition: (node: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>) => boolean): FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>[] {
+    find(condition: (node: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>) => boolean): FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined {
         return this._root!.find(condition)
     }
-
+    findAll(condition: (node: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>) => boolean): FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>[] {
+        return this._root!.findAll(condition)
+    }
+    forEach(callback: (
+        node: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>,
+        parent: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined
+    ) => void, options?: { includeSelf?: boolean, ignoreErrors?: boolean, mode?: 'dfs' | 'bfs' }) {
+        return this._root!.forEach(callback, options)
+    }
     toJson(options?: FlexTreeExportJsonOptions<Fields, KeyFields>): FlexTreeExportJsonFormat<Fields, KeyFields> {
         return this._root!.toJson(options)
     }

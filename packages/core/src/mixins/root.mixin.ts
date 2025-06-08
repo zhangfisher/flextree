@@ -1,13 +1,13 @@
 import sqlstring from 'sqlstring'
 import type { FlexTreeManager } from '../manager'
-import type { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNode, NonUndefined } from '../types'
+import type { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNodeFields, NonUndefined } from '../types'
 import { FlexTreeNodeError } from '../errors'
 import { escapeSqlString } from '../utils/escapeSqlString'
 
 export class RootNodeMixin<
     Fields extends Record<string, any> = object,
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
+    TreeNode extends IFlexTreeNodeFields<Fields, KeyFields> = IFlexTreeNodeFields<Fields, KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
     TreeId = NonUndefined<KeyFields['treeId']>[1],
 > {

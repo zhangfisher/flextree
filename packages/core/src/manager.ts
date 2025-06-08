@@ -10,7 +10,7 @@ import { mix } from 'ts-mixer'
 import mitt from 'mitt'
 import type { IFlexTreeAdapter } from './adapter'
 import { FlexTreeDriverError, FlexTreeError, FlexTreeInvalidUpdateError } from './errors'
-import type { CustomTreeKeyFields, DefaultTreeKeyFields, FlexTreeEvents, IFlexTreeNode, NonUndefined } from './types'
+import type { CustomTreeKeyFields, DefaultTreeKeyFields, FlexTreeEvents, IFlexTreeNodeFields, NonUndefined } from './types'
 import { MoveNodeMixin } from './mixins/move.mixin'
 import { DeleteNodeMixin } from './mixins/delete.mixin'
 import { AddNodeMixin } from './mixins/add.mixin'
@@ -39,7 +39,7 @@ export interface FlexTreeManagerOptions<TreeIdType = number> {
 export interface FlexTreeManager<
     Fields extends Record<string, any> = object,
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
+    TreeNode extends IFlexTreeNodeFields<Fields, KeyFields> = IFlexTreeNodeFields<Fields, KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
     TreeId = NonUndefined<KeyFields['treeId']>[1],
 > extends MoveNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
@@ -83,7 +83,7 @@ export class FlexTreeManager<
     Fields extends Record<string, any> = object,
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
     // eslint-disable-next-line unused-imports/no-unused-vars
-    TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
+    TreeNode extends IFlexTreeNodeFields<Fields, KeyFields> = IFlexTreeNodeFields<Fields, KeyFields>,
     // eslint-disable-next-line unused-imports/no-unused-vars
     NodeId = NonUndefined<KeyFields['id']>[1],
     TreeId = NonUndefined<KeyFields['treeId']>[1],

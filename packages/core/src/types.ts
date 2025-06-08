@@ -74,7 +74,7 @@ export type PickKeyFieldType<
         : { [K in Name]: DefaultType }
     )
 
-export type IFlexTreeNode<
+export type IFlexTreeNodeFields<
     Fields extends Record<string, any> = Record<string, any>,
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
 > = PickKeyFieldType<KeyFields, 'id', number>
@@ -101,14 +101,14 @@ export interface FlexTreeExportJsonOptions<
 > {
     childrenField?: string
     level?: number // 限定导出的级别
-    fields?: (keyof IFlexTreeNode<Fields, KeyFields>)[]
+    fields?: (keyof IFlexTreeNodeFields<Fields, KeyFields>)[]
     includeKeyFields?: boolean
 }
 
 export type FlexTreeExportJsonFormat<
     Fields extends Record<string, any> = object,
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
+    TreeNode extends IFlexTreeNodeFields<Fields, KeyFields> = IFlexTreeNodeFields<Fields, KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
 > = TreeNode &
     {
@@ -121,14 +121,14 @@ export interface FlexTreeExportListOptions<
 > {
     pidField?: string
     level?: number // 限定导出的级别
-    fields?: (keyof IFlexTreeNode<Fields, KeyFields>)[]
+    fields?: (keyof IFlexTreeNodeFields<Fields, KeyFields>)[]
     includeKeyFields?: boolean
 }
 
 export type FlexTreeExportListFormat<
     Fields extends Record<string, any> = object,
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
+    TreeNode extends IFlexTreeNodeFields<Fields, KeyFields> = IFlexTreeNodeFields<Fields, KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
     OPTIONS extends FlexTreeExportListOptions<Fields, KeyFields> = FlexTreeExportListOptions<Fields, KeyFields>,
 >

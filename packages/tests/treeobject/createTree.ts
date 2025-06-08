@@ -1,9 +1,9 @@
 import path from 'node:path'
 import fs from "node:fs"
 import Database from 'better-sqlite3'
-import type { FlexTreeOptions, IFlexTreeNode } from 'flextree'
-import { FlexTreeManager,FlexTree, FlexTreeVerifyError } from 'flextree'
-import SqliteAdapter from 'flextree-sqlite-adapter' 
+import type { FlexTreeOptions, IFlexTreeNodeFields } from 'flextree'
+import { FlexTreeManager, FlexTree, FlexTreeVerifyError } from 'flextree'
+import SqliteAdapter from 'flextree-sqlite-adapter'
 
 export async function createTreeTable(driver: SqliteAdapter) {
     await driver.exec([`
@@ -51,7 +51,7 @@ export async function createTreeManager(treeId?: any) {
         title: string
         size: number
     }>('tree', {
-	    treeId,
+        treeId,
         adapter: sqliteAdapter,
     })
 }
@@ -65,7 +65,7 @@ export type DemoFlexTree = FlexTree<{
     size: number
 }>
 
-export async function createFlexTree(treeId?: any, options?:Partial<FlexTreeOptions>) {
+export async function createFlexTree(treeId?: any, options?: Partial<FlexTreeOptions>) {
     const sqliteDriver = new SqliteAdapter()
     await sqliteDriver.open()
     if (treeId) {
@@ -78,9 +78,9 @@ export async function createFlexTree(treeId?: any, options?:Partial<FlexTreeOpti
         title: string
         size: number
     }>('tree', Object.assign({
-	    treeId,
-	    adapter: sqliteDriver,
-    },options))
+        treeId,
+        adapter: sqliteDriver,
+    }, options))
     return tree
 }
 /**
@@ -183,7 +183,7 @@ export async function dumpTree(srcDb: any, dbFile: string = 'tree.db') {
 export async function verifyTree(tree: FlexTreeManager): Promise<boolean> {
     const nodes = await tree.getNodes()
 
-    const pnodes: IFlexTreeNode[] = []
+    const pnodes: IFlexTreeNodeFields[] = []
     for (let i = 0; i < nodes.length; i++) {
         const node = nodes[i]
         if (node.rightValue - node.leftValue === 1) { // 无子节点

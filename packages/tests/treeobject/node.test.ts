@@ -10,10 +10,10 @@ describe('访问树节点实例', () => {
         await tree.load()
     })
     afterEach(async () => {
-      //  await dumpTree(tree.manager.adapter.db, 'create.root.db')
+        //  await dumpTree(tree.manager.adapter.db, 'create.root.db')
     })
 
-    test('同步节点数据', async () => { 
+    test('同步节点数据', async () => {
         const root = tree.root!
         expect(root.name).toBe('root')
         await tree.manager.write(async () => {
@@ -58,9 +58,9 @@ describe('访问树节点实例', () => {
         expect(root.name).toBe('ROOT')
     })
     test('根据节点id获取节点实例', async () => {
-        const a = tree.find(node => node.name === 'A')[0]
+        const a = tree.findAll(node => node.name === 'A')[0]
         expect(tree.get(a!.id)).toBe(a)
-        const anodes = tree.find(node => node.name.startsWith('A'))
+        const anodes = tree.findAll(node => node.name.startsWith('A'))
         for (const node of anodes) {
             const n = tree.get(node.id)!
             expect(n.name.startsWith('A')).toBe(true)
@@ -68,13 +68,13 @@ describe('访问树节点实例', () => {
     })
 
     test('在节点后代中根据id获取节点实例', async () => {
-        const a = tree.find(node => node.name === 'A')[0]
-        const a11 = tree.find(node => node.name === 'A-1-1')[0] 
+        const a = tree.findAll(node => node.name === 'A')[0]
+        const a11 = tree.findAll(node => node.name === 'A-1-1')[0]
         expect(a.get(a11.id)).toBe(a11)
     })
 
     test('访问节点的兄弟节点', async () => {
-        const a = tree.find(node => node.name === 'A-1')[0]
+        const a = tree.findAll(node => node.name === 'A-1')[0]
 
         const siblings = a.siblings!
 
@@ -85,7 +85,7 @@ describe('访问树节点实例', () => {
         expect(siblings[3].name).toBe('A-5')
     })
     test('访问节点的祖先节点', async () => {
-        const a12 = tree.find(node => node.name === 'A-1-2')[0]
+        const a12 = tree.findAll(node => node.name === 'A-1-2')[0]
 
         const ancestors = a12.ancestors!
         expect(ancestors.length).toBe(3)
@@ -94,11 +94,11 @@ describe('访问树节点实例', () => {
         expect(ancestors[2].name).toBe('A-1')
     })
     test('访问节点的后代节点', async () => {
-        const a = tree.find(node => node.name === 'A')[0]
+        const a = tree.findAll(node => node.name === 'A')[0]
 
         const descendants = a.descendants!
         for (const node of descendants) {
             expect(node.name.startsWith('A')).toBe(true)
-        } 
+        }
     })
 })

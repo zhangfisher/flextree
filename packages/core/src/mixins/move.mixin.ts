@@ -1,12 +1,12 @@
 import type { FlexTreeManager } from '../manager'
-import type { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNode, NonUndefined } from '../types'
+import type { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNodeFields, NonUndefined } from '../types'
 import { FlexNodeRelPosition, FlexTreeNodeRelation } from '../types'
 import { FlexTreeError, FlexTreeNodeInvalidOperationError } from '../errors'
 
 export class MoveNodeMixin<
     Fields extends Record<string, any> = object,
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
+    TreeNode extends IFlexTreeNodeFields<Fields, KeyFields> = IFlexTreeNodeFields<Fields, KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
     TreeId = NonUndefined<KeyFields['treeId']>[1],
 > {
@@ -55,7 +55,7 @@ export class MoveNodeMixin<
 
         const leftValue = fromNode[this.keyFields.leftValue]
 
-        const sqls: string[] =  [
+        const sqls: string[] = [
             this._sql(`
                 UPDATE ${this.tableName} 
                 SET 
@@ -91,7 +91,7 @@ export class MoveNodeMixin<
                 WHERE 
                     {__TREE_ID__} ${this.keyFields.rightValue} < 0
             `),
-        ] 
+        ]
 
         return sqls
     }
@@ -138,7 +138,7 @@ export class MoveNodeMixin<
                 WHERE 
                     {__TREE_ID__} ${this.keyFields.rightValue} < 0
             `),
-        ] 
+        ]
         return sqls
     }
 
@@ -273,10 +273,12 @@ export class MoveNodeMixin<
 
         const sqls: string[] = []
         // 1. 将源节点及其子节点标记为已删除, 没有真正删除，只是标记为已删除, 执行后要移动的节点就从树中脱离，但是数据还在，仅是左右值变成负数
-        await this.deleteNode(srcNode.id, { onlyMark: true, onExecuteBefore: (delSqls) => {
-            sqls.push(...delSqls)
-            return false
-        } })
+        await this.deleteNode(srcNode.id, {
+            onlyMark: true, onExecuteBefore: (delSqls) => {
+                sqls.push(...delSqls)
+                return false
+            }
+        })
 
         if (pos === FlexNodeRelPosition.LastChild) {
             sqls.push(...this._moveToLastChild(srcNode, targetNode))

@@ -1,8 +1,11 @@
 import { pick } from 'flex-tools/object/pick'
 import { omit } from 'flex-tools/object/omit'
-import type { CustomTreeKeyFields, DefaultTreeKeyFields, FlexTreeExportJsonFormat, FlexTreeExportJsonOptions, FlexTreeExportListFormat, FlexTreeExportListOptions, IFlexTreeNode, NonUndefined, Expand, PickKeyFieldType } from './types'
+import type {
+    CustomTreeKeyFields, DefaultTreeKeyFields, FlexTreeExportJsonFormat, FlexTreeExportJsonOptions,
+    FlexTreeExportListFormat, FlexTreeExportListOptions, IFlexTreeNodeFields, NonUndefined, Expand
+} from './types'
 import type { FlexTree } from './tree'
-import { FlexTreeInvalidError, FlexTreeNodeNotFoundError, FlexTreeNotFoundError } from './errors'
+import { FlexTreeAbortError, FlexTreeInvalidError, FlexTreeNodeNotFoundError, FlexTreeNotFoundError } from './errors'
 import { filterObject } from './utils/filterObject'
 import { getRelNodePath } from './utils/getRelNodePath'
 import { isNull } from './utils/isNull'
@@ -20,21 +23,35 @@ import { isNull } from './utils/isNull'
  */
 export type FlexTreeNodeStatus = 'not-loaded' | 'loading' | 'loaded' | 'error'
 
+export type TypedNode<
+    Fields extends Record<string, any> = object,
+    KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
+    NodeFields extends IFlexTreeNodeFields<Fields, KeyFields> = IFlexTreeNodeFields<Fields, KeyFields>
+> = FlexTreeNode<
+    Fields,
+    KeyFields,
+    IFlexTreeNodeFields<Fields, KeyFields>,
+    NonUndefined<NodeFields['id']>,
+    NonUndefined<NodeFields['treeId']>
+>
+
 
 export class FlexTreeNode<
     Fields extends Record<string, any> = object,
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
-    NodeId = NonUndefined<TreeNode['id']>,
-    TreeId = NonUndefined<TreeNode['treeId']>,
+    // 以下是快捷方式，不要重载覆盖
+    NodeFields extends IFlexTreeNodeFields<Fields, KeyFields> = IFlexTreeNodeFields<Fields, KeyFields>,
+    NodeId = NonUndefined<NodeFields['id']>,
+    TreeId = NonUndefined<NodeFields['treeId']>
 > {
-    private _tree: FlexTree<Fields, KeyFields, TreeNode, NodeId, TreeId>
-    private _node: Expand<TreeNode> | undefined
-    private _children?: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>[]
-    private _parent: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> | undefined
+    private _tree: FlexTree<Fields, KeyFields, NodeFields, NodeId, TreeId>
+    private _node: Expand<NodeFields> | undefined
+    private _children?: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>[]
+    private _parent: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined
     private _keyFields
     private _status: FlexTreeNodeStatus = 'not-loaded'
-    constructor(node: TreeNode | undefined, parent: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> | undefined, tree: FlexTree<Fields, KeyFields, TreeNode, NodeId, TreeId>) {
+
+    constructor(node: NodeFields | undefined, parent: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined, tree: FlexTree<Fields, KeyFields, NodeFields, NodeId, TreeId>) {
         this._tree = tree
         this._parent = parent
         this._keyFields = tree.manager.keyFields
@@ -87,7 +104,7 @@ export class FlexTreeNode<
     }
 
     get descendants() {
-        const descendants: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>[] = []
+        const descendants: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>[] = []
         if (this._children) {
             for (const node of this._children) {
                 descendants.push(node)
@@ -98,7 +115,7 @@ export class FlexTreeNode<
     }
 
     get ancestors() {
-        const ancestors: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>[] = []
+        const ancestors: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>[] = []
         let parent = this._parent
         while (parent) {
             ancestors.splice(0, 0, parent)
@@ -116,7 +133,7 @@ export class FlexTreeNode<
         if (!node) {
             throw new FlexTreeNodeNotFoundError(`Node ${this.id} not found`)
         }
-        this._node = node as Expand<TreeNode>
+        this._node = node as Expand<NodeFields>
         if (this._children && includeDescendants) {
             Promise.all(this._children.map(n => n.sync(includeDescendants)))
         }
@@ -128,7 +145,7 @@ export class FlexTreeNode<
      * 不包括关键字段
      *
      */
-    async update(data: Partial<TreeNode>) {
+    async update(data: Partial<NodeFields>) {
         const nodeData = filterObject(data, (k) => {
             return !(k in this._keyFields)
                 || k === this._keyFields.name
@@ -163,9 +180,9 @@ export class FlexTreeNode<
      * @param {string} [options.byField]  指定路径字段，默认为id
      * @param {string} [options.delimiter]  路径分隔符，默认为'/'
      */
-    getByPath(path: string, options?: { byField?: string, delimiter?: string }): FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> | undefined {
+    getByPath(path: string, options?: { byField?: string, delimiter?: string }): FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined {
         const { byField, delimiter } = Object.assign({ byField: this._tree.manager.keyFields.name, delimiter: '/' }, options)
-        let [entryNode, entryPath] = getRelNodePath(this as any, path, delimiter) as [FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>, string]
+        let [entryNode, entryPath] = getRelNodePath(this as any, path, delimiter) as [FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>, string]
         for (const subpath of entryPath.split(delimiter)) {
             if (subpath === '') {
                 continue
@@ -181,51 +198,76 @@ export class FlexTreeNode<
                 return undefined
             }
         }
-        return entryNode as FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>
+        return entryNode as FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>
     }
 
     /**
      * 获取该节点下id=nodeId的节点实例
      */
-    get(nodeId: NodeId): FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> | undefined {
-        if (this.id === nodeId) {
-            return this
-        }
-        if (this._children) {
-            for (const node of this._children) {
-                if (node.id === nodeId) {
-                    return node
-                } else {
-                    const n = node.get(nodeId)
-                    if (n) {
-                        return n
+    get(nodeId: NodeId): FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined
+    get(condition: (node: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>) => boolean): FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined
+    get(): FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined {
+        const nodeId = typeof (arguments[0]) !== 'function' ? arguments[0] : undefined
+        const condition = typeof (arguments[0]) == 'function' ? arguments[0] : undefined
+        if (nodeId) {
+            if (this.id === nodeId) {
+                return this
+            }
+            if (this._children) {
+                for (const node of this._children) {
+                    if (node.id === nodeId) {
+                        return node
+                    } else {
+                        const n = node.get(nodeId)
+                        if (n) {
+                            return n
+                        }
                     }
                 }
             }
+        } else {
+            this.forEach((node) => {
+                if (condition(node)) {
+                    return node
+                }
+            })
         }
     }
     _getNode() {
-        return this._node as Expand<TreeNode>
+        return this._node as Expand<NodeFields>
     }
     /**
-     * 返回符合条件的子节点和后代节点集合
+     * 返回符合条件的第一个节点
+     * 不包括自身
      * @param condition  条件函数
      * @returns  返回符合条件的节点集合
      */
-    find(condition: (node: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>) => boolean): FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>[] {
-        const nodes: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>[] = []
-        if (this._children) {
-            for (const node of this._children) {
-                if (condition(node)) {
-                    nodes.push(node)
-                }
-                nodes.push(...node.find(condition))
+    find(condition: (node: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>) => boolean): FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined {
+        let matchednNode: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined
+        this.forEach((node => {
+            if (condition(node)) {
+                matchednNode = node
+                throw new FlexTreeAbortError()
             }
-        }
+        }))
+        return matchednNode
+    }
+    /**
+     * 返回符合条件的子节点和后代节点集合
+     * 不包括自身节点
+     * @param condition  条件函数     
+     * @returns  返回符合条件的节点集合
+     */
+    findAll(condition: (node: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>) => boolean): FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>[] {
+        const nodes: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>[] = []
+        this.forEach((node => {
+            if (condition(node)) {
+                nodes.push(node)
+            }
+        }))
         return nodes
     }
-
-    private updateSelf(node: TreeNode | undefined) {
+    private updateSelf(node: NodeFields | undefined) {
         if (!isNull(node)) {
             this._node = Object.assign({}, this._node!, node) // 更新节点数据
             const leftValue = (this._node as any)[this._keyFields.leftValue]
@@ -251,15 +293,15 @@ export class FlexTreeNode<
             const nodes = (await this.tree.manager.getDescendants(this.id, {
                 includeSelf: true,
                 level: maxLevel,   // 当懒加载时，只加载一级节点
-            })) as unknown as TreeNode[]
+            })) as unknown as NodeFields[]
             if (!nodes || nodes.length === 0) {
                 throw new FlexTreeNotFoundError()
             }
             // 2. 加载自身节点数据
             this.updateSelf(nodes[0])
 
-            const pnodes: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>[] = [this]
-            let preNode: FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> = this as any
+            const pnodes: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>[] = [this]
+            let preNode: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> = this as any
             // 3. 加载所有后代节点 ，懒加载时只会加载子节点
             for (const node of nodes) {
                 if (node[this._keyFields.id] === this.id) {
@@ -271,7 +313,7 @@ export class FlexTreeNode<
 
                 if (nodeLevel === preNode.level) {
                     const parent = pnodes[pnodes.length - 1]
-                    const nodeObj = new FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>(node, parent, this._tree)
+                    const nodeObj = new FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>(node, parent, this._tree)
                     parent.children!.push(nodeObj)
                     preNode = nodeObj
                 } else if (nodeLevel > preNode.level) {
@@ -400,5 +442,109 @@ export class FlexTreeNode<
 
     toString() {
         return `${this.name}<${this.id}>`
+    }
+    forEach(callback: (
+        node: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>,
+        parent: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined
+    ) => void, options?: { includeSelf?: boolean, ignoreErrors?: boolean, mode?: 'dfs' | 'bfs' }) {
+        const { includeSelf = false, ignoreErrors = true, mode = 'dfs' } = options || {}
+        if (mode === 'dfs') {
+            this._forEachDFS(callback, { includeSelf, ignoreErrors })
+        } else {
+            this._forEachBFS(callback, { includeSelf, ignoreErrors })
+        }
+    }
+    _executeForEachCallback(callback: any, node: any, parent: any, ignoreErrors: boolean): boolean {
+        try {
+            callback(node, parent)
+        } catch (e: any) {
+            if (e instanceof FlexTreeAbortError) {
+                return true
+            } else if (!ignoreErrors) {
+                return true
+            }
+        }
+        return false
+    }
+    /**
+     * 
+     * 遍历树节点
+     * 
+     * 采用深度优先遍历树节点
+     * 
+     * 通过触发FlexTreeAbortError中断遍历
+     * 
+     * @param callback 遍历节点
+     * @param options 
+     * @param options.includeSelf 是否包含自身 
+     * @param options.ignoreErrors 是否忽略callback错误，默认情况下，当callback出错时会忽略
+     */
+    _forEachDFS(callback: (
+        node: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>,
+        parent: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined
+    ) => void, options?: { includeSelf?: boolean, ignoreErrors?: boolean }) {
+        const { includeSelf = true, ignoreErrors = true } = options || {}
+        type Node = FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>
+        let isAbort = false
+        const forEachNode = (node: Node, parent: Node | undefined) => {
+            isAbort = this._executeForEachCallback(callback, node, parent, ignoreErrors)
+            if (isAbort) return
+            if (node.children) {
+                node.children.forEach((child) => {
+                    forEachNode(child, node)
+                })
+            }
+        }
+        if (includeSelf) {
+            forEachNode(this, this.parent)
+        } else {
+            for (let node of this._children || []) {
+                if (isAbort) break
+                forEachNode(node, this)
+            }
+        }
+
+    }
+    /**
+     * 
+     * 广度优先遍历树节点
+     * 
+     * 通过触发FlexTreeAbortError中断遍历
+     * 
+     * @param callback 遍历节点
+     * @param options 
+     * @param options.includeSelf 是否包含自身 
+     */
+    _forEachBFS(callback: (
+        node: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>,
+        parent: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined
+    ) => void, options?: { includeSelf?: boolean, ignoreErrors?: boolean }) {
+        const { includeSelf = true, ignoreErrors = true } = options || {};
+        type Node = FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>;
+
+        // 使用数组作为队列
+        const queue: Array<{ node: Node, parent: Node | undefined }> = [];
+
+        // 根据includeSelf选项决定是否将当前节点加入队列
+        if (includeSelf) {
+            queue.push({ node: this, parent: this.parent });
+        } else if (this._children) {
+            // 如果不包含自身，则将所有子节点加入队列
+            this._children.forEach(child => {
+                queue.push({ node: child, parent: this });
+            });
+        }
+        // 广度优先遍历
+        while (queue.length > 0) {
+            const { node, parent } = queue.shift()!;
+            const isAbort = this._executeForEachCallback(callback, node, parent, ignoreErrors)
+            if (isAbort) break;
+            // 将当前节点的子节点加入队列
+            if (node._children) {
+                node._children.forEach(child => {
+                    queue.push({ node: child, parent: node });
+                });
+            }
+        }
     }
 }

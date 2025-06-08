@@ -1,11 +1,11 @@
 import type { FlexTreeManager } from '../manager'
-import type { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNode, NonUndefined } from '../types'
+import type { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNodeFields, NonUndefined } from '../types'
 import { FlexTreeVerifyError } from '../errors'
 
 export class VerifyTreeMixin<
     Fields extends Record<string, any> = object,
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
+    TreeNode extends IFlexTreeNodeFields<Fields, KeyFields> = IFlexTreeNodeFields<Fields, KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
     TreeId = NonUndefined<KeyFields['treeId']>[1],
 > {
@@ -17,7 +17,7 @@ export class VerifyTreeMixin<
     async verify(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, nodes?: TreeNode[]) {
         nodes = nodes || await this.getNodes({
             // @ts-ignore
-            fields:[
+            fields: [
                 this.keyFields.id,
                 this.keyFields.name,
                 this.keyFields.leftValue,
@@ -25,21 +25,21 @@ export class VerifyTreeMixin<
                 this.keyFields.level
             ]
         })
-        const pnodes: IFlexTreeNode[] = []
+        const pnodes: IFlexTreeNodeFields[] = []
         for (let i = 0; i < nodes.length; i++) {
-            const node = nodes[i] as IFlexTreeNode
-            if (node[this.keyFields.rightValue]- node[this.keyFields.leftValue] === 1) { // 无子节点
+            const node = nodes[i] as IFlexTreeNodeFields
+            if (node[this.keyFields.rightValue] - node[this.keyFields.leftValue] === 1) { // 无子节点
                 if (pnodes.length > 0) {
                     const pnode = pnodes[pnodes.length - 1]
-                    if (pnode[this.keyFields.level] !== node[this.keyFields.level]  - 1) {
+                    if (pnode[this.keyFields.level] !== node[this.keyFields.level] - 1) {
                         throw new FlexTreeVerifyError(`level error ${node[this.keyFields.name]}(${node[this.keyFields.id]})`)
                     } else if (!(node[this.keyFields.leftValue] > pnode[this.keyFields.leftValue])) {
                         throw new FlexTreeVerifyError(`leftValue error ${node[this.keyFields.name]}(${node[this.keyFields.id]})`)
-                    } else if (!(node[this.keyFields.rightValue]< pnode[this.keyFields.rightValue])) {
+                    } else if (!(node[this.keyFields.rightValue] < pnode[this.keyFields.rightValue])) {
                         throw new FlexTreeVerifyError(`rightValue error ${node[this.keyFields.name]}(${node[this.keyFields.id]})`)
                     }
                     // 子节点结束
-                    if (node[this.keyFields.rightValue]+ 1 === pnode[this.keyFields.rightValue]) {
+                    if (node[this.keyFields.rightValue] + 1 === pnode[this.keyFields.rightValue]) {
                         let preNode = pnodes.pop()
                         if (pnodes.length > 0) {
                             while (preNode![this.keyFields.rightValue] + 1 === pnodes[pnodes.length - 1]?.[this.keyFields.rightValue]) {
@@ -51,12 +51,12 @@ export class VerifyTreeMixin<
                         }
                     }
                 }
-                if ((node[this.keyFields.rightValue]- node[this.keyFields.leftValue] - 1) % 2 !== 0) {
-                    throw new FlexTreeVerifyError(`${node[this.keyFields.name] }(${node[this.keyFields.id] }) rightValue - leftValue error `)
+                if ((node[this.keyFields.rightValue] - node[this.keyFields.leftValue] - 1) % 2 !== 0) {
+                    throw new FlexTreeVerifyError(`${node[this.keyFields.name]}(${node[this.keyFields.id]}) rightValue - leftValue error `)
                 }
-            } else if (node[this.keyFields.rightValue]- node[this.keyFields.leftValue] >= 3) { // 有子节点
+            } else if (node[this.keyFields.rightValue] - node[this.keyFields.leftValue] >= 3) { // 有子节点
                 //  rightValue-leftValue一定是奇数,否则说明有问题
-                if ((node[this.keyFields.rightValue]- node[this.keyFields.leftValue] - 1) % 2 === 0) {
+                if ((node[this.keyFields.rightValue] - node[this.keyFields.leftValue] - 1) % 2 === 0) {
                     pnodes.push(node) // 先保存父节点
                 } else {
                     throw new FlexTreeVerifyError(`${node.name}(${node[this.keyFields.id]}) rightValue - leftValue error `)

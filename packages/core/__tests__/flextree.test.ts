@@ -97,5 +97,11 @@ describe("FlexTree类型系统测试", () => {
             ]
             return true
         })!
+        const node = tree.get('123')!
+
+        type keyFieldCases = [
+            Expect<Equal<typeof node.id, string>>,
+            Expect<Equal<typeof node.treeId, string>>
+        ]
     })
 })

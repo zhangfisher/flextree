@@ -1,5 +1,5 @@
 import type { FlexTreeManager } from '../manager'
-import type { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNode, NonUndefined } from '../types'
+import type { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNodeFields, NonUndefined } from '../types'
 import { FlexTreeError, FlexTreeNodeNotFoundError, FlexTreeNotExists } from '../errors'
 import { escapeSqlString } from '../utils/escapeSqlString'
 import { isLikeNode } from '../utils/isLikeNode'
@@ -9,7 +9,7 @@ import { isNull } from '../utils/isNull'
 export class GetNodeMixin<
     Fields extends Record<string, any> = object,
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
-    TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
+    TreeNode extends IFlexTreeNodeFields<Fields, KeyFields> = IFlexTreeNodeFields<Fields, KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
     TreeId = NonUndefined<KeyFields['treeId']>[1],
 > {
@@ -47,9 +47,9 @@ export class GetNodeMixin<
      * @param {number}  [options.level]            限定返回的层级,0表示不限制,1表示只返回根节点，2表示返回根节点和其子节点, 依次类推
      * @returns TreeNode[]
      */
-    async getNodes(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, options?: { level?: number,fields?:keyof TreeNode }): Promise<TreeNode[]> {
-        const { level,fields } = Object.assign({ level: 0,fields:[] }, options)
-        const fieldList = fields.length>0 ? fields.map(f=>`${f}`).join(',') : '*'
+    async getNodes(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, options?: { level?: number, fields?: keyof TreeNode }): Promise<TreeNode[]> {
+        const { level, fields } = Object.assign({ level: 0, fields: [] }, options)
+        const fieldList = fields.length > 0 ? fields.map(f => `${f}`).join(',') : '*'
         const sql = this._sql(`SELECT ${fieldList} FROM ${this.tableName} 
             WHERE {__TREE_ID__} ${this.keyFields.leftValue}>0 AND ${this.keyFields.rightValue}>0
                 ${level > 0 ? `AND ${this.keyFields.level}<=${level}` : ''}
@@ -106,8 +106,8 @@ export class GetNodeMixin<
      * @param {number}  [options.level]           限制返回的级别
      * @param {boolean} [options.includeSelf]     返回结果是否包括自身
      */
-    async getDescendants(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, nodeId?: NodeId | TreeNode, options?: { level?: number, includeSelf?: boolean }): Promise<IFlexTreeNode<Fields, KeyFields>[]> {
-        if(isNull(nodeId)) {
+    async getDescendants(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, nodeId?: NodeId | TreeNode, options?: { level?: number, includeSelf?: boolean }): Promise<IFlexTreeNodeFields<Fields, KeyFields>[]> {
+        if (isNull(nodeId)) {
             return await this.getNodes(options)
         }
         const { level, includeSelf } = Object.assign({ includeSelf: false, level: 0 }, options)
