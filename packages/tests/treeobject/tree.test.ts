@@ -52,7 +52,7 @@ describe('访问树对象实例', () => {
         const root = tree.root!
         expect(root.name).toBe('root')
         await tree.manager.write(async () => {
-            await tree.manager.update({ ...root.data, name: 'ROOT' })
+            await tree.manager.update({ ...root.fields, name: 'ROOT' })
             expect(root.name).toBe('root')
             await root.sync()
             expect(root.name).toBe('ROOT')

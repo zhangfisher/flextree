@@ -61,29 +61,29 @@ export type PickKeyFieldType<
     KeyFields extends Record<string, string | [string, any]>,
     Name extends string,
     DefaultType = any,
-> = KeyFields[Name] extends [ infer K, infer V ] ?
-        (
-            K extends string ?
-                    { [ P in K ]: V }
-                : { [ P in Name ]: DefaultType }
-        )
+> = KeyFields[Name] extends [infer K, infer V] ?
+    (
+        K extends string ?
+        { [P in K]: V }
+        : { [P in Name]: DefaultType }
+    )
     :
-        (
-            KeyFields[Name] extends string ?
-                    { [ P in KeyFields[Name] ]: DefaultType }
-                : { [K in Name]: DefaultType }
-        )
+    (
+        KeyFields[Name] extends string ?
+        { [P in KeyFields[Name]]: DefaultType }
+        : { [K in Name]: DefaultType }
+    )
 
 export type IFlexTreeNode<
     Fields extends Record<string, any> = Record<string, any>,
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
 > = PickKeyFieldType<KeyFields, 'id', number>
-& PickKeyFieldType<KeyFields, 'treeId', number>
-& PickKeyFieldType<KeyFields, 'name', string>
-& PickKeyFieldType<KeyFields, 'level', number>
-& PickKeyFieldType<KeyFields, 'leftValue', number>
-& PickKeyFieldType<KeyFields, 'rightValue', number>
-& Fields
+    & PickKeyFieldType<KeyFields, 'treeId', number>
+    & PickKeyFieldType<KeyFields, 'name', string>
+    & PickKeyFieldType<KeyFields, 'level', number>
+    & PickKeyFieldType<KeyFields, 'leftValue', number>
+    & PickKeyFieldType<KeyFields, 'rightValue', number>
+    & Fields
 
 export type RemoveKeyFields<T extends Record<string, any>, KeyFields extends CustomTreeKeyFields> = {
     [K in keyof T]: K extends KeyFields[keyof KeyFields] ? never : T[K]
@@ -111,9 +111,9 @@ export type FlexTreeExportJsonFormat<
     TreeNode extends IFlexTreeNode<Fields, KeyFields> = IFlexTreeNode<Fields, KeyFields>,
     NodeId = NonUndefined<KeyFields['id']>[1],
 > = TreeNode &
-{
-    children?: FlexTreeExportJsonFormat<Fields, KeyFields, TreeNode, NodeId>[]
-}
+    {
+        children?: FlexTreeExportJsonFormat<Fields, KeyFields, TreeNode, NodeId>[]
+    }
 
 export interface FlexTreeExportListOptions<
     Fields extends Record<string, any> = object,
@@ -136,3 +136,6 @@ export type FlexTreeExportListFormat<
         (OPTIONS['fields'] extends string[] ? Extract<TreeNode, OPTIONS['fields'][number]> : TreeNode)
         & { [P in OPTIONS['pidField'] & string]: NodeId }
     )[]
+
+
+export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;

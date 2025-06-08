@@ -38,6 +38,6 @@
         "flextree": "workspace:^",
         "prisma": "^5.17.0",
         "tsup": "^8.1.0",
-        "typescript": "^5.5.4"
+        "typescript": "^5.8.3"
     }
 }

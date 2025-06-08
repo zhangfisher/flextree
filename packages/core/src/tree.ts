@@ -1,8 +1,8 @@
 import type { RequiredDeep } from 'type-fest'
-import type { CustomTreeKeyFields, DefaultTreeKeyFields, FlexTreeExportJsonFormat, FlexTreeExportJsonOptions, FlexTreeExportListFormat, FlexTreeExportListOptions, IFlexTreeNode, NonUndefined } from './types'
+import type { CustomTreeKeyFields, DefaultTreeKeyFields, FlexTreeExportJsonFormat, FlexTreeExportJsonOptions, FlexTreeExportListFormat, FlexTreeExportListOptions, IFlexTreeNode, Expand, NonUndefined } from './types'
 import { FlexTreeManager, type FlexTreeManagerOptions } from './manager'
-import { FlexTreeNode,type FlexTreeNodeStatus  } from './node'
-import { FlexTreeInvalidError, FlexTreeNotFoundError } from './errors'
+import { FlexTreeNode, type FlexTreeNodeStatus } from './node'
+import { FlexTreeNotFoundError } from './errors'
 
 export type FlexTreeOptions<TreeIdType = number> = FlexTreeManagerOptions<TreeIdType> & {
     lazy?: boolean                      // 是否懒加载树
@@ -54,10 +54,10 @@ export class FlexTree<
     get root() {
         return this._root
     }
-    get status(){
-        if(!this._root){
+    get status() {
+        if (!this._root) {
             return 'not-loaded'
-        }else{
+        } else {
             return this._root.status
         }
     }
@@ -65,7 +65,7 @@ export class FlexTree<
      * 加载树到内存中
      */
     async load() {
-        this._root = new FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>(undefined, undefined, this )        
+        this._root = new FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId>(undefined, undefined, this)
         await this._root.load()
     }
     getByPath(path: string, options?: { byField?: string, delimiter?: string }): FlexTreeNode<Fields, KeyFields, TreeNode, NodeId, TreeId> | undefined {

@@ -39,13 +39,14 @@
     },
     "devDependencies": {
         "@swc/core": "^1.7.2",
+        "@type-challenges/utils": "^0.1.1",
         "@types/sqlstring": "^2.3.2",
         "@vitest/coverage-v8": "^2.0.4",
         "ts-node": "^10.9.2",
         "tsd": "^0.31.1",
         "tsup": "^8.2.3",
         "type-fest": "^4.23.0",
-        "typescript": "^5.5.4"
+        "typescript": "^5.8.3"
     },
     "tsd": {
         "directory": "__tests__"

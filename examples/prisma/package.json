@@ -14,19 +14,18 @@
         "db:sync": "prisma db push",
         "dev": "ts-node --experimentalSpecifierResolution node ./src/index.ts",
         "dev:custom": "ts-node --experimentalSpecifierResolution node ./src/custom.ts"
-
     },
     "dependencies": {
-        "flextree-prisma-adapter": "workspace:*",
         "@prisma/client": "5.17.0",
         "flextree": "workspace:*",
+        "flextree-prisma-adapter": "workspace:*",
         "prisma": "^5.17.0"
     },
     "devDependencies": {
         "@types/node": "^20.14.12",
         "ts-node": "^10.9.2",
         "tsx": "^4.16.2",
-        "typescript": "^5.5.4"
+        "typescript": "^5.8.3"
     },
     "prisma": {
         "seed": "ts-node prisma/seed.ts"
