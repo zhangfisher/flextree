@@ -1,4 +1,4 @@
-import type { DefaultTreeKeyFields, FlexTreeManager, IFlexTreeAdapter, IFlexTreeNode } from 'flextree'
+import type { DefaultTreeKeyFields, FlexTreeManager, IFlexTreeAdapter, IFlexTreeNodeFields } from 'flextree'
 
 export default class PrismaAdapter implements IFlexTreeAdapter {
     ready: boolean = true
@@ -8,7 +8,7 @@ export default class PrismaAdapter implements IFlexTreeAdapter {
         this.db = prismaClient
     }
 
-    bind(treeManager: FlexTreeManager<object, DefaultTreeKeyFields, IFlexTreeNode<object, DefaultTreeKeyFields>, number, number>): void {
+    bind(treeManager: FlexTreeManager<object, DefaultTreeKeyFields, IFlexTreeNodeFields<object, DefaultTreeKeyFields>, number, number>): void {
         this._treeManager = treeManager
     }
 
