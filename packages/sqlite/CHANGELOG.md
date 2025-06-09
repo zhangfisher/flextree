@@ -1,5 +1,12 @@
 # flextree-sqlite-adapter
 
+## 1.1.1
+
+### Patch Changes
+
+-   Updated dependencies [827f089]
+    -   flextree@1.1.1
+
 ## 1.1.0
 
 ### Minor Changes
