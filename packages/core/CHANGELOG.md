@@ -1,5 +1,11 @@
 # flextree
 
+## 2.0.2
+
+### Patch Changes
+
+-   7e63e70: 当`node.get`输入条件函数时，包括当前节点
+
 ## 1.1.1
 
 ### Patch Changes
