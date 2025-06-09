@@ -1,5 +1,11 @@
 # flextree
 
+## 1.1.1
+
+### Patch Changes
+
+-   827f089: fix tree.get
+
 ## 1.1.0
 
 ### Minor Changes
