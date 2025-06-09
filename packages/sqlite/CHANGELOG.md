@@ -1,5 +1,16 @@
 # flextree-sqlite-adapter
 
+## 1.1.0
+
+### Minor Changes
+
+-   f01b923: 新增加 foreach 方法用于遍历树
+
+### Patch Changes
+
+-   Updated dependencies [f01b923]
+    -   flextree@1.1.0
+
 ## 1.0.3
 
 ### Patch Changes
