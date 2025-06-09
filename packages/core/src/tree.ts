@@ -86,7 +86,10 @@ export class FlexTree<
     /**
      * 根据节点id获取节点实例
      */
-    get(nodeId: NodeId) {
+    get(nodeId: NodeId): FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined
+    get(condition: (node: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>) => boolean): FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined
+    get(): FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined {
+        const nodeId = arguments[0]
         if (nodeId === this._root?.id) {
             return this._root
         } else {
