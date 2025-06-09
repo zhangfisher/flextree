@@ -226,6 +226,7 @@ export class FlexTreeNode<
                 }
             }
         } else {
+            if (condition(this)) return this
             this.forEach((node) => {
                 if (condition(node)) {
                     return node
