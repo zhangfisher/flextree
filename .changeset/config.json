@@ -1,13 +1,19 @@
 {
-  "$schema": "https://unpkg.com/@changesets/config@3.0.2/schema.json",
-  "changelog": "@changesets/cli/changelog",
-  "commit": true,
-  "fixed": [],
-  "linked": [],
-  "access": "public",
-  "baseBranch": "master",
-  "updateInternalDependencies": "patch",
-  "ignore": [  
-    "flextree-unit-tests"
-  ]
+    "$schema": "https://unpkg.com/@changesets/config@3.0.2/schema.json",
+    "changelog": "@changesets/cli/changelog",
+    "commit": true,
+    "fixed": [
+        [
+            "flextree",
+            "flextree-sqlite-adapter",
+            "flextree-prisma-adapter"
+        ]
+    ],
+    "linked": [],
+    "access": "public",
+    "baseBranch": "master",
+    "updateInternalDependencies": "patch",
+    "ignore": [
+        "flextree-unit-tests"
+    ]
 }
