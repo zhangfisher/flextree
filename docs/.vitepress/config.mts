@@ -1,3 +1,4 @@
+import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 import { defineConfig } from 'vitepress'
 
 // https://vitepress.dev/reference/site-config
@@ -14,7 +15,7 @@ export default defineConfig({
         nav: [
             { text: '首页', link: '/' },
             { text: '指南', link: '/guide' },
-            { text: '开源推荐', link: 'https://zhangfisher.github.io/repos/'}
+            { text: '开源推荐', link: 'https://zhangfisher.github.io/repos/' }
         ],
 
         sidebar: [
@@ -29,22 +30,22 @@ export default defineConfig({
                     { text: '创建树', link: '/guide/createtree' },
                     { text: '管理器', link: '/guide/manager' },
                     { text: '查询树', link: '/guide/query' },
-                    { 
-                        text: '更新操作', 
+                    {
+                        text: '更新操作',
                         link: '/guide/write',
-                        items:[
-                            { text: '添加节点', link: '/guide/add' },                             
-                            { text: '删除节点', link: '/guide/delete' },                           
+                        items: [
+                            { text: '添加节点', link: '/guide/add' },
+                            { text: '删除节点', link: '/guide/delete' },
                             { text: '移动节点', link: '/guide/move' },
-                            { text: '更新节点', link: '/guide/update'}
+                            { text: '更新节点', link: '/guide/update' }
                         ]
-                    },                   
+                    },
                     { text: '查找节点', link: '/guide/find' },
                     { text: '节点关系', link: '/guide/relation' },
                     { text: 'FlexTree', link: '/guide/flextree' },
                     { text: '校验', link: '/guide/verify' },
                     { text: '导出', link: '/guide/export' },
-                    { text: '自定义', link: '/guide/custom' },                    
+                    { text: '自定义', link: '/guide/custom' },
                     { text: '多树表', link: '/guide/multitree' },
                     { text: '数据库适配', link: '/guide/adapters' },
                 ],
@@ -69,4 +70,13 @@ export default defineConfig({
             },
         },
     },
+    markdown: {
+        codeTransformers: [
+            transformerTwoslash({
+                // typesCache: createFileSystemTypesCache()
+            })
+        ],
+        // Explicitly load these languages for types hightlighting
+        //languages: ['js', 'jsx', 'ts', 'tsx']
+    }
 })
