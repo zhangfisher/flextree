@@ -1,5 +1,12 @@
 # flextree-prisma-adapter
 
+## 2.0.2
+
+### Patch Changes
+
+-   Updated dependencies [7e63e70]
+    -   flextree@2.0.2
+
 ## 2.0.1
 
 ### Patch Changes
