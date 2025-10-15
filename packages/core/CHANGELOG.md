@@ -1,5 +1,11 @@
 # flextree
 
+## 2.0.3
+
+### Patch Changes
+
+-   a1b13b0: 修复 getNodeData 中对无效节点数据的判断逻辑错误
+
 ## 2.0.2
 
 ### Patch Changes
