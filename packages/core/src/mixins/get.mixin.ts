@@ -35,7 +35,7 @@ export class GetNodeMixin<
         } else {
             throw new FlexTreeError('Invalid node parameter')
         }
-        if (isValidNode(node!)) {
+        if (!isValidNode(node!)) {
             throw new FlexTreeNodeNotFoundError('Invalid node parameter')
         }
         return node
