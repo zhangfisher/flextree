@@ -1,5 +1,11 @@
 # flextree
 
+## 2.0.4
+
+### Patch Changes
+
+-   3c5317c: 修复 isValidNode 的判定条件错误
+
 ## 2.0.3
 
 ### Patch Changes
