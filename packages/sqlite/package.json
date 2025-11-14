@@ -1,7 +1,7 @@
 {
     "name": "flextree-sqlite-adapter",
     "type": "module",
-    "version": "2.0.3",
+    "version": "2.0.4",
     "description": "sqlite driver for flextree",
     "author": "zhangfisher",
     "homepage": "https://zhangfisher.github.io/flextree/",
