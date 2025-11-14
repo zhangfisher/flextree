@@ -3,11 +3,23 @@
  *
  */
 export function isValidNode(node: any): boolean {
-    if (!node) { return false }
-    if (!node.id) { return false }
-    if (!node.leftValue || node.leftValue! <= 0) { return false }
-    if (!node.rightValue || node.rightValue! <= 0) { return false }
-    if (node.leftValue! <= node.rightValue!) { return false }
-    if (!node.level || node.level! <= 0) { return false }
-    return true
+    if (!node) {
+        return false;
+    }
+    if (!node.id) {
+        return false;
+    }
+    if (!node.leftValue || node.leftValue! <= 0) {
+        return false;
+    }
+    if (!node.rightValue || node.rightValue! <= 0) {
+        return false;
+    }
+    if (node.leftValue! >= node.rightValue!) {
+        return false;
+    }
+    if (!node.level || node.level! <= 0) {
+        return false;
+    }
+    return true;
 }
