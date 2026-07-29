@@ -109,7 +109,7 @@ export class FlexTreeManager<
   private _ready: boolean = false; // 当driver准备就绪时,ready为true时,才允许执行读写操作
   private _emitter = mitt<FlexTreeEvents>();
   private _lastUpdateAt = 0;
-  constructor(tableName: string, options?: FlexTreeManagerOptions<KeyFields["treeId"]>) {
+  constructor(tableName: string, options?: FlexTreeManagerOptions<NonUndefined<KeyFields["treeId"]>[1]>) {
     this._tableName = tableName;
     this._options = deepMerge(
       {

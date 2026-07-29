@@ -80,9 +80,19 @@ export class GetNodeMixin<
      */
     async getNthChild(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, node: NodeId | TreeNode, index: number = 1): Promise<TreeNode | undefined> {
         const relNodeId = this.escapeString(isLikeNode(node, this.keyFields) ? (node as any)[this.keyFields.id] : node)
-        const sql = this._sql(`SELECT Node.* FROM ${this.tableName}  Node
+        let treeCondition = ''
+        if (this.treeId) {
+            let treeIdValue: string | number
+            if (typeof this.treeId === 'string') {
+                treeIdValue = `'` + this.treeId + `'`
+            } else {
+                treeIdValue = this.treeId
+            }
+            treeCondition = `Node.${this.keyFields.treeId}=${treeIdValue} AND`
+        }
+        const sql = `SELECT Node.* FROM ${this.tableName}  Node
             JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
-            WHERE {__TREE_ID__} 
+            WHERE ${treeCondition}
                 (
                     Node.${this.keyFields.leftValue} > RelNode.${this.keyFields.leftValue}
                     AND Node.${this.keyFields.rightValue} < RelNode.${this.keyFields.rightValue}
@@ -90,7 +100,7 @@ export class GetNodeMixin<
                 )
             ORDER BY Node.${this.keyFields.leftValue} ${index < 0 ? 'DESC' : ''}
             LIMIT 1 OFFSET ${Math.abs(index) - 1}
-        `)
+        `
         const result = await this.onExecuteReadSql(sql)
         return result.length > 0 ? result[0] as TreeNode : undefined
     }
@@ -111,30 +121,40 @@ export class GetNodeMixin<
         const { level, includeSelf } = Object.assign({ includeSelf: false, level: 0 }, options)
         const relNode = await this.getNodeData(nodeId)
         const relNodeId = this.escapeString(relNode[this.keyFields.id])
+        let treeCondition = ''
+        if (this.treeId) {
+            let treeIdValue: string | number
+            if (typeof this.treeId === 'string') {
+                treeIdValue = `'` + this.treeId + `'`
+            } else {
+                treeIdValue = this.treeId
+            }
+            treeCondition = `Node.${this.keyFields.treeId}=${treeIdValue} AND`
+        }
         let sql: string = ''
         if (level === 0) { // 不限定层级
-            sql = this._sql(`SELECT Node.* FROM ${this.tableName} Node
+            sql = `SELECT Node.* FROM ${this.tableName} Node
                 JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
-                WHERE 
-                  {__TREE_ID__} 
+                WHERE
+                  ${treeCondition}
                   ((Node.${this.keyFields.leftValue} > RelNode.${this.keyFields.leftValue}
-                  AND Node.${this.keyFields.rightValue} < RelNode.${this.keyFields.rightValue})                  
-                  ${includeSelf ? `OR Node.${this.keyFields.id} = ${relNodeId}` : ''})     
-                ORDER BY ${this.keyFields.leftValue}             
-                `)
+                  AND Node.${this.keyFields.rightValue} < RelNode.${this.keyFields.rightValue})
+                  ${includeSelf ? `OR Node.${this.keyFields.id} = ${relNodeId}` : ''})
+                ORDER BY ${this.keyFields.leftValue}
+                `
         } else { // 限定层级
-            sql = this._sql(`SELECT Node.* FROM ${this.tableName} Node
+            sql = `SELECT Node.* FROM ${this.tableName} Node
                 JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
-                WHERE 
-                {__TREE_ID__} 
+                WHERE
+                ${treeCondition}
                 ((Node.${this.keyFields.leftValue} > RelNode.${this.keyFields.leftValue}
                 AND Node.${this.keyFields.rightValue} < RelNode.${this.keyFields.rightValue}
                 -- 限定层级
                 AND Node.${this.keyFields.level} > RelNode.${this.keyFields.level}
                 AND Node.${this.keyFields.level} <= RelNode.${this.keyFields.level}+${level})
                 ${includeSelf ? `OR Node.${this.keyFields.id} = ${relNodeId}` : ''})
-                ORDER BY ${this.keyFields.leftValue}             
-            `)
+                ORDER BY ${this.keyFields.leftValue}
+            `
         }
         // 得到的平面形式的节点列表
         return await this.onExecuteReadSql(sql)
@@ -148,15 +168,24 @@ export class GetNodeMixin<
         const relNode = await this.getNodeData(nodeId)
         const relNodeId = this.escapeString(relNode[this.keyFields.id])
         const relNodeLevel = relNode[this.keyFields.level]
+        let treeCondition = ''
+        if (this.treeId) {
+            let treeIdValue: string | number
+            if (typeof this.treeId === 'string') {
+                treeIdValue = `'` + this.treeId + `'`
+            } else {
+                treeIdValue = this.treeId
+            }
+            treeCondition = `Node.${this.keyFields.treeId}=${treeIdValue} AND`
+        }
 
-        const sql = this._sql(`SELECT COUNT(*) FROM ${this.tableName} Node
+        const sql = `SELECT COUNT(*) FROM ${this.tableName} Node
             JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
-            WHERE {__TREE_ID__} 
-                (   
+            WHERE ${treeCondition}
+                (
                     Node.${this.keyFields.leftValue} > RelNode.${this.keyFields.leftValue}
                     AND Node.${this.keyFields.rightValue} < RelNode.${this.keyFields.rightValue}
-                ) ${level > 0 ? `AND Node.${this.keyFields.level} <= ${relNodeLevel + level} ` : ''}       
-        `)
+                ) ${level > 0 ? `AND Node.${this.keyFields.level} <= ${relNodeLevel + level} ` : ''}`
         return await this.getScalar(sql)
     }
 
@@ -182,19 +211,29 @@ export class GetNodeMixin<
 
         const relNode = await this.getNodeData(nodeId)
         const relNodeId = this.escapeString(relNode[this.keyFields.id])
+        let treeCondition = ''
+        if (this.treeId) {
+            let treeIdValue: string | number
+            if (typeof this.treeId === 'string') {
+                treeIdValue = `'` + this.treeId + `'`
+            } else {
+                treeIdValue = this.treeId
+            }
+            treeCondition = `Node.${this.keyFields.treeId}=${treeIdValue} AND`
+        }
 
-        const sql = this._sql(`SELECT Node.* FROM ${this.tableName} Node
+        const sql = `SELECT Node.* FROM ${this.tableName} Node
             JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
-            WHERE {__TREE_ID__} 
+            WHERE ${treeCondition}
             (
-                (   
+                (
                     Node.${this.keyFields.leftValue} < RelNode.${this.keyFields.leftValue}
                     AND Node.${this.keyFields.rightValue} > RelNode.${this.keyFields.rightValue}
-                )   
+                )
                 ${includeSelf ? `OR Node.${this.keyFields.id} = ${relNodeId}` : ''}
-            ) 
-            ORDER BY ${this.keyFields.leftValue}     
-        `)
+            )
+            ORDER BY ${this.keyFields.leftValue}
+        `
         return await this.getNodeList(sql)
     }
 
@@ -204,14 +243,24 @@ export class GetNodeMixin<
      * @returns {number}  返回祖先节点数量
      */
     async getAncestorsCount(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, nodeId: NodeId) {
-        const sql = this._sql(`SELECT COUNT(*) FROM ${this.tableName} Node
+        let treeCondition = ''
+        if (this.treeId) {
+            let treeIdValue: string | number
+            if (typeof this.treeId === 'string') {
+                treeIdValue = `'` + this.treeId + `'`
+            } else {
+                treeIdValue = this.treeId
+            }
+            treeCondition = `Node.${this.keyFields.treeId}=${treeIdValue} AND`
+        }
+        const sql = `SELECT COUNT(*) FROM ${this.tableName} Node
             JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${this.escapeString(nodeId)}
-            WHERE {__TREE_ID__} 
-                (   
+            WHERE ${treeCondition}
+                (
                     Node.${this.keyFields.leftValue} < RelNode.${this.keyFields.leftValue}
                     AND Node.${this.keyFields.rightValue} > RelNode.${this.keyFields.rightValue}
-                )       
-        `)
+                )
+        `
         return await this.getScalar(sql)
     }
 
@@ -223,15 +272,25 @@ export class GetNodeMixin<
     async getParent(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, nodeId: NodeId | TreeNode): Promise<TreeNode> {
         const relNode = await this.getNodeData(nodeId)
         const relNodeId = this.escapeString(relNode[this.keyFields.id])
-        const sql = this._sql(`SELECT Node.* FROM ${this.tableName} Node
+        let treeCondition = ''
+        if (this.treeId) {
+            let treeIdValue: string | number
+            if (typeof this.treeId === 'string') {
+                treeIdValue = `'` + this.treeId + `'`
+            } else {
+                treeIdValue = this.treeId
+            }
+            treeCondition = `Node.${this.keyFields.treeId}=${treeIdValue} AND`
+        }
+        const sql = `SELECT Node.* FROM ${this.tableName} Node
             JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
-            WHERE {__TREE_ID__}  
-            (   
+            WHERE ${treeCondition}
+            (
                 Node.${this.keyFields.leftValue} < RelNode.${this.keyFields.leftValue}
                 AND Node.${this.keyFields.rightValue} > RelNode.${this.keyFields.rightValue}
-            )  
-            ORDER BY ${this.keyFields.leftValue} DESC LIMIT 1     
-        `)
+            )
+            ORDER BY ${this.keyFields.leftValue} DESC LIMIT 1
+        `
         const result = await this.onExecuteReadSql(sql)
         if (result.length === 0) { throw new FlexTreeNodeNotFoundError() }
         return result[0] as TreeNode
@@ -263,26 +322,36 @@ export class GetNodeMixin<
         const { includeSelf } = Object.assign({ includeSelf: false }, options)
         const relNode = await this.getNodeData(nodeId)
         const relNodeId = this.escapeString(relNode[this.keyFields.id])
-        const sql = this._sql(`SELECT Node.* FROM ${this.tableName} Node
+        let treeCondition = ''
+        if (this.treeId) {
+            let treeIdValue: string | number
+            if (typeof this.treeId === 'string') {
+                treeIdValue = `'` + this.treeId + `'`
+            } else {
+                treeIdValue = this.treeId
+            }
+            treeCondition = `Node.${this.keyFields.treeId}=${treeIdValue} AND`
+        }
+        const sql = `SELECT Node.* FROM ${this.tableName} Node
             JOIN (
                 SELECT Node.* FROM ${this.tableName} Node
                 JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
-                WHERE 
-                    (Node.${this.keyFields.leftValue} < RelNode.${this.keyFields.leftValue} 
+                WHERE
+                    (Node.${this.keyFields.leftValue} < RelNode.${this.keyFields.leftValue}
                     AND Node.${this.keyFields.rightValue} > RelNode.${this.keyFields.rightValue} )
                 ORDER BY Node.${this.keyFields.leftValue} DESC LIMIT 1
             ) ParentNode
-            WHERE {__TREE_ID__}  
+            WHERE ${treeCondition}
             (
                 (
-                    Node.${this.keyFields.leftValue} > ParentNode.${this.keyFields.leftValue} 
+                    Node.${this.keyFields.leftValue} > ParentNode.${this.keyFields.leftValue}
                     AND Node.${this.keyFields.rightValue} < ParentNode.${this.keyFields.rightValue}
                     AND Node.${this.keyFields.level} = ParentNode.${this.keyFields.level}+1
                     ${includeSelf ? '' : `AND Node.${this.keyFields.id} != ${relNodeId}`}
-                )                
+                )
             )
-            ORDER BY ${this.keyFields.leftValue}     
-        `)
+            ORDER BY ${this.keyFields.leftValue}
+        `
         return await this.getNodeList(sql)
     }
 
@@ -303,15 +372,25 @@ export class GetNodeMixin<
     async getNextSibling(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, nodeId: NodeId | TreeNode) {
         const relNode = await this.getNodeData(nodeId)
         const relNodeId = this.escapeString(relNode[this.keyFields.id])
+        let treeCondition = ''
+        if (this.treeId) {
+            let treeIdValue: string | number
+            if (typeof this.treeId === 'string') {
+                treeIdValue = `'` + this.treeId + `'`
+            } else {
+                treeIdValue = this.treeId
+            }
+            treeCondition = `Node.${this.keyFields.treeId}=${treeIdValue} AND`
+        }
 
-        const sql = this._sql(`SELECT Node.* FROM ${this.tableName} Node
-            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}             
-            WHERE {__TREE_ID__}  
+        const sql = `SELECT Node.* FROM ${this.tableName} Node
+            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
+            WHERE ${treeCondition}
                 (
-                    Node.${this.keyFields.leftValue} = RelNode.${this.keyFields.rightValue}+1  
+                    Node.${this.keyFields.leftValue} = RelNode.${this.keyFields.rightValue}+1
                     AND Node.${this.keyFields.level} = RelNode.${this.keyFields.level}
-                )     
-            LIMIT 1`)
+                )
+            LIMIT 1`
         return await this.getOneNode(sql)
     }
 
@@ -322,14 +401,24 @@ export class GetNodeMixin<
     async getPreviousSibling(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, nodeId: NodeId | TreeNode) {
         const relNode = await this.getNodeData(nodeId)
         const relNodeId = this.escapeString(relNode[this.keyFields.id])
+        let treeCondition = ''
+        if (this.treeId) {
+            let treeIdValue: string | number
+            if (typeof this.treeId === 'string') {
+                treeIdValue = `'` + this.treeId + `'`
+            } else {
+                treeIdValue = this.treeId
+            }
+            treeCondition = `Node.${this.keyFields.treeId}=${treeIdValue} AND`
+        }
 
-        const sql = this._sql(`SELECT Node.* FROM ${this.tableName} Node
-            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}             
-            WHERE {__TREE_ID__}  
+        const sql = `SELECT Node.* FROM ${this.tableName} Node
+            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
+            WHERE ${treeCondition}
                 (
-                    Node.${this.keyFields.rightValue} = RelNode.${this.keyFields.leftValue}-1  
-                )     
-            LIMIT 1`)
+                    Node.${this.keyFields.rightValue} = RelNode.${this.keyFields.leftValue}-1
+                )
+            LIMIT 1`
         return await this.getOneNode(sql)
     }
 

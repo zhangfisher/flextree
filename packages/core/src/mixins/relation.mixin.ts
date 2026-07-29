@@ -49,25 +49,35 @@ export class RelationMixin<
             } else if (leftValue < relLeftValue && rightValue > relRightValue) {
                 result = FlexTreeNodeRelation.Ancestors // 一个节点是另一个节点的祖先
             } else {
-                const sql = this._sql(`SELECT 
-                CASE 
+                let treeCondition = ''
+                if (this.treeId) {
+                    let treeIdValue: string | number
+                    if (typeof this.treeId === 'string') {
+                        treeIdValue = `'` + this.treeId + `'`
+                    } else {
+                        treeIdValue = this.treeId
+                    }
+                    treeCondition = `Node.${this.keyFields.treeId}=${treeIdValue} AND`
+                }
+                const sql = `SELECT
+                CASE
                     WHEN t1.${this.keyFields.id}  = t2.${this.keyFields.id}  THEN 1 ELSE 0
                 END as isSiblings
-                FROM 
+                FROM
                     ( SELECT Node.* FROM  ${this.tableName} Node
                         JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${nodeId}
-                        WHERE ( {__TREE_ID__}
+                        WHERE (${treeCondition}
                         Node.${this.keyFields.leftValue} < RelNode.${this.keyFields.leftValue}
                         AND Node.${this.keyFields.rightValue} > RelNode.${this.keyFields.rightValue}
                         ) ORDER BY ${this.keyFields.leftValue} DESC LIMIT 1
                     ) AS t1,
                     ( SELECT Node.* FROM  ${this.tableName} Node
                         JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id}  = ${relNodeId}
-                        WHERE ( {__TREE_ID__}
+                        WHERE (${treeCondition}
                         Node.${this.keyFields.leftValue} < RelNode.${this.keyFields.leftValue}
                         AND Node.${this.keyFields.rightValue} > RelNode.${this.keyFields.rightValue}
                         ) ORDER BY ${this.keyFields.leftValue} DESC LIMIT 1
-                    ) AS t2`)
+                    ) AS t2`
                 const r = await this.onGetScalar(sql) // 两个节点在同一棵树中
                 if (r === 1) {
                     result = FlexTreeNodeRelation.Siblings // 两个节点是兄弟节点

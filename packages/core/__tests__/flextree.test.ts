@@ -451,7 +451,7 @@ describe("FlexTree 功能测试", () => {
   describe("树状态和属性", () => {
     test("未加载时的状态", async () => {
       const tree = await createFlexTree();
-      expect(tree.status).toBe("not-loaded");
+      expect(tree.status).toBe("idle");
     });
 
     test("加载后的状态", async () => {

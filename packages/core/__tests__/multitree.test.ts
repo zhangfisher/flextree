@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach } from "bun:test";
-import { FlexTreeManager, FlexTree } from "../src";
+import { describe, test, expect } from "bun:test";
+import { FlexTreeManager, FlexTree, FlexNodeRelPosition } from "../src";
 import BunSqliteAdapter from "../../bun-sqlite/src";
 
 interface TestFields {
@@ -203,15 +203,16 @@ describe("单表多树场景测试", () => {
           await tree2.addNodes([{ id: 2, name: "C", treeId: 2, title: "Tree 2 - C" }]);
         });
 
-        // 在树1中移动节点
+        // 在树1中移动节点 - 将B移动到A的下一个位置
         await tree1.write(async () => {
-          await tree1.moveNode(2, 3, "next-sibling");
+          await tree1.moveNode(3, 2, FlexNodeRelPosition.NextSibling);
         });
 
         // 验证树1的节点顺序已改变
         const tree1Nodes = await tree1.getNodes();
-        expect(tree1Nodes[1].name).toBe("B");
-        expect(tree1Nodes[2].name).toBe("A");
+        expect(tree1Nodes[0].name).toBe("root1");
+        expect(tree1Nodes[1].name).toBe("A");
+        expect(tree1Nodes[2].name).toBe("B");
 
         // 验证树2不受影响
         const tree2Nodes = await tree2.getNodes();
@@ -360,8 +361,8 @@ describe("单表多树场景测试", () => {
         });
 
         await tree2.manager.write(async () => {
-          await tree2.manager.createRoot({ id: 1, name: "root2", treeId: 2, title: "Tree 2" });
-          await tree2.manager.addNodes([{ id: 2, name: "B", treeId: 2, title: "Node B" }]);
+          await tree2.manager.createRoot({ id: 101, name: "root2", treeId: 2, title: "Tree 2" });
+          await tree2.manager.addNodes([{ id: 102, name: "B", treeId: 2, title: "Node B" }]);
         });
 
         // 加载树1
@@ -388,20 +389,20 @@ describe("单表多树场景测试", () => {
 
         // 初始化树2
         await tree2.manager.write(async () => {
-          await tree2.manager.createRoot({ id: 1, name: "root2", treeId: 2 });
-          await tree2.manager.addNodes([{ id: 2, name: "B", treeId: 2 }]);
+          await tree2.manager.createRoot({ id: 101, name: "root2", treeId: 2 });
+          await tree2.manager.addNodes([{ id: 102, name: "B", treeId: 2 }]);
         });
 
         await tree1.load();
         await tree2.load();
 
-        // 在树1中访问节点
-        const tree1Node = tree1.getByPath("root1/A");
+        // 在树1中访问节点 - 使用相对路径
+        const tree1Node = tree1.getByPath("A");
         expect(tree1Node?.name).toBe("A");
         expect(tree1Node?.treeId).toBe(1);
 
-        // 在树2中访问节点（同样的路径结构）
-        const tree2Node = tree2.getByPath("root2/B");
+        // 在树2中访问节点 - 使用相对路径
+        const tree2Node = tree2.getByPath("B");
         expect(tree2Node?.name).toBe("B");
         expect(tree2Node?.treeId).toBe(2);
       });
@@ -421,31 +422,31 @@ describe("单表多树场景测试", () => {
 
         // 初始化树2
         await tree2.manager.write(async () => {
-          await tree2.manager.createRoot({ id: 1, name: "root2", treeId: 2, title: "Tree2" });
+          await tree2.manager.createRoot({ id: 101, name: "root2", treeId: 2, title: "Tree2" });
           await tree2.manager.addNodes([
-            { id: 2, name: "C", treeId: 2, title: "Node C" },
-            { id: 3, name: "D", treeId: 2, title: "Node D" },
+            { id: 102, name: "C", treeId: 2, title: "Node C" },
+            { id: 103, name: "D", treeId: 2, title: "Node D" },
           ]);
         });
 
         await tree1.load();
         await tree2.load();
 
-        // 在树1中查找
-        const tree1FindResult = tree1.find((n) => n.title === "Node A");
+        // 在树1中查找 - 使用name字段
+        const tree1FindResult = tree1.find((n) => n.name === "A");
         expect(tree1FindResult).toBeDefined();
         expect(tree1FindResult?.name).toBe("A");
 
-        // 在树2中查找
-        const tree2FindResult = tree2.find((n) => n.title === "Node C");
+        // 在树2中查找 - 使用name字段
+        const tree2FindResult = tree2.find((n) => n.name === "C");
         expect(tree2FindResult).toBeDefined();
         expect(tree2FindResult?.name).toBe("C");
 
         // 确保查找不跨树
-        const tree1NotFound = tree1.find((n) => n.title === "Node C");
+        const tree1NotFound = tree1.find((n) => n.name === "C");
         expect(tree1NotFound).toBeUndefined();
 
-        const tree2NotFound = tree2.find((n) => n.title === "Node A");
+        const tree2NotFound = tree2.find((n) => n.name === "A");
         expect(tree2NotFound).toBeUndefined();
       });
     });
@@ -585,7 +586,7 @@ describe("单表多树场景测试", () => {
       expect(tree2Nodes).toHaveLength(0);
 
       // 空树验证应该通过
-      const tree2Valid = await tree2.verifyTree();
+      const tree2Valid = await tree2.verify();
       expect(tree2Valid).toBe(true);
     });
 

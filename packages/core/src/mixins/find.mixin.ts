@@ -1,7 +1,7 @@
 import sqlstring from 'sqlstring'
 import type { FlexTreeManager } from '../manager'
 import type { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNodeFields, NonUndefined } from '../types'
-import { FlexTreeError, FlexTreeNodeNotFoundError } from '../errors'
+import { FlexTreeError } from '../errors'
 
 export class FindNodeMixin<
     Fields extends Record<string, any> = object,
@@ -20,14 +20,14 @@ export class FindNodeMixin<
      * findNode({name:"A",level:1})  根据组合AND条件查找节点
      *
      */
-    async findNode(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, node: NodeId | Partial<TreeNode>): Promise<TreeNode> {
+    async findNode(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, node: NodeId | Partial<TreeNode>): Promise<TreeNode | null> {
         let nodes: TreeNode[] = []
         if (typeof (node) === 'object') {
             nodes = await this.findNodes(node as Partial<TreeNode>)
         } else {
             nodes = await this.findNodes({ [this.keyFields.id]: node } as Partial<TreeNode>)
         }
-        if (nodes.length === 0) { throw new FlexTreeNodeNotFoundError() }
+        if (nodes.length === 0) { return null }
         return nodes[0] as TreeNode
     }
 
