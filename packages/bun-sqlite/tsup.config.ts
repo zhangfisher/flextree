@@ -8,11 +8,7 @@ export default defineConfig({
     format: ['cjs', 'esm'],
     outDir: 'dist',
     minify: true,
-    noExternal: [
-        'flex-tools',
-        'mitt',
-        'ts-mixer',
-        'sqlstring',
+    noExternal: [ 
     ],
     external: ['bun:sqlite'],
 })

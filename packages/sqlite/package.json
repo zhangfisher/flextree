@@ -35,8 +35,18 @@
     },
     "devDependencies": {
         "@types/better-sqlite3": "^7.6.11",
+        "@types/bun": "^1.1.6",
         "flextree": "workspace:^",
         "tsup": "^8.1.0",
         "typescript": "^5.8.3"
+    },
+    "peerDependencies": {
+        "bun": ">=1.0.0",
+        "flextree": "workspace:^"
+    },
+    "peerDependenciesMeta": {
+        "bun": {
+            "optional": true
+        }
     }
 }

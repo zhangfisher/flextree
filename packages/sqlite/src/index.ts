@@ -1,5 +1,5 @@
 import type { FlexTreeManager, IFlexTreeAdapter } from 'flextree'
-import Database from 'better-sqlite3' 
+import Database from 'better-sqlite3'
 
 export type SqliteDatabase = Database.Database
 export default class SqliteAdapter implements IFlexTreeAdapter {

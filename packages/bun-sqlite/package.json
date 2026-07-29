@@ -1,0 +1,34 @@
+{
+    "name": "flextree-bun-sqlite-adapter",
+    "type": "module",
+    "version": "2.0.4",
+    "access": "public",
+    "author": "zhangfisher",
+    "description": "bun-sqlite driver for flextree",
+    "main": "dist/index.cjs",
+    "module": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        }
+    },
+    "homepage": "https://zhangfisher.github.io/flextree/",
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:zhangfisher/flextree.git"
+    },
+    "license": "MIT",
+    "scripts": {
+        "build": "tsup"
+    },
+    "devDependencies": {
+        "@types/bun": "^1.3.14"
+    },
+    "peerDependencies": {
+        "typescript": "^6",
+        "flextree": "workspace:^"
+    }
+}

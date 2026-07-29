@@ -7,7 +7,6 @@ import sqlstring from 'sqlstring'
 import { FlexTreeInvalidUpdateError, FlexTreeNodeError } from '../errors'
 import type { FlexTreeManager } from '../manager'
 import type { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNodeFields, NonUndefined } from '../types'
-import { escapeSqlString } from '../utils/escapeSqlString'
 
 export class UpdateNodeMixin<
     Fields extends Record<string, any> = object,
@@ -26,14 +25,14 @@ export class UpdateNodeMixin<
     async update(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, node: Partial<TreeNode> | Partial<TreeNode>[]) {
         const nodes = Array.isArray(node) ? node : [node]
         const sqls: string[] = nodes.map((node) => {
-            const id = escapeSqlString(node[this.keyFields.id])
+            const id = this.escapeString(node[this.keyFields.id])
             if (!id) {
                 throw new FlexTreeNodeError(`Node ${this.keyFields.id} is required`)
             }
             const fields: string[] = []
             Object.entries(node).forEach(([k, v]) => {
                 if (!(k in this.keyFields) || k === 'name') {
-                    fields.push(`${sqlstring.escapeId(k)}=${escapeSqlString(v)}`)
+                    fields.push(`${sqlstring.escapeId(k)}=${this.escapeString(v)}`)
                 }
             })
             if (fields.length === 0) {

@@ -2,7 +2,6 @@ import type { FlexTreeManager } from '../manager'
 import type { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNodeFields, NonUndefined } from '../types'
 import { FlexNodeRelPosition } from '../types'
 import { FlexTreeError } from '../errors'
-import { escapeSqlString } from '../utils/escapeSqlString'
 
 export class AddNodeMixin<
     Fields extends Record<string, any> = object,
@@ -27,7 +26,7 @@ export class AddNodeMixin<
                 relNode[this.keyFields.rightValue] + i * 2 + 1,
             ]
             for (let i = 3; i < fields.length; i++) {
-                row.push(escapeSqlString(node[fields[i]]))
+                row.push(this.escapeString(node[fields[i]]))
             }
             return `(${row.join(',')})`
         }).join(',')
@@ -41,7 +40,7 @@ export class AddNodeMixin<
                 WHERE {__TREE_ID__} ${this.keyFields.rightValue} >= ${relNode[this.keyFields.rightValue]}
             `),
             this._sql(`
-                INSERT INTO ${this.tableName} ( ${fields.map(f => escapeSqlString(f)).join(',')}) 
+                INSERT INTO ${this.tableName} ( ${fields.map(f => this.escapeString(f)).join(',')}) 
                 VALUES ${values}
             `),
         ]
@@ -60,7 +59,7 @@ export class AddNodeMixin<
                 relNode[this.keyFields.leftValue] + i * 2 + 2,
             ]
             for (let i = 3; i < fields.length; i++) {
-                row.push(escapeSqlString(node[fields[i]]))
+                row.push(this.escapeString(node[fields[i]]))
             }
             return `(${row.join(',')})`
         }).join(',')
@@ -74,7 +73,7 @@ export class AddNodeMixin<
                 WHERE {__TREE_ID__} ${this.keyFields.rightValue} >= ${relNode[this.keyFields.leftValue] + 1}
             `),
             this._sql(`
-                INSERT INTO ${this.tableName} ( ${fields.map(f => escapeSqlString(f)).join(',')}) 
+                INSERT INTO ${this.tableName} ( ${fields.map(f => this.escapeString(f)).join(',')}) 
                 VALUES ${values}
             `),
         ]
@@ -88,7 +87,7 @@ export class AddNodeMixin<
                 relNode[this.keyFields.rightValue] + i * 2 + 2,
             ]
             for (let i = 3; i < fields.length; i++) {
-                row.push(escapeSqlString(node[fields[i]]))
+                row.push(this.escapeString(node[fields[i]]))
             }
             return `(${row.join(',')})`
         }).join(',')
@@ -102,7 +101,7 @@ export class AddNodeMixin<
                 WHERE {__TREE_ID__} ${this.keyFields.rightValue} > ${relNode[this.keyFields.rightValue]}
             `),
             this._sql(`
-                INSERT INTO ${this.tableName} ( ${fields.map(f => escapeSqlString(f)).join(',')}) 
+                INSERT INTO ${this.tableName} ( ${fields.map(f => this.escapeString(f)).join(',')}) 
                 VALUES ${values}
             `),
         ]
@@ -116,7 +115,7 @@ export class AddNodeMixin<
                 relNode[this.keyFields.leftValue] + i * 2 + 1,
             ]
             for (let i = 3; i < fields.length; i++) {
-                row.push(escapeSqlString(node[fields[i]]))
+                row.push(this.escapeString(node[fields[i]]))
             }
             return `(${row.join(',')})`
         }).join(',')
@@ -130,7 +129,7 @@ export class AddNodeMixin<
                 WHERE {__TREE_ID__} ${this.keyFields.rightValue} > ${relNode[this.keyFields.leftValue]}
             `),
             this._sql(`
-                INSERT INTO ${this.tableName} ( ${fields.map(f => escapeSqlString(f)).join(',')}) 
+                INSERT INTO ${this.tableName} ( ${fields.map(f => this.escapeString(f)).join(',')}) 
                 VALUES ${values}
             `),
         ]

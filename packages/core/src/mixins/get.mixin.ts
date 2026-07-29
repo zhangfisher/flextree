@@ -1,9 +1,7 @@
 import type { FlexTreeManager } from '../manager'
 import type { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNodeFields, NonUndefined } from '../types'
 import { FlexTreeError, FlexTreeNodeNotFoundError, FlexTreeNotExists } from '../errors'
-import { escapeSqlString } from '../utils/escapeSqlString'
 import { isLikeNode } from '../utils/isLikeNode'
-import { isValidNode } from '../utils/isValidNode'
 import { isNull } from '../utils/isNull'
 
 export class GetNodeMixin<
@@ -35,7 +33,7 @@ export class GetNodeMixin<
         } else {
             throw new FlexTreeError('Invalid node parameter')
         }
-        if (!isValidNode(node!)) {
+        if (!this.isValidNode(node!)) {
             throw new FlexTreeNodeNotFoundError('Invalid node parameter')
         }
         return node
@@ -64,7 +62,7 @@ export class GetNodeMixin<
      */
     async getNode(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, nodeId: NodeId): Promise<TreeNode | undefined> {
         const sql = this._sql(`SELECT * FROM ${this.tableName} 
-            WHERE {__TREE_ID__} (${this.keyFields.id}=${escapeSqlString(nodeId)})`)
+            WHERE {__TREE_ID__} (${this.keyFields.id}=${this.escapeString(nodeId)})`)
         const result = await this.onExecuteReadSql(sql)
         if (result.length === 0) { throw new FlexTreeNodeNotFoundError() }
         return result[0] as TreeNode
@@ -81,7 +79,7 @@ export class GetNodeMixin<
      * @param node
      */
     async getNthChild(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, node: NodeId | TreeNode, index: number = 1): Promise<TreeNode | undefined> {
-        const relNodeId = escapeSqlString(isLikeNode(node, this.keyFields) ? (node as any)[this.keyFields.id] : node)
+        const relNodeId = this.escapeString(isLikeNode(node, this.keyFields) ? (node as any)[this.keyFields.id] : node)
         const sql = this._sql(`SELECT Node.* FROM ${this.tableName}  Node
             JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
             WHERE {__TREE_ID__} 
@@ -112,7 +110,7 @@ export class GetNodeMixin<
         }
         const { level, includeSelf } = Object.assign({ includeSelf: false, level: 0 }, options)
         const relNode = await this.getNodeData(nodeId)
-        const relNodeId = escapeSqlString(relNode[this.keyFields.id])
+        const relNodeId = this.escapeString(relNode[this.keyFields.id])
         let sql: string = ''
         if (level === 0) { // 不限定层级
             sql = this._sql(`SELECT Node.* FROM ${this.tableName} Node
@@ -148,7 +146,7 @@ export class GetNodeMixin<
     async getDescendantCount(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, nodeId: NodeId | TreeNode, options?: { level?: number }) {
         const { level } = Object.assign({ level: 0 }, options)
         const relNode = await this.getNodeData(nodeId)
-        const relNodeId = escapeSqlString(relNode[this.keyFields.id])
+        const relNodeId = this.escapeString(relNode[this.keyFields.id])
         const relNodeLevel = relNode[this.keyFields.level]
 
         const sql = this._sql(`SELECT COUNT(*) FROM ${this.tableName} Node
@@ -183,7 +181,7 @@ export class GetNodeMixin<
         const { includeSelf } = Object.assign({ includeSelf: false }, options)
 
         const relNode = await this.getNodeData(nodeId)
-        const relNodeId = escapeSqlString(relNode[this.keyFields.id])
+        const relNodeId = this.escapeString(relNode[this.keyFields.id])
 
         const sql = this._sql(`SELECT Node.* FROM ${this.tableName} Node
             JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
@@ -207,7 +205,7 @@ export class GetNodeMixin<
      */
     async getAncestorsCount(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, nodeId: NodeId) {
         const sql = this._sql(`SELECT COUNT(*) FROM ${this.tableName} Node
-            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${escapeSqlString(nodeId)}
+            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${this.escapeString(nodeId)}
             WHERE {__TREE_ID__} 
                 (   
                     Node.${this.keyFields.leftValue} < RelNode.${this.keyFields.leftValue}
@@ -224,7 +222,7 @@ export class GetNodeMixin<
      */
     async getParent(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, nodeId: NodeId | TreeNode): Promise<TreeNode> {
         const relNode = await this.getNodeData(nodeId)
-        const relNodeId = escapeSqlString(relNode[this.keyFields.id])
+        const relNodeId = this.escapeString(relNode[this.keyFields.id])
         const sql = this._sql(`SELECT Node.* FROM ${this.tableName} Node
             JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
             WHERE {__TREE_ID__}  
@@ -264,7 +262,7 @@ export class GetNodeMixin<
     async getSiblings(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, nodeId: NodeId | TreeNode, options?: { includeSelf?: boolean }) {
         const { includeSelf } = Object.assign({ includeSelf: false }, options)
         const relNode = await this.getNodeData(nodeId)
-        const relNodeId = escapeSqlString(relNode[this.keyFields.id])
+        const relNodeId = this.escapeString(relNode[this.keyFields.id])
         const sql = this._sql(`SELECT Node.* FROM ${this.tableName} Node
             JOIN (
                 SELECT Node.* FROM ${this.tableName} Node
@@ -304,7 +302,7 @@ export class GetNodeMixin<
      */
     async getNextSibling(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, nodeId: NodeId | TreeNode) {
         const relNode = await this.getNodeData(nodeId)
-        const relNodeId = escapeSqlString(relNode[this.keyFields.id])
+        const relNodeId = this.escapeString(relNode[this.keyFields.id])
 
         const sql = this._sql(`SELECT Node.* FROM ${this.tableName} Node
             JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}             
@@ -323,7 +321,7 @@ export class GetNodeMixin<
      */
     async getPreviousSibling(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, nodeId: NodeId | TreeNode) {
         const relNode = await this.getNodeData(nodeId)
-        const relNodeId = escapeSqlString(relNode[this.keyFields.id])
+        const relNodeId = this.escapeString(relNode[this.keyFields.id])
 
         const sql = this._sql(`SELECT Node.* FROM ${this.tableName} Node
             JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}             

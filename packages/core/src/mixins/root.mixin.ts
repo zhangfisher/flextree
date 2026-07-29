@@ -2,7 +2,6 @@ import sqlstring from 'sqlstring'
 import type { FlexTreeManager } from '../manager'
 import type { CustomTreeKeyFields, DefaultTreeKeyFields, IFlexTreeNodeFields, NonUndefined } from '../types'
 import { FlexTreeNodeError } from '../errors'
-import { escapeSqlString } from '../utils/escapeSqlString'
 
 export class RootNodeMixin<
     Fields extends Record<string, any> = object,
@@ -55,7 +54,7 @@ export class RootNodeMixin<
         }) as TreeNode
         this.withTreeId(record)
         const keys = Object.keys(record).map(key => sqlstring.escapeId(key)).join(',')
-        const values = Object.values(record).map(v => escapeSqlString(v)).join(',')
+        const values = Object.values(record).map(v => this.escapeString(v)).join(',')
         const sql = `INSERT INTO ${this.tableName} (${keys}) VALUES (${values})`
         await this.onExecuteWriteSql([sql])
     }

@@ -1,37 +1,32 @@
 {
-    "files.exclude": {
-        "**/.git": true,
-        "**/.svn": true,
-        "**/.hg": true,
-        "**/CVS": true,
-        "**/.DS_Store": true,
-        "**/Thumbs.db": true,
-        "**/node_modules": false
-    }, 
     "editor.tabSize": 4,
     "editor.insertSpaces": true,
     "editor.detectIndentation": false,
-    "editor.formatOnSave": true,
     "prettier.tabWidth": 4,
-    "oxlint.enable": true,
-    // Auto fix
-    "editor.codeActionsOnSave": {
-        "source.fixAll.eslint": "explicit",
-        "source.organizeImports": "never"
+    "editor.gotoLocation.alternativeDeclarationCommand": "editor.action.revealDefinition",
+    "editor.gotoLocation.alternativeDefinitionCommand": "editor.action.revealDefinition",
+    "editor.gotoLocation.alternativeTypeDefinitionCommand": "editor.action.revealDefinition",
+    "editor.selectionHighlight": false,
+    "files.autoSave": "onFocusChange",
+    "editor.suggest.snippetsPreventQuickSuggestions": false,
+    "editor.quickSuggestions": {
+        "other": "on",
+        "comments": "off",
+        "strings": "on"
     },
-
-    // Silent the stylistic rules in you IDE, but still auto fix them
-    "eslint.rules.customizations": [
-        { "rule": "style/*", "severity": "off", "fixable": true },
-        { "rule": "format/*", "severity": "off", "fixable": true },
-        { "rule": "*-indent", "severity": "off", "fixable": true },
-        { "rule": "*-spacing", "severity": "off", "fixable": true },
-        { "rule": "*-spaces", "severity": "off", "fixable": true },
-        { "rule": "*-order", "severity": "off", "fixable": true },
-        { "rule": "*-dangle", "severity": "off", "fixable": true },
-        { "rule": "*-newline", "severity": "off", "fixable": true },
-        { "rule": "*quotes", "severity": "off", "fixable": true },
-        { "rule": "*semi", "severity": "off", "fixable": true }
-    ],
- 
+    "editor.codeActionsOnSave": {
+        "source.fixAll.oxc": "always"
+    },
+    "oxc.typeAware": true,
+    "oxc.fmt.configPath": ".oxfmtrc.json",
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+    "editor.formatOnSave": true,
+    "[typescript]": {
+        "editor.defaultFormatter": "oxc.oxc-vscode"
+    },
+    "[javascript]": {
+        "editor.defaultFormatter": "oxc.oxc-vscode"
+    },
+    "js/ts.tsdk.path": "node_modules\\typescript\\lib",
+    "js/ts.experimental.useTsgo": false
 }
