@@ -28,7 +28,7 @@ import { FindNodeMixin } from "./mixins/find.mixin";
 import { RootNodeMixin } from "./mixins/root.mixin";
 import { RelationMixin } from "./mixins/relation.mixin";
 import { UpdateNodeMixin } from "./mixins/update.mixin";
-import { escapeSqlString, escapeSqliteString } from "./utils/escapeSqlString";
+import { escapeSqlString } from "./utils/escapeSqlString";
 import { VerifyTreeMixin } from "./mixins/verify.mixin";
 
 export interface FlexTreeManagerOptions<TreeIdType = number> {
@@ -109,7 +109,10 @@ export class FlexTreeManager<
   private _ready: boolean = false; // 当driver准备就绪时,ready为true时,才允许执行读写操作
   private _emitter = mitt<FlexTreeEvents>();
   private _lastUpdateAt = 0;
-  constructor(tableName: string, options?: FlexTreeManagerOptions<NonUndefined<KeyFields["treeId"]>[1]>) {
+  constructor(
+    tableName: string,
+    options?: FlexTreeManagerOptions<NonUndefined<KeyFields["treeId"]>[1]>,
+  ) {
     this._tableName = tableName;
     this._options = deepMerge(
       {
