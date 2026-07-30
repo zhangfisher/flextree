@@ -192,11 +192,6 @@ export class FlexTreeManager<
     }
     return false;
   }
-  private _escapeKeyFields() {
-    Object.entries(this._fields).forEach(([key, value]) => {
-      (this._fields as any)[key] = this.escaper.escapeId(value);
-    });
-  }
   async assertDriverReady() {
     try {
       if (!this._adapter) {
