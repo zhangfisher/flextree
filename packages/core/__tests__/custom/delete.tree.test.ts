@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test } from "bun:test"
 import { createCustomDemoTree, createCustomTreeManager, CustomDemoFlexTreeManager, dumpCustomTree } from './createCustomTree'
 
 describe('自定义关键字段-删除树节点', () => {

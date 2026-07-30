@@ -1,20 +1,20 @@
-import { afterEach, beforeEach, describe, expect, test } from 'vitest'
-import { FlexTreeNodeRelation } from 'flextree'
-import type { DemoFlexTreeManager } from '../default/createTree'
-import { createDemoTree, createTreeManager, dumpTree, verifyTree } from '../default/createTree'
+import { afterEach, beforeEach, describe, expect, test } from "bun:test"
+import { FlexTreeNodeRelation } from "../../src"
+import type { CustomDemoFlexTreeManager } from './createCustomTree'
+import { createCustomDemoTree, createCustomTreeManager, verifyCustomTree } from './createCustomTree'
 
 describe('查询节点关系', () => {
-    let tree: DemoFlexTreeManager
+    let tree: CustomDemoFlexTreeManager
     beforeEach(async () => {
-        tree = await createTreeManager()
-        await createDemoTree(tree)
-        await verifyTree(tree)
+        tree = await createCustomTreeManager()
+        await createCustomDemoTree(tree)
+        await verifyCustomTree(tree)
     })
     afterEach(async () => {
-        //await dumpTree(tree.adapter.db, 'relation.db')
+        //await dumpCustomTree(tree.adapter.db, 'relation.db')
     })
     test('返回自己关系', async () => {
-        const a1 = await tree.findNode({ name: 'A-1' })
+        const a1 = await tree.findNode({ title: 'A-1' })
         expect(await tree.getNodeRelation(a1, a1)).toBe(FlexTreeNodeRelation.Self)
     })
     test('返回后代关系', async () => {
@@ -36,7 +36,7 @@ describe('查询节点关系', () => {
         expect(await tree.getNodeRelation(a, a3)).toBe(FlexTreeNodeRelation.Ancestors)
     })
     test('返回兄弟节点关系', async () => {
-        const a1 = await tree.findNode({ name: 'A-1' })
+        const a1 = await tree.findNode({ title: 'A-1' })
         const a2 = await tree.findNode({ name: 'A-2' })
         const a3 = await tree.findNode({ name: 'A-3' })
 
@@ -66,7 +66,7 @@ describe('查询节点关系', () => {
         }
     })
     test('返回同级节点关系', async () => {
-        const a1 = await tree.findNode({ name: 'A-1' })
+        const a1 = await tree.findNode({ title: 'A-1' })
         const b2 = await tree.findNode({ name: 'B-2' })
         const c3 = await tree.findNode({ name: 'C-3' })
         expect(await tree.getNodeRelation(a1, b2)).toBe(FlexTreeNodeRelation.SameLevel)

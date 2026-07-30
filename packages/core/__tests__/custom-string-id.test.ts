@@ -254,13 +254,13 @@ describe("字符串 TreeID 和自定义字符串标识字段测试", () => {
 
         const nodeA = nodes.find((n) => n.uuid === "node-a-001");
         expect(nodeA).toBeDefined();
-        expect(nodeA.title).toBe("A");
-        expect(nodeA.category).toBe("cat-a");
-        expect(nodeA.size).toBe(10);
+        expect(nodeA!.title).toBe("A");
+        expect(nodeA!.category).toBe("cat-a");
+        expect(nodeA!.size).toBe(10);
 
         const nodeB = nodes.find((n) => n.uuid === "node-b-002");
         expect(nodeB).toBeDefined();
-        expect(nodeB.title).toBe("B");
+        expect(nodeB!.title).toBe("B");
 
         expect(nodes[0].lft).toBe(1);
         expect(nodes[0].rgt).toBe(8);
@@ -278,12 +278,12 @@ describe("字符串 TreeID 和自定义字符串标识字段测试", () => {
         const nodes = await tree.getNodes();
         const child1 = nodes.find((n) => n.uuid === "child-1");
         expect(child1).toBeDefined();
-        expect(child1.title).toBe("Child1");
+        expect(child1!.title).toBe("Child1");
 
         // 也可以通过数值ID直接查询
-        const child1ById = await tree.getNode(child1.id);
+        const child1ById = await tree.getNode(child1!.id);
         expect(child1ById).toBeDefined();
-        expect(child1ById.uuid).toBe("child-1");
+        expect(child1ById!.uuid).toBe("child-1");
       });
     });
 
@@ -318,10 +318,10 @@ describe("字符串 TreeID 和自定义字符串标识字段测试", () => {
 
         const updatedNode = await tree.getNode(rootNode.id);
         expect(updatedNode).toBeDefined();
-        expect(updatedNode.category).toBe("updated-cat");
-        expect(updatedNode.size).toBe(99);
-        expect(updatedNode.title).toBe("original"); // 原有字段保持不变
-        expect(updatedNode.uuid).toBe("update-test"); // uuid保持不变
+        expect(updatedNode!.category).toBe("updated-cat");
+        expect(updatedNode!.size).toBe(99);
+        expect(updatedNode!.title).toBe("original"); // 原有字段保持不变
+        expect(updatedNode!.uuid).toBe("update-test"); // uuid保持不变
       });
     });
 

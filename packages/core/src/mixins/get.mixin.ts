@@ -8,6 +8,7 @@ import type {
 import { FlexTreeError, FlexTreeNodeNotFoundError, FlexTreeNotExists } from "../errors";
 import { isLikeNode } from "../utils/isLikeNode";
 import { isNull } from "../utils/isNull";
+import { checkSqlSafety } from "../utils/checkSqlSafety";
 
 export class GetNodeMixin<
   Fields extends Record<string, any> = object,
@@ -55,19 +56,47 @@ export class GetNodeMixin<
    * 获取节点列表
    * @param {object} options                    选项
    * @param {number}  [options.level]            限定返回的层级,0表示不限制,1表示只返回根节点，2表示返回根节点和其子节点, 依次类推
+   * @param {number}  [options.files]            限定返回的字段名称
+   * @param {string}  [options.where]            WHERE过滤条件，确保树的完整性：父节点被过滤时，其所有后代也被过滤
    * @returns TreeNode[]
    */
   async getNodes(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-    options?: { level?: number; fields?: keyof TreeNode },
+    options?: { level?: number; fields?: (keyof TreeNode)[]; where?: string },
   ): Promise<TreeNode[]> {
-    const { level, fields } = Object.assign({ level: 0, fields: [] }, options);
+    const { level, fields, where } = Object.assign({ level: 0, fields: [], where: "" }, options);
+
     const fieldList = fields.length > 0 ? fields.map((f) => `${f}`).join(",") : "*";
-    const sql = this._sql(`SELECT ${fieldList} FROM ${this.tableName} 
-            WHERE {__TREE_ID__} ${this.keyFields.leftValue}>0 AND ${this.keyFields.rightValue}>0
-                ${level > 0 ? `AND ${this.keyFields.level}<=${level}` : ""}
+
+    let sql: string;
+
+    if (where && where.trim()) {
+      // 带过滤条件的复杂查询
+      const validatedWhere = checkSqlSafety(where);
+      const levelCondition = level > 0 ? `AND Node.${this.keyFields.level}<=${level}` : "";
+
+      sql = this._sql(`SELECT Node.${fieldList} FROM ${this.tableName} Node
+        WHERE {__TREE_ID__} Node.${this.keyFields.leftValue} > 0
+          AND Node.${this.keyFields.rightValue} > 0
+          ${levelCondition}
+          AND ${validatedWhere}
+          AND NOT EXISTS (
+              SELECT 1 FROM ${this.tableName} Ancestor
+              WHERE {__TREE_ID__} Ancestor.${this.keyFields.leftValue} < Node.${this.keyFields.leftValue}
+                AND Ancestor.${this.keyFields.rightValue} > Node.${this.keyFields.rightValue}
+                AND NOT (${validatedWhere})
+          )
+        ORDER BY Node.${this.keyFields.leftValue}`);
+    } else {
+      // 原有的简单查询（保持向后兼容）
+      sql = this._sql(`SELECT ${fieldList} FROM ${this.tableName}
+            WHERE {__TREE_ID__} ${this.keyFields.leftValue}>0
+              AND ${this.keyFields.rightValue}>0
+              ${level > 0 ? `AND ${this.keyFields.level}<=${level}` : ""}
             ORDER BY ${this.keyFields.leftValue}
         `);
+    }
+
     return await this.onExecuteReadSql(sql);
   }
 
@@ -169,7 +198,6 @@ export class GetNodeMixin<
                 ${treeCondition}
                 ((Node.${this.keyFields.leftValue} > RelNode.${this.keyFields.leftValue}
                 AND Node.${this.keyFields.rightValue} < RelNode.${this.keyFields.rightValue}
-                -- 限定层级
                 AND Node.${this.keyFields.level} > RelNode.${this.keyFields.level}
                 AND Node.${this.keyFields.level} <= RelNode.${this.keyFields.level}+${level})
                 ${includeSelf ? `OR Node.${this.keyFields.id} = ${relNodeId}` : ""})

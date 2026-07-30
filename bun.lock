@@ -55,8 +55,6 @@
       "dependencies": {
         "flex-tools": "^1.4.5",
         "mitt": "^3.0.1",
-        "sql-escaper": "^1.5.1",
-        "sqlstring": "^2.3.3",
         "ts-mixer": "^6.0.4",
       },
       "devDependencies": {
@@ -68,17 +66,6 @@
         "tsup": "^8.2.3",
         "type-fest": "^4.23.0",
         "typescript": "^6",
-      },
-    },
-    "packages/core/examples": {
-      "name": "flextree-demo",
-      "version": "1.0.0",
-      "dependencies": {
-        "flextree": "workspace:^",
-        "flextree-bun-sqlite-adapter": "workspace:^",
-      },
-      "devDependencies": {
-        "@types/bun": "latest",
       },
     },
     "packages/prisma": {
@@ -796,8 +783,6 @@
 
     "flextree-bun-sqlite-adapter": ["flextree-bun-sqlite-adapter@workspace:packages/bun-sqlite"],
 
-    "flextree-demo": ["flextree-demo@workspace:packages/core/examples"],
-
     "flextree-prisma-adapter": ["flextree-prisma-adapter@workspace:packages/prisma"],
 
     "flextree-prisma-example": ["flextree-prisma-example@workspace:examples/prisma"],
@@ -1189,10 +1174,6 @@
     "speakingurl": ["speakingurl@14.0.1", "https://registry.npmmirror.com/speakingurl/-/speakingurl-14.0.1.tgz", {}, "sha512-1POYv7uv2gXoyGFpBCmpDVSNV74IfsWlDW216UPjbWufNf+bSU6GdbDsxdcxtfwb4xlI3yxzOTKClUosxARYrQ=="],
 
     "sprintf-js": ["sprintf-js@1.0.3", "https://registry.npmmirror.com/sprintf-js/-/sprintf-js-1.0.3.tgz", {}, "sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g=="],
-
-    "sql-escaper": ["sql-escaper@1.5.1", "https://registry.npmmirror.com/sql-escaper/-/sql-escaper-1.5.1.tgz", {}, "sha512-4toX5E1fQbBrpfXidaHnF0669nkAdETeIPTs2SUjxxD7RRIs9ICG4gtpmfc68JCEKehsdwLFqBu9VlQqZ1P1gg=="],
-
-    "sqlstring": ["sqlstring@2.3.3", "https://registry.npmmirror.com/sqlstring/-/sqlstring-2.3.3.tgz", {}, "sha512-qC9iz2FlN7DQl3+wjwn3802RTyjCx7sDvfQEXchwa6CWOx07/WVfh91gBmQ9fahw8snwGEWU3xGzOt4tFyHLxg=="],
 
     "stackback": ["stackback@0.0.2", "https://registry.npmmirror.com/stackback/-/stackback-0.0.2.tgz", {}, "sha512-1XMJE5fQo1jGH6Y/7ebnwPOBEkIEnT4QF32d5R1+VXdXveM0IBMJt8zfaxX1P3QhVwrYe+576+jkANtSS2mBbw=="],
 

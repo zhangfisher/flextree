@@ -6,7 +6,6 @@
  */
 import { deepMerge } from "flex-tools/object/deepMerge";
 import type { RequiredDeep } from "type-fest";
-import sqlstring from "sqlstring";
 import { mix } from "ts-mixer";
 import mitt from "mitt";
 import type { IFlexTreeAdapter } from "./adapter";
@@ -31,7 +30,7 @@ import { UpdateNodeMixin } from "./mixins/update.mixin";
 import { VerifyTreeMixin } from "./mixins/verify.mixin";
 import { createEscaper, Escaper } from "./escaper";
 
-export interface FlexTreeManagerOptions<TreeIdType = number> {
+export interface FlexTreeManagerOptions<TreeIdType = any> {
   treeId?: TreeIdType; // 使用支持单表多树时需要提供
   fields?: {
     id?: string;

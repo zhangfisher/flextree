@@ -1,13 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import {
-  FlexTreeManager,
-  FlexTree,
-  FlexNodeRelPosition,
-  NextSibling,
-  PreviousSibling,
-} from "../src";
+import { FlexTreeManager, FlexTree, NextSibling } from "../src";
 import BunSqliteAdapter from "../../bun-sqlite/src";
-import { escapeSqliteString } from "../src/utils/escapeSqlString";
 
 interface CustomFields {
   size: number;

@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, test } from 'vitest'
-import { FlexNodeRelPosition, FlexTreeNodeError, NextSibling, PreviousSibling } from 'flextree'
+import { afterEach, beforeEach, describe, expect, test } from "bun:test"
+import { FlexNodeRelPosition, FlexTreeNodeError, NextSibling, PreviousSibling } from "../../src"
 import type { CustomDemoFlexTreeManager } from './createCustomTree'
 import { createCustomTreeManager, dumpCustomTree } from './createCustomTree'
 

@@ -33,8 +33,6 @@
     "dependencies": {
         "flex-tools": "^1.4.5",
         "mitt": "^3.0.1",
-        "sql-escaper": "^1.5.1",
-        "sqlstring": "^2.3.3",
         "ts-mixer": "^6.0.4"
     },
     "devDependencies": {

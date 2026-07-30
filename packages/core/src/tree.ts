@@ -7,7 +7,6 @@ import type {
   FlexTreeExportListFormat,
   FlexTreeExportListOptions,
   IFlexTreeNodeFields,
-  Expand,
   NonUndefined,
 } from "./types";
 import { FlexTreeManager, type FlexTreeManagerOptions } from "./manager";

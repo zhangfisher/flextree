@@ -1,3 +1,4 @@
+// oxlint-disable no-control-regex
 import type { Raw, SqlValue, TemporalValue, Timezone, DatabaseType, Escaper } from "./types";
 import { Buffer } from "node:buffer";
 
@@ -8,46 +9,46 @@ interface DatabaseConfig {
   identifierStart: string;
   identifierEnd: string;
   identifierEscape: string;
-  stringEscape: 'backslash' | 'doublequote';
-  booleanAs: 'truefalse' | '10';
+  stringEscape: "backslash" | "doublequote";
+  booleanAs: "truefalse" | "10";
 }
 
 // 数据库配置映射
 const DATABASE_CONFIGS: Record<DatabaseType, DatabaseConfig> = {
   mysql: {
-    identifierStart: '`',
-    identifierEnd: '`',
-    identifierEscape: '``',
-    stringEscape: 'backslash',
-    booleanAs: 'truefalse',
+    identifierStart: "`",
+    identifierEnd: "`",
+    identifierEscape: "``",
+    stringEscape: "backslash",
+    booleanAs: "truefalse",
   },
   postgresql: {
     identifierStart: '"',
     identifierEnd: '"',
     identifierEscape: '""',
-    stringEscape: 'doublequote',
-    booleanAs: 'truefalse',
+    stringEscape: "doublequote",
+    booleanAs: "truefalse",
   },
   sqlite: {
-    identifierStart: '[',
-    identifierEnd: ']',
-    identifierEscape: ']]',
-    stringEscape: 'doublequote',
-    booleanAs: 'truefalse',
+    identifierStart: "[",
+    identifierEnd: "]",
+    identifierEscape: "]]",
+    stringEscape: "doublequote",
+    booleanAs: "truefalse",
   },
   oracle: {
     identifierStart: '"',
     identifierEnd: '"',
     identifierEscape: '""',
-    stringEscape: 'doublequote',
-    booleanAs: 'truefalse',
+    stringEscape: "doublequote",
+    booleanAs: "truefalse",
   },
   sqlserver: {
-    identifierStart: '[',
-    identifierEnd: ']',
-    identifierEscape: ']]',
-    stringEscape: 'doublequote',
-    booleanAs: 'truefalse',
+    identifierStart: "[",
+    identifierEnd: "]",
+    identifierEscape: "]]",
+    stringEscape: "doublequote",
+    booleanAs: "truefalse",
   },
 };
 
@@ -57,8 +58,20 @@ const CONTEXT_TRIGGER = new Uint8Array(128);
 const SET_CLAUSE_TERMINATORS_BY_FIRST: Record<number, string[]> = {};
 
 const SET_CLAUSE_TERMINATORS = [
-  "where", "order", "group", "having", "limit", "union", "returning",
-  "into", "for", "lock", "offset", "window", "procedure", "on",
+  "where",
+  "order",
+  "group",
+  "having",
+  "limit",
+  "union",
+  "returning",
+  "into",
+  "for",
+  "lock",
+  "offset",
+  "window",
+  "procedure",
+  "on",
 ] as const;
 
 const regex = {
@@ -323,7 +336,7 @@ const hasSqlString = (value: unknown): value is Raw =>
 /**
  * 创建字符串转义函数
  */
-const createEscapeString = (stringEscape: 'backslash' | 'doublequote') => {
+const createEscapeString = (stringEscape: "backslash" | "doublequote") => {
   return (value: string): string => {
     const escapeChars = regex.escapeChars;
     escapeChars.lastIndex = 0;
@@ -340,7 +353,7 @@ const createEscapeString = (stringEscape: 'backslash' | 'doublequote') => {
 
       switch (value.charCodeAt(i)) {
         case 0:
-          escaped = stringEscape === 'backslash' ? "\\0" : "''";
+          escaped = stringEscape === "backslash" ? "\\0" : "''";
           break;
         case 8:
           escaped = "\\b";
@@ -358,10 +371,10 @@ const createEscapeString = (stringEscape: 'backslash' | 'doublequote') => {
           escaped = "\\Z";
           break;
         case 39:
-          escaped = stringEscape === 'backslash' ? "\\'" : "''";
+          escaped = stringEscape === "backslash" ? "\\'" : "''";
           break;
         case 92:
-          escaped = stringEscape === 'backslash' ? "\\\\" : "\\";
+          escaped = stringEscape === "backslash" ? "\\\\" : "\\";
           break;
         default:
           continue;
@@ -398,8 +411,9 @@ const createEscapeId = (config: DatabaseConfig) => {
     const hasJsonOperator = !forbidQualified && identifier.indexOf("->") !== -1;
 
     if (forbidQualified || hasJsonOperator) {
-      const escapeRegex = identifierStart === '`' ? regex.backtick : regex.doublequote;
-      if (identifier.indexOf(identifierStart) === -1) return `${identifierStart}${identifier}${identifierEnd}`;
+      const escapeRegex = identifierStart === "`" ? regex.backtick : regex.doublequote;
+      if (identifier.indexOf(identifierStart) === -1)
+        return `${identifierStart}${identifier}${identifierEnd}`;
       return `${identifierStart}${identifier.replace(escapeRegex, identifierEscape)}${identifierEnd}`;
     }
 
@@ -407,7 +421,7 @@ const createEscapeId = (config: DatabaseConfig) => {
       return `${identifierStart}${identifier}${identifierEnd}`;
     }
 
-    const escapeRegex = identifierStart === '`' ? regex.backtick : regex.doublequote;
+    const escapeRegex = identifierStart === "`" ? regex.backtick : regex.doublequote;
     const dotRegex = regex.dot;
     return `${identifierStart}${identifier.replace(escapeRegex, identifierEscape).replace(dotRegex, `${identifierEnd}.${identifierStart}`)}${identifierEnd}`;
   };
@@ -583,11 +597,7 @@ export const createEscaper = (type: DatabaseType): Escaper => {
     return sql;
   };
 
-  const escape = (
-    value: SqlValue,
-    stringifyObjects?: boolean,
-    timezone?: Timezone,
-  ): string => {
+  const escape = (value: SqlValue, stringifyObjects?: boolean, timezone?: Timezone): string => {
     if (value === undefined || value === null) return "NULL";
 
     switch (typeof value) {
@@ -632,7 +642,7 @@ export const createEscaper = (type: DatabaseType): Escaper => {
     // 智能处理参数：如果 values 不是数组，但 stringifyObjects 不是布尔值，
     // 则将两者合并为一个数组
     let valuesArray: SqlValue[];
-    if (!Array.isArray(values) && typeof stringifyObjects !== 'boolean') {
+    if (!Array.isArray(values) && typeof stringifyObjects !== "boolean") {
       // 将 values 和 stringifyObjects 都作为值处理
       valuesArray = [values, stringifyObjects];
       // 重置 stringifyObjects 为 undefined
@@ -740,16 +750,3 @@ export const createEscaper = (type: DatabaseType): Escaper => {
     raw,
   };
 };
-
-// 保持向后兼容 - 使用 MySQL 风格作为默认实现
-const defaultEscaper = createEscaper('mysql');
-
-export const escape = defaultEscaper.escape;
-export const format = defaultEscaper.format;
-export const escapeId = defaultEscaper.escapeId;
-export const objectToValues = defaultEscaper.objectToValues;
-export const arrayToList = defaultEscaper.arrayToList;
-export const dateToString = defaultEscaper.dateToString;
-export const temporalToString = defaultEscaper.temporalToString;
-export const bufferToString = defaultEscaper.bufferToString;
-export const raw = defaultEscaper.raw;
