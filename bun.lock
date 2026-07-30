@@ -70,6 +70,17 @@
         "typescript": "^6",
       },
     },
+    "packages/core/examples": {
+      "name": "flextree-demo",
+      "version": "1.0.0",
+      "dependencies": {
+        "flextree": "workspace:^",
+        "flextree-bun-sqlite-adapter": "workspace:^",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+      },
+    },
     "packages/prisma": {
       "name": "flextree-prisma-adapter",
       "version": "2.0.4",
@@ -784,6 +795,8 @@
     "flextree": ["flextree@workspace:packages/core"],
 
     "flextree-bun-sqlite-adapter": ["flextree-bun-sqlite-adapter@workspace:packages/bun-sqlite"],
+
+    "flextree-demo": ["flextree-demo@workspace:packages/core/examples"],
 
     "flextree-prisma-adapter": ["flextree-prisma-adapter@workspace:packages/prisma"],
 

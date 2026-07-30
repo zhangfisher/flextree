@@ -57,7 +57,7 @@ export async function createTreeManager(treeId?: number): Promise<FlexTreeManage
   await clearAllTables(sqliteAdapter);
 
   const manager = new FlexTreeManager<TestFields>("tree", {
-    treeId: treeId ? ["treeId", treeId] : undefined,
+    treeId: treeId,
     adapter: sqliteAdapter,
   });
 
@@ -75,7 +75,7 @@ export async function createFlexTree(treeId?: number): Promise<FlexTree<TestFiel
   await clearAllTables(sqliteAdapter);
 
   const tree = new FlexTree<TestFields>("tree", {
-    treeId: treeId ? ["treeId", treeId] : undefined,
+    treeId: treeId,
     adapter: sqliteAdapter,
     lazy: false, // 明确禁用 lazy loading，确保完整树结构加载
   });

@@ -1,3 +1,4 @@
+// oxlint-disable no-unused-vars
 import { describe, test, expect, beforeEach } from "bun:test";
 import { createFlexTree, type TestFlexTree } from "./test-helpers";
 
@@ -37,8 +38,6 @@ describe("FlexTree 导出功能测试", () => {
 
       // 调试：检查实际加载的节点
       const allNodes = await tree.manager.getNodes();
-      console.log('Total nodes in DB:', allNodes.length);
-      console.log('List export length:', tree.toList().length);
     });
 
     test("导出为 JSON 格式（默认选项）", () => {
@@ -396,8 +395,8 @@ describe("FlexTree 导出功能测试", () => {
       const list = tree.toList() as any[];
 
       // 调试输出
-      console.log('List length:', list.length);
-      console.log('List:', JSON.stringify(list, null, 2));
+      //   console.log('List length:', list.length);
+      //   console.log('List:', JSON.stringify(list, null, 2));
 
       // 临时修正：根据实际输出调整期望
       expect(list.length).toBe(5); // 实际只有 5 个节点
@@ -771,7 +770,7 @@ describe("FlexTree 导出功能测试", () => {
         id: 1,
         name: "root",
         title: null, // 没有设置的字段为 null
-        size: null,  // 没有设置的字段为 null
+        size: null, // 没有设置的字段为 null
         // 没有子节点，所以没有 children 字段
       });
 

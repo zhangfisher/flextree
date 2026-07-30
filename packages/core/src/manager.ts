@@ -28,8 +28,8 @@ import { FindNodeMixin } from "./mixins/find.mixin";
 import { RootNodeMixin } from "./mixins/root.mixin";
 import { RelationMixin } from "./mixins/relation.mixin";
 import { UpdateNodeMixin } from "./mixins/update.mixin";
-import { escapeSqlString } from "./utils/escapeSqlString";
 import { VerifyTreeMixin } from "./mixins/verify.mixin";
+import { createEscaper, Escaper } from "./escaper";
 
 export interface FlexTreeManagerOptions<TreeIdType = number> {
   treeId?: TreeIdType; // 使用支持单表多树时需要提供
@@ -42,7 +42,6 @@ export interface FlexTreeManagerOptions<TreeIdType = number> {
     rightValue?: string;
   };
   adapter: IFlexTreeAdapter;
-  escapeString?: (value: any) => string; // 自定义SQL字符串转义函数
 }
 
 export interface FlexTreeManager<
@@ -105,7 +104,7 @@ export class FlexTreeManager<
   private _treeId: any;
   private _fields: RequiredDeep<NonUndefined<FlexTreeManagerOptions["fields"]>>;
   private _adapter: IFlexTreeAdapter;
-  private _escapeString: (value: any) => string; // SQL字符串转义函数
+  private _escaper: Escaper;
   private _ready: boolean = false; // 当driver准备就绪时,ready为true时,才允许执行读写操作
   private _emitter = mitt<FlexTreeEvents>();
   private _lastUpdateAt = 0;
@@ -113,7 +112,6 @@ export class FlexTreeManager<
     tableName: string,
     options?: FlexTreeManagerOptions<NonUndefined<KeyFields["treeId"]>[1]>,
   ) {
-    this._tableName = tableName;
     this._options = deepMerge(
       {
         treeId: undefined,
@@ -129,26 +127,20 @@ export class FlexTreeManager<
       options,
     ) as RequiredDeep<FlexTreeManagerOptions<TreeId>>;
     if (!this._options.adapter) {
-      throw new FlexTreeError("not found database driver");
+      throw new FlexTreeError("not found database adapter");
     }
     this._fields = this._options.fields;
     this._treeId = this.options.treeId;
     this._adapter = this.options.adapter;
     this._adapter.bind(this as FlexTreeManager);
-    // 初始化转义函数，如果用户提供了则使用用户的，否则使用默认的
-    this._escapeString = this._options.escapeString || escapeSqlString;
+    this._escaper = createEscaper(this._adapter.type || "postgresql");
+    this._tableName = this._escaper.escapeId(tableName);
   }
-
   get options() {
     return this._options;
   }
-
-  /**
-   * 获取SQL字符串转义函数
-   * 用于在SQL语句中转义字符串值，防止SQL注入
-   */
-  get escapeString() {
-    return this._escapeString;
+  get escaper() {
+    return this._escaper;
   }
 
   get updating() {
@@ -201,7 +193,11 @@ export class FlexTreeManager<
     }
     return false;
   }
-
+  private _escapeKeyFields() {
+    Object.entries(this._fields).forEach(([key, value]) => {
+      (this._fields as any)[key] = this.escaper.escapeId(value);
+    });
+  }
   async assertDriverReady() {
     try {
       if (!this._adapter) {
@@ -254,7 +250,8 @@ export class FlexTreeManager<
    */
   protected withTreeId(record: Record<string, any>) {
     if (this.isMultiTree) {
-      record[this._fields.treeId] = sqlstring.escape(this._treeId);
+      // 直接设置原始值，不进行转义，因为后续的escaper会处理转义
+      record[this._fields.treeId] = this._treeId;
     }
   }
 

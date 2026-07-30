@@ -78,17 +78,16 @@ async function createCustomTreeManager(treeId?: number): Promise<CustomFlexTreeM
   await clearAllTables(sqliteAdapter);
 
   const manager = new FlexTreeManager<CustomFields, CustomKeyFields>("tree", {
-    treeId: treeId ? ["tree", treeId] : undefined,
+    treeId: treeId, // 直接传递数字，不是数组
     adapter: sqliteAdapter,
     fields: {
       id: "pk",
       name: "title",
-      treeId: "tree",
+      treeId: "tree", // 这里是字段名映射
       leftValue: "lft",
       rightValue: "rgt",
     },
-    escapeString: escapeSqliteString, // 使用SQLite专用转义函数
-  });
+  }) as CustomFlexTreeManager;
 
   return manager;
 }
@@ -106,17 +105,16 @@ async function createCustomFlexTree(treeId?: number): Promise<CustomFlexTree> {
   await clearAllTables(sqliteAdapter);
 
   const tree = new FlexTree<CustomFields, CustomKeyFields>("tree", {
-    treeId: treeId ? ["tree", treeId] : undefined,
+    treeId: treeId, // 直接传递数字，不是数组
     adapter: sqliteAdapter,
     fields: {
       id: "pk",
       name: "title",
-      treeId: "tree",
+      treeId: "tree", // 这里是字段名映射
       leftValue: "lft",
       rightValue: "rgt",
     },
-    escapeString: escapeSqliteString, // 使用SQLite专用转义函数
-  });
+  }) as CustomFlexTree;
 
   return tree;
 }

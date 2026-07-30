@@ -52,11 +52,7 @@ describe("FlexTreeManager CRUD 操作", () => {
 
     test("在根节点下创建最后的子节点", async () => {
       await tree.write(async () => {
-        await tree.addNodes([
-          { name: "A" },
-          { name: "B" },
-          { name: "C" }
-        ]);
+        await tree.addNodes([{ name: "A" }, { name: "B" }, { name: "C" }]);
       });
 
       const nodes = await tree.getNodes();

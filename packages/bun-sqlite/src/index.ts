@@ -6,7 +6,7 @@ export default class BunSqliteAdapter implements IFlexTreeAdapter {
   _db?: BunSqliteDatabase;
   _ready: boolean = false;
   _treeManager?: FlexTreeManager;
-
+  type = "sqlite" as const;
   constructor(db?: Database) {
     this._db = db;
     this._ready = this._isDatabaseOpen();
