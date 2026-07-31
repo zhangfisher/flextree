@@ -14,6 +14,8 @@ import type {
   CustomTreeKeyFields,
   DefaultTreeKeyFields,
   FlexTreeEvents,
+  FlexTreeExportJsonOptions,
+  FlexTreeExportListOptions,
   IFlexTreeNodeFields,
   NonUndefined,
 } from "./types";
@@ -29,6 +31,7 @@ import { RelationMixin } from "./mixins/relation.mixin";
 import { UpdateNodeMixin } from "./mixins/update.mixin";
 import { VerifyTreeMixin } from "./mixins/verify.mixin";
 import { createEscaper, Escaper } from "./escaper";
+import { FlexTree, type FlexTreeOptions } from "./tree";
 
 export interface FlexTreeManagerOptions<TreeIdType = any> {
   treeId?: TreeIdType; // 使用支持单表多树时需要提供
@@ -256,4 +259,32 @@ export class FlexTreeManager<
       );
     }
   }
+  getTree(options?: FlexTreeOptions) {
+    // 需要传递未转义的表名，避免 FlexTreeManager 构造函数重复转义
+    const rawTableName = this.tableName.replace(/^\[|\]$/g, "");
+    return new FlexTree<Fields, KeyFields>(rawTableName, {
+      lazy: false,
+      ...options,
+      treeId: this.treeId as any,
+      adapter: this.adapter,
+      fields: this._fields,
+    });
+  }
+  async toJson(options?: FlexTreeExportJsonOptions<Fields, KeyFields>) {
+    const tree = this.getTree();
+    await tree.load();
+    return tree.toJson(options);
+  }
+  async toList(options?: FlexTreeExportListOptions<Fields, KeyFields>) {
+    const tree = this.getTree();
+    await tree.load();
+    return tree.toList(options);
+  }
+  /**
+   *
+   * 从外部直接导入节点到树中
+   * 适有于指快速导入
+   *
+   */
+  async import(nodes: Record<string, any> | Record<string, any>[], relId?: NodeId) {}
 }

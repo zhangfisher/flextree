@@ -33,6 +33,10 @@ export class AddNodeMixin<
     const treeIdField = this.keyFields.treeId;
     const treeIdValue = this.treeId;
 
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
+
     const values = nodes
       .map((node, i) => {
         const row = [
@@ -54,12 +58,12 @@ export class AddNodeMixin<
       .join(",");
     return [
       this._sql(`
-                UPDATE ${this.tableName} SET ${this.keyFields.leftValue} = ${this.keyFields.leftValue} + ${nodes.length * 2}
-                WHERE {__TREE_ID__} ${this.keyFields.leftValue} >= ${relNode[this.keyFields.rightValue]}
+                UPDATE ${this.tableName} SET ${leftValueField} = ${leftValueField} + ${nodes.length * 2}
+                WHERE {__TREE_ID__} ${leftValueField} >= ${relNode[this.keyFields.rightValue]}
             `),
       this._sql(`
-                UPDATE ${this.tableName} SET ${this.keyFields.rightValue} = ${this.keyFields.rightValue} + ${nodes.length * 2}
-                WHERE {__TREE_ID__} ${this.keyFields.rightValue} >= ${relNode[this.keyFields.rightValue]}
+                UPDATE ${this.tableName} SET ${rightValueField} = ${rightValueField} + ${nodes.length * 2}
+                WHERE {__TREE_ID__} ${rightValueField} >= ${relNode[this.keyFields.rightValue]}
             `),
       this._sql(`
                 INSERT INTO ${this.tableName} ( ${fields.map((f) => this.escaper.escapeId(f)).join(",")})
@@ -83,6 +87,10 @@ export class AddNodeMixin<
     const treeIdField = this.keyFields.treeId;
     const treeIdValue = this.treeId;
 
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
+
     const values = nodes
       .map((node, i) => {
         const row = [
@@ -104,12 +112,12 @@ export class AddNodeMixin<
       .join(",");
     return [
       this._sql(`
-                UPDATE ${this.tableName} SET ${this.keyFields.leftValue} = ${this.keyFields.leftValue} + ${nodes.length * 2}
-                WHERE {__TREE_ID__} ${this.keyFields.leftValue} > ${relNode[this.keyFields.leftValue]}
+                UPDATE ${this.tableName} SET ${leftValueField} = ${leftValueField} + ${nodes.length * 2}
+                WHERE {__TREE_ID__} ${leftValueField} > ${relNode[this.keyFields.leftValue]}
             `),
       this._sql(`
-                UPDATE ${this.tableName} SET ${this.keyFields.rightValue} = ${this.keyFields.rightValue} + ${nodes.length * 2}
-                WHERE {__TREE_ID__} ${this.keyFields.rightValue} >= ${relNode[this.keyFields.leftValue] + 1}
+                UPDATE ${this.tableName} SET ${rightValueField} = ${rightValueField} + ${nodes.length * 2}
+                WHERE {__TREE_ID__} ${rightValueField} >= ${relNode[this.keyFields.leftValue] + 1}
             `),
       this._sql(`
                 INSERT INTO ${this.tableName} ( ${fields.map((f) => this.escaper.escapeId(f)).join(",")})
@@ -127,6 +135,10 @@ export class AddNodeMixin<
     const isMultiTree = this.isMultiTree;
     const treeIdField = this.keyFields.treeId;
     const treeIdValue = this.treeId;
+
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
 
     const values = nodes
       .map((node, i) => {
@@ -149,12 +161,12 @@ export class AddNodeMixin<
       .join(",");
     return [
       this._sql(`
-                UPDATE ${this.tableName} SET ${this.keyFields.leftValue} = ${this.keyFields.leftValue} + ${nodes.length * 2}
-                WHERE {__TREE_ID__} ${this.keyFields.leftValue} > ${relNode[this.keyFields.rightValue]}
+                UPDATE ${this.tableName} SET ${leftValueField} = ${leftValueField} + ${nodes.length * 2}
+                WHERE {__TREE_ID__} ${leftValueField} > ${relNode[this.keyFields.rightValue]}
             `),
       this._sql(`
-                UPDATE ${this.tableName} SET ${this.keyFields.rightValue} = ${this.keyFields.rightValue} + ${nodes.length * 2}
-                WHERE {__TREE_ID__} ${this.keyFields.rightValue} > ${relNode[this.keyFields.rightValue]}
+                UPDATE ${this.tableName} SET ${rightValueField} = ${rightValueField} + ${nodes.length * 2}
+                WHERE {__TREE_ID__} ${rightValueField} > ${relNode[this.keyFields.rightValue]}
             `),
       this._sql(`
                 INSERT INTO ${this.tableName} ( ${fields.map((f) => this.escaper.escapeId(f)).join(",")})
@@ -172,6 +184,10 @@ export class AddNodeMixin<
     const isMultiTree = this.isMultiTree;
     const treeIdField = this.keyFields.treeId;
     const treeIdValue = this.treeId;
+
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
 
     const values = nodes
       .map((node, i) => {
@@ -194,12 +210,12 @@ export class AddNodeMixin<
       .join(",");
     return [
       this._sql(`
-                UPDATE ${this.tableName} SET ${this.keyFields.leftValue} = ${this.keyFields.leftValue} + ${nodes.length * 2}
-                WHERE {__TREE_ID__} ${this.keyFields.leftValue} >= ${relNode[this.keyFields.leftValue]}
+                UPDATE ${this.tableName} SET ${leftValueField} = ${leftValueField} + ${nodes.length * 2}
+                WHERE {__TREE_ID__} ${leftValueField} >= ${relNode[this.keyFields.leftValue]}
             `),
       this._sql(`
-                UPDATE ${this.tableName} SET ${this.keyFields.rightValue} = ${this.keyFields.rightValue} + ${nodes.length * 2}
-                WHERE {__TREE_ID__} ${this.keyFields.rightValue} > ${relNode[this.keyFields.leftValue]}
+                UPDATE ${this.tableName} SET ${rightValueField} = ${rightValueField} + ${nodes.length * 2}
+                WHERE {__TREE_ID__} ${rightValueField} > ${relNode[this.keyFields.leftValue]}
             `),
       this._sql(`
                 INSERT INTO ${this.tableName} ( ${fields.map((f) => this.escaper.escapeId(f)).join(",")})

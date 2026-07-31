@@ -64,10 +64,12 @@ export class SqlMixin<
   protected _sql(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, sql: string) {
     // 在一表多树时,需要增加额外的树判定
     if (this.treeId) {
+      // 预计算转义后的字段名以提高性能和代码可读性
+      const treeIdField = this.escaper.escapeId(this.keyFields.treeId);
       // 字符串类型直接传给escaper处理，数值类型也直接传递
       // escaper会根据类型自动添加引号（字符串）或不添加（数值）
       sql = sql.params({
-        __TREE_ID__: `${this.keyFields.treeId}=${this.escaper.escape(this.treeId)} AND `,
+        __TREE_ID__: `${treeIdField}=${this.escaper.escape(this.treeId)} AND `,
       });
     } else {
       sql = sql.params({ __TREE_ID__: "" });

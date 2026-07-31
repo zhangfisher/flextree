@@ -68,32 +68,37 @@ export class GetNodeMixin<
 
     const fieldList = fields.length > 0 ? fields.map((f) => `${f}`).join(",") : "*";
 
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
+    const levelField = this.escaper.escapeId(this.keyFields.level);
+
     let sql: string;
 
     if (where && where.trim()) {
       // 带过滤条件的复杂查询
       const validatedWhere = checkSqlSafety(where);
-      const levelCondition = level > 0 ? `AND Node.${this.keyFields.level}<=${level}` : "";
+      const levelCondition = level > 0 ? `AND Node.${levelField}<=${level}` : "";
 
       sql = this._sql(`SELECT Node.${fieldList} FROM ${this.tableName} Node
-        WHERE {__TREE_ID__} Node.${this.keyFields.leftValue} > 0
-          AND Node.${this.keyFields.rightValue} > 0
+        WHERE {__TREE_ID__} Node.${leftValueField} > 0
+          AND Node.${rightValueField} > 0
           ${levelCondition}
           AND ${validatedWhere}
           AND NOT EXISTS (
               SELECT 1 FROM ${this.tableName} Ancestor
-              WHERE {__TREE_ID__} Ancestor.${this.keyFields.leftValue} < Node.${this.keyFields.leftValue}
-                AND Ancestor.${this.keyFields.rightValue} > Node.${this.keyFields.rightValue}
+              WHERE {__TREE_ID__} Ancestor.${leftValueField} < Node.${leftValueField}
+                AND Ancestor.${rightValueField} > Node.${rightValueField}
                 AND NOT (${validatedWhere})
           )
-        ORDER BY Node.${this.keyFields.leftValue}`);
+        ORDER BY Node.${leftValueField}`);
     } else {
       // 原有的简单查询（保持向后兼容）
       sql = this._sql(`SELECT ${fieldList} FROM ${this.tableName}
-            WHERE {__TREE_ID__} ${this.keyFields.leftValue}>0
-              AND ${this.keyFields.rightValue}>0
-              ${level > 0 ? `AND ${this.keyFields.level}<=${level}` : ""}
-            ORDER BY ${this.keyFields.leftValue}
+            WHERE {__TREE_ID__} ${leftValueField}>0
+              AND ${rightValueField}>0
+              ${level > 0 ? `AND ${levelField}<=${level}` : ""}
+            ORDER BY ${leftValueField}
         `);
     }
 
@@ -108,8 +113,9 @@ export class GetNodeMixin<
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     nodeId: NodeId,
   ): Promise<TreeNode | undefined> {
-    const sql = this._sql(`SELECT * FROM ${this.tableName} 
-            WHERE {__TREE_ID__} (${this.keyFields.id}=${this.escaper.escape(nodeId as any)})`);
+    const idField = this.escaper.escapeId(this.keyFields.id);
+    const sql = this._sql(`SELECT * FROM ${this.tableName}
+            WHERE {__TREE_ID__} (${idField}=${this.escaper.escape(nodeId as any)})`);
     const result = await this.onExecuteReadSql(sql);
     if (result.length === 0) {
       throw new FlexTreeNodeNotFoundError();
@@ -135,19 +141,26 @@ export class GetNodeMixin<
     const relNodeId = this.escaper.escape(
       isLikeNode(node, this.keyFields) ? (node as any)[this.keyFields.id] : node,
     );
+
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const idField = this.escaper.escapeId(this.keyFields.id);
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
+    const levelField = this.escaper.escapeId(this.keyFields.level);
+
     let treeCondition = "";
     if (this.treeId) {
       treeCondition = `Node.${this.escaper.escapeId(this.keyFields.treeId)}=${this.escaper.escape(this.treeId)} AND`;
     }
     const sql = `SELECT Node.* FROM ${this.tableName}  Node
-            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
+            JOIN ${this.tableName} RelNode ON RelNode.${idField} = ${relNodeId}
             WHERE ${treeCondition}
                 (
-                    Node.${this.keyFields.leftValue} > RelNode.${this.keyFields.leftValue}
-                    AND Node.${this.keyFields.rightValue} < RelNode.${this.keyFields.rightValue}
-                    AND Node.${this.keyFields.level} = RelNode.${this.keyFields.level} + 1
+                    Node.${leftValueField} > RelNode.${leftValueField}
+                    AND Node.${rightValueField} < RelNode.${rightValueField}
+                    AND Node.${levelField} = RelNode.${levelField} + 1
                 )
-            ORDER BY Node.${this.keyFields.leftValue} ${index < 0 ? "DESC" : ""}
+            ORDER BY Node.${leftValueField} ${index < 0 ? "DESC" : ""}
             LIMIT 1 OFFSET ${Math.abs(index) - 1}
         `;
     const result = await this.onExecuteReadSql(sql);
@@ -174,6 +187,13 @@ export class GetNodeMixin<
     const { level, includeSelf } = Object.assign({ includeSelf: false, level: 0 }, options);
     const relNode = await this.getNodeData(nodeId);
     const relNodeId = this.escaper.escape(relNode[this.keyFields.id]);
+
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const idField = this.escaper.escapeId(this.keyFields.id);
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
+    const levelField = this.escaper.escapeId(this.keyFields.level);
+
     let treeCondition = "";
     if (this.treeId) {
       treeCondition = `Node.${this.escaper.escapeId(this.keyFields.treeId)}=${this.escaper.escape(this.treeId)} AND`;
@@ -182,26 +202,26 @@ export class GetNodeMixin<
     if (level === 0) {
       // 不限定层级
       sql = `SELECT Node.* FROM ${this.tableName} Node
-                JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
+                JOIN ${this.tableName} RelNode ON RelNode.${idField} = ${relNodeId}
                 WHERE
                   ${treeCondition}
-                  ((Node.${this.keyFields.leftValue} > RelNode.${this.keyFields.leftValue}
-                  AND Node.${this.keyFields.rightValue} < RelNode.${this.keyFields.rightValue})
-                  ${includeSelf ? `OR Node.${this.keyFields.id} = ${relNodeId}` : ""})
-                ORDER BY ${this.keyFields.leftValue}
+                  ((Node.${leftValueField} > RelNode.${leftValueField}
+                  AND Node.${rightValueField} < RelNode.${rightValueField})
+                  ${includeSelf ? `OR Node.${idField} = ${relNodeId}` : ""})
+                ORDER BY ${leftValueField}
                 `;
     } else {
       // 限定层级
       sql = `SELECT Node.* FROM ${this.tableName} Node
-                JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
+                JOIN ${this.tableName} RelNode ON RelNode.${idField} = ${relNodeId}
                 WHERE
                 ${treeCondition}
-                ((Node.${this.keyFields.leftValue} > RelNode.${this.keyFields.leftValue}
-                AND Node.${this.keyFields.rightValue} < RelNode.${this.keyFields.rightValue}
-                AND Node.${this.keyFields.level} > RelNode.${this.keyFields.level}
-                AND Node.${this.keyFields.level} <= RelNode.${this.keyFields.level}+${level})
-                ${includeSelf ? `OR Node.${this.keyFields.id} = ${relNodeId}` : ""})
-                ORDER BY ${this.keyFields.leftValue}
+                ((Node.${leftValueField} > RelNode.${leftValueField}
+                AND Node.${rightValueField} < RelNode.${rightValueField}
+                AND Node.${levelField} > RelNode.${levelField}
+                AND Node.${levelField} <= RelNode.${levelField}+${level})
+                ${includeSelf ? `OR Node.${idField} = ${relNodeId}` : ""})
+                ORDER BY ${leftValueField}
             `;
     }
     // 得到的平面形式的节点列表
@@ -220,18 +240,25 @@ export class GetNodeMixin<
     const relNode = await this.getNodeData(nodeId);
     const relNodeId = this.escaper.escape(relNode[this.keyFields.id]);
     const relNodeLevel = relNode[this.keyFields.level];
+
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const idField = this.escaper.escapeId(this.keyFields.id);
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
+    const levelField = this.escaper.escapeId(this.keyFields.level);
+
     let treeCondition = "";
     if (this.treeId) {
       treeCondition = `Node.${this.escaper.escapeId(this.keyFields.treeId)}=${this.escaper.escape(this.treeId)} AND`;
     }
 
     const sql = `SELECT COUNT(*) FROM ${this.tableName} Node
-            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
+            JOIN ${this.tableName} RelNode ON RelNode.${idField} = ${relNodeId}
             WHERE ${treeCondition}
                 (
-                    Node.${this.keyFields.leftValue} > RelNode.${this.keyFields.leftValue}
-                    AND Node.${this.keyFields.rightValue} < RelNode.${this.keyFields.rightValue}
-                ) ${level > 0 ? `AND Node.${this.keyFields.level} <= ${relNodeLevel + level} ` : ""}`;
+                    Node.${leftValueField} > RelNode.${leftValueField}
+                    AND Node.${rightValueField} < RelNode.${rightValueField}
+                ) ${level > 0 ? `AND Node.${levelField} <= ${relNodeLevel + level} ` : ""}`;
     return await this.getScalar(sql);
   }
 
@@ -264,22 +291,28 @@ export class GetNodeMixin<
 
     const relNode = await this.getNodeData(nodeId);
     const relNodeId = this.escaper.escape(relNode[this.keyFields.id]);
+
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const idField = this.escaper.escapeId(this.keyFields.id);
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
+
     let treeCondition = "";
     if (this.treeId) {
       treeCondition = `Node.${this.escaper.escapeId(this.keyFields.treeId)}=${this.escaper.escape(this.treeId)} AND`;
     }
 
     const sql = `SELECT Node.* FROM ${this.tableName} Node
-            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
+            JOIN ${this.tableName} RelNode ON RelNode.${idField} = ${relNodeId}
             WHERE ${treeCondition}
             (
                 (
-                    Node.${this.keyFields.leftValue} < RelNode.${this.keyFields.leftValue}
-                    AND Node.${this.keyFields.rightValue} > RelNode.${this.keyFields.rightValue}
+                    Node.${leftValueField} < RelNode.${leftValueField}
+                    AND Node.${rightValueField} > RelNode.${rightValueField}
                 )
-                ${includeSelf ? `OR Node.${this.keyFields.id} = ${relNodeId}` : ""}
+                ${includeSelf ? `OR Node.${idField} = ${relNodeId}` : ""}
             )
-            ORDER BY ${this.keyFields.leftValue}
+            ORDER BY ${leftValueField}
         `;
     return await this.getNodeList(sql);
   }
@@ -293,16 +326,21 @@ export class GetNodeMixin<
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     nodeId: NodeId,
   ) {
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const idField = this.escaper.escapeId(this.keyFields.id);
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
+
     let treeCondition = "";
     if (this.treeId) {
       treeCondition = `Node.${this.escaper.escapeId(this.keyFields.treeId)}=${this.escaper.escape(this.treeId)} AND`;
     }
     const sql = `SELECT COUNT(*) FROM ${this.tableName} Node
-            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${this.escaper.escape(nodeId)}
+            JOIN ${this.tableName} RelNode ON RelNode.${idField} = ${this.escaper.escape(nodeId)}
             WHERE ${treeCondition}
                 (
-                    Node.${this.keyFields.leftValue} < RelNode.${this.keyFields.leftValue}
-                    AND Node.${this.keyFields.rightValue} > RelNode.${this.keyFields.rightValue}
+                    Node.${leftValueField} < RelNode.${leftValueField}
+                    AND Node.${rightValueField} > RelNode.${rightValueField}
                 )
         `;
     return await this.getScalar(sql);
@@ -319,18 +357,24 @@ export class GetNodeMixin<
   ): Promise<TreeNode> {
     const relNode = await this.getNodeData(nodeId);
     const relNodeId = this.escaper.escape(relNode[this.keyFields.id]);
+
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const idField = this.escaper.escapeId(this.keyFields.id);
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
+
     let treeCondition = "";
     if (this.treeId) {
       treeCondition = `Node.${this.escaper.escapeId(this.keyFields.treeId)}=${this.escaper.escape(this.treeId)} AND`;
     }
     const sql = `SELECT Node.* FROM ${this.tableName} Node
-            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
+            JOIN ${this.tableName} RelNode ON RelNode.${idField} = ${relNodeId}
             WHERE ${treeCondition}
             (
-                Node.${this.keyFields.leftValue} < RelNode.${this.keyFields.leftValue}
-                AND Node.${this.keyFields.rightValue} > RelNode.${this.keyFields.rightValue}
+                Node.${leftValueField} < RelNode.${leftValueField}
+                AND Node.${rightValueField} > RelNode.${rightValueField}
             )
-            ORDER BY ${this.keyFields.leftValue} DESC LIMIT 1
+            ORDER BY ${leftValueField} DESC LIMIT 1
         `;
     const result = await this.onExecuteReadSql(sql);
     if (result.length === 0) {
@@ -369,6 +413,13 @@ export class GetNodeMixin<
     const { includeSelf } = Object.assign({ includeSelf: false }, options);
     const relNode = await this.getNodeData(nodeId);
     const relNodeId = this.escaper.escape(relNode[this.keyFields.id]);
+
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const idField = this.escaper.escapeId(this.keyFields.id);
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
+    const levelField = this.escaper.escapeId(this.keyFields.level);
+
     let treeCondition = "";
     if (this.treeId) {
       treeCondition = `Node.${this.escaper.escapeId(this.keyFields.treeId)}=${this.escaper.escape(this.treeId)} AND`;
@@ -376,22 +427,22 @@ export class GetNodeMixin<
     const sql = `SELECT Node.* FROM ${this.tableName} Node
             JOIN (
                 SELECT Node.* FROM ${this.tableName} Node
-                JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
+                JOIN ${this.tableName} RelNode ON RelNode.${idField} = ${relNodeId}
                 WHERE
-                    (Node.${this.keyFields.leftValue} < RelNode.${this.keyFields.leftValue}
-                    AND Node.${this.keyFields.rightValue} > RelNode.${this.keyFields.rightValue} )
-                ORDER BY Node.${this.keyFields.leftValue} DESC LIMIT 1
+                    (Node.${leftValueField} < RelNode.${leftValueField}
+                    AND Node.${rightValueField} > RelNode.${rightValueField} )
+                ORDER BY Node.${leftValueField} DESC LIMIT 1
             ) ParentNode
             WHERE ${treeCondition}
             (
                 (
-                    Node.${this.keyFields.leftValue} > ParentNode.${this.keyFields.leftValue}
-                    AND Node.${this.keyFields.rightValue} < ParentNode.${this.keyFields.rightValue}
-                    AND Node.${this.keyFields.level} = ParentNode.${this.keyFields.level}+1
-                    ${includeSelf ? "" : `AND Node.${this.keyFields.id} != ${relNodeId}`}
+                    Node.${leftValueField} > ParentNode.${leftValueField}
+                    AND Node.${rightValueField} < ParentNode.${rightValueField}
+                    AND Node.${levelField} = ParentNode.${levelField}+1
+                    ${includeSelf ? "" : `AND Node.${idField} != ${relNodeId}`}
                 )
             )
-            ORDER BY ${this.keyFields.leftValue}
+            ORDER BY ${leftValueField}
         `;
     return await this.getNodeList(sql);
   }
@@ -416,17 +467,24 @@ export class GetNodeMixin<
   ) {
     const relNode = await this.getNodeData(nodeId);
     const relNodeId = this.escaper.escape(relNode[this.keyFields.id]);
+
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const idField = this.escaper.escapeId(this.keyFields.id);
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
+    const levelField = this.escaper.escapeId(this.keyFields.level);
+
     let treeCondition = "";
     if (this.treeId) {
       treeCondition = `Node.${this.escaper.escapeId(this.keyFields.treeId)}=${this.escaper.escape(this.treeId)} AND`;
     }
 
     const sql = `SELECT Node.* FROM ${this.tableName} Node
-            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
+            JOIN ${this.tableName} RelNode ON RelNode.${idField} = ${relNodeId}
             WHERE ${treeCondition}
                 (
-                    Node.${this.keyFields.leftValue} = RelNode.${this.keyFields.rightValue}+1
-                    AND Node.${this.keyFields.level} = RelNode.${this.keyFields.level}
+                    Node.${leftValueField} = RelNode.${rightValueField}+1
+                    AND Node.${levelField} = RelNode.${levelField}
                 )
             LIMIT 1`;
     return await this.getOneNode(sql);
@@ -442,16 +500,22 @@ export class GetNodeMixin<
   ) {
     const relNode = await this.getNodeData(nodeId);
     const relNodeId = this.escaper.escape(relNode[this.keyFields.id]);
+
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const idField = this.escaper.escapeId(this.keyFields.id);
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
+
     let treeCondition = "";
     if (this.treeId) {
       treeCondition = `Node.${this.escaper.escapeId(this.keyFields.treeId)}=${this.escaper.escape(this.treeId)} AND`;
     }
 
     const sql = `SELECT Node.* FROM ${this.tableName} Node
-            JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${relNodeId}
+            JOIN ${this.tableName} RelNode ON RelNode.${idField} = ${relNodeId}
             WHERE ${treeCondition}
                 (
-                    Node.${this.keyFields.rightValue} = RelNode.${this.keyFields.leftValue}-1
+                    Node.${rightValueField} = RelNode.${leftValueField}-1
                 )
             LIMIT 1`;
     return await this.getOneNode(sql);
@@ -464,8 +528,9 @@ export class GetNodeMixin<
    *
    */
   async getRoot(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>) {
-    const sql = this._sql(`SELECT * FROM ${this.tableName} 
-                        WHERE {__TREE_ID__} ${this.keyFields.leftValue}=1`);
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const sql = this._sql(`SELECT * FROM ${this.tableName}
+                        WHERE {__TREE_ID__} ${leftValueField}=1`);
     return (await this.getOneNode(sql))!;
   }
 }

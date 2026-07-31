@@ -7,9 +7,20 @@ export default class BunSqliteAdapter implements IFlexTreeAdapter {
   _ready: boolean = false;
   _treeManager?: FlexTreeManager;
   type = "sqlite" as const;
-  constructor(db?: Database) {
-    this._db = db;
-    this._ready = this._isDatabaseOpen();
+  private _externalDb: boolean = false; // 标记是否使用外部传入的数据库
+  private _dbPath?: string; // 数据库文件路径
+
+  constructor(db?: Database | string) {
+    if (typeof db === 'string') {
+      // 传入的是数据库文件路径
+      this._dbPath = db;
+      this._ready = false;
+    } else if (db instanceof Database) {
+      // 传入的是已有的 Database 对象
+      this._db = db;
+      this._externalDb = true;
+      this._ready = this._isDatabaseOpen();
+    }
   }
 
   get ready() {
@@ -44,7 +55,21 @@ export default class BunSqliteAdapter implements IFlexTreeAdapter {
   open() {
     return new Promise((resolve, reject) => {
       try {
-        this._db = new Database(":memory:");
+        // 如果已经通过外部传入数据库，则不需要再次打开
+        if (this._externalDb && this._db) {
+          this._ready = true;
+          resolve(this._db);
+          return;
+        }
+
+        // 如果指定了数据库路径，则创建真实数据库文件
+        if (this._dbPath) {
+          this._db = new Database(this._dbPath);
+        } else {
+          // 默认使用内存数据库
+          this._db = new Database(":memory:");
+        }
+
         this._ready = true;
         resolve(this._db);
       } catch (e: any) {

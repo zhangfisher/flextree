@@ -6,7 +6,7 @@ import type {
   NonUndefined,
 } from "../types";
 import { FlexNodeRelPosition, FlexTreeNodeRelation } from "../types";
-import { FlexTreeError, FlexTreeNodeInvalidOperationError } from "../errors";
+import { FlexTreeError, FlexTreeNodeInvalidOperationError, FlexTreeNodeNotFoundError } from "../errors";
 
 export class MoveNodeMixin<
   Fields extends Record<string, any> = object,
@@ -71,42 +71,56 @@ export class MoveNodeMixin<
       fromNode[this.keyFields.rightValue] - fromNode[this.keyFields.leftValue] + 1;
 
     const leftValue = fromNode[this.keyFields.leftValue];
+    const rightValue = fromNode[this.keyFields.rightValue];
+
+    // 保存目标节点的原始位置
+    const toNodeRightValue = toNode[this.keyFields.rightValue];
+
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
+    const levelField = this.escaper.escapeId(this.keyFields.level);
+
+    // 计算目标节点在deleteNode调整后的rightValue
+    // 如果目标节点在源节点右边，它的rightValue会被减少movedLength
+    const adjustedToNodeRightValue = toNodeRightValue > rightValue
+      ? toNodeRightValue - movedLength
+      : toNodeRightValue;
 
     const sqls: string[] = [
+      // 第1步：为目标位置腾出空间（在调整后的目标节点之后）
       this._sql(`
-                UPDATE ${this.tableName} 
-                SET 
-                    ${this.keyFields.leftValue} = ${this.keyFields.leftValue} + ${movedLength}                              
-                WHERE 
-                    {__TREE_ID__} 
-                    ${this.keyFields.leftValue} > (SELECT ${this.keyFields.rightValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )                
-            `),
-      this._sql(`
-                UPDATE ${this.tableName} 
-                SET 
-                    ${this.keyFields.rightValue} = ${this.keyFields.rightValue} + ${movedLength}   
-                WHERE 
-                    {__TREE_ID__} 
-                    ${this.keyFields.rightValue} > (SELECT ${this.keyFields.rightValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )                    
+                UPDATE ${this.tableName}
+                SET
+                    ${leftValueField} = ${leftValueField} + ${movedLength}
+                WHERE {__TREE_ID__}
+                    ${leftValueField} > ${adjustedToNodeRightValue}
             `),
 
       this._sql(`
-                UPDATE ${this.tableName} 
-                SET 
-                    ${this.keyFields.leftValue} = (SELECT ${this.keyFields.rightValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )
-                                                 + (-${this.keyFields.leftValue} - ${leftValue} ) + 1 ,
-                    ${this.keyFields.level} = ${toNode[this.keyFields.level]} +  ${this.keyFields.level} - ${fromNode[this.keyFields.level]} 
-                WHERE 
-                    {__TREE_ID__} ${this.keyFields.leftValue} < 0  
+                UPDATE ${this.tableName}
+                SET
+                    ${rightValueField} = ${rightValueField} + ${movedLength}
+                WHERE {__TREE_ID__}
+                    ${rightValueField} > ${adjustedToNodeRightValue}
+            `),
+
+      // 第2步：将已逻辑删除的节点移动到新位置并恢复为正数
+      this._sql(`
+                UPDATE ${this.tableName}
+                SET
+                    ${leftValueField} = ${adjustedToNodeRightValue + 1} + (-${leftValueField} - ${leftValue}),
+                    ${levelField} = ${toNode[this.keyFields.level]} + ${levelField} - ${fromNode[this.keyFields.level]}
+                WHERE {__TREE_ID__}
+                    ${leftValueField} < 0
             `),
 
       this._sql(`
-                UPDATE ${this.tableName} 
-                SET 
-                    ${this.keyFields.rightValue} =  (SELECT ${this.keyFields.leftValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${fromNode[this.keyFields.id]} )
-                                                 + (-${this.keyFields.rightValue} - ${leftValue} ) 
-                WHERE 
-                    {__TREE_ID__} ${this.keyFields.rightValue} < 0
+                UPDATE ${this.tableName}
+                SET
+                    ${rightValueField} = ${adjustedToNodeRightValue + 1} + (-${rightValueField} - ${leftValue})
+                WHERE {__TREE_ID__}
+                    ${rightValueField} < 0
             `),
     ];
 
@@ -122,43 +136,59 @@ export class MoveNodeMixin<
       fromNode[this.keyFields.rightValue] - fromNode[this.keyFields.leftValue] + 1;
 
     const leftValue = fromNode[this.keyFields.leftValue];
+    const rightValue = fromNode[this.keyFields.rightValue];
+
+    // 保存目标节点的原始位置
+    const toNodeLeftValue = toNode[this.keyFields.leftValue];
+
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
+    const levelField = this.escaper.escapeId(this.keyFields.level);
+
+    // 计算目标节点在deleteNode调整后的leftValue
+    // 如果目标节点在源节点右边，它的leftValue会被减少movedLength
+    const adjustedToNodeLeftValue = toNodeLeftValue > rightValue
+      ? toNodeLeftValue - movedLength
+      : toNodeLeftValue;
+
     const sqls: string[] = [
-      // 调整目标节点及其后代节点的左右值
+      // 第1步：为目标位置腾出空间（在调整后的目标节点之前）
       this._sql(`
-                UPDATE ${this.tableName} 
-                SET 
-                    ${this.keyFields.leftValue} = ${this.keyFields.leftValue} + ${movedLength}                              
-                WHERE 
-                    {__TREE_ID__} 
-                    ${this.keyFields.leftValue} >= (SELECT ${this.keyFields.leftValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} ) 
-            `),
-      this._sql(`
-                UPDATE ${this.tableName} 
-                SET 
-                    ${this.keyFields.rightValue} =  ${this.keyFields.rightValue} + ${movedLength}
-                WHERE 
-                    {__TREE_ID__} 
-                    ${this.keyFields.rightValue} > (SELECT ${this.keyFields.leftValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )
-                                                - ${movedLength}
-            `),
-      // 修复源节点的左右值
-      this._sql(`
-                UPDATE ${this.tableName} 
-                SET 
-                    ${this.keyFields.leftValue} = (SELECT ${this.keyFields.leftValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )
-                                                  - ${movedLength} + (-${this.keyFields.leftValue} - ${leftValue}  ) ,
-                    ${this.keyFields.level} = ${toNode[this.keyFields.level]} +  ${this.keyFields.level} - ${fromNode[this.keyFields.level]} 
-                WHERE 
-                    {__TREE_ID__} ${this.keyFields.leftValue} < 0  
+                UPDATE ${this.tableName}
+                SET
+                    ${leftValueField} = ${leftValueField} + ${movedLength}
+                WHERE
+                    {__TREE_ID__}
+                    ${leftValueField} >= ${adjustedToNodeLeftValue}
             `),
 
       this._sql(`
-                UPDATE ${this.tableName} 
-                SET 
-                    ${this.keyFields.rightValue} =  (SELECT ${this.keyFields.leftValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${fromNode[this.keyFields.id]} )
-                                                 + (-${this.keyFields.rightValue} - ${leftValue} )                 
-                WHERE 
-                    {__TREE_ID__} ${this.keyFields.rightValue} < 0
+                UPDATE ${this.tableName}
+                SET
+                    ${rightValueField} = ${rightValueField} + ${movedLength}
+                WHERE
+                    {__TREE_ID__}
+                    ${rightValueField} >= ${adjustedToNodeLeftValue}
+            `),
+
+      // 第2步：将已逻辑删除的节点移动到新位置并恢复为正数
+      // 源节点应该插入到adjustedToNodeLeftValue之前
+      this._sql(`
+                UPDATE ${this.tableName}
+                SET
+                    ${leftValueField} = ${adjustedToNodeLeftValue} + (-${leftValueField} - ${leftValue}),
+                    ${levelField} = ${toNode[this.keyFields.level]} + ${levelField} - ${fromNode[this.keyFields.level]}
+                WHERE
+                    {__TREE_ID__} ${leftValueField} < 0
+            `),
+
+      this._sql(`
+                UPDATE ${this.tableName}
+                SET
+                    ${rightValueField} = ${adjustedToNodeLeftValue} + (-${rightValueField} - ${leftValue})
+                WHERE
+                    {__TREE_ID__} ${rightValueField} < 0
             `),
     ];
     return sqls;
@@ -173,43 +203,69 @@ export class MoveNodeMixin<
       fromNode[this.keyFields.rightValue] - fromNode[this.keyFields.leftValue] + 1;
 
     const leftValue = fromNode[this.keyFields.leftValue];
+    const rightValue = fromNode[this.keyFields.rightValue];
+
+    // 保存目标节点的原始位置
+    const toNodeRightValue = toNode[this.keyFields.rightValue];
+
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
+    const levelField = this.escaper.escapeId(this.keyFields.level);
+    const idField = this.escaper.escapeId(this.keyFields.id);
+
+    // 计算目标节点在deleteNode调整后的rightValue
+    // 如果目标节点在源节点右边，它的rightValue会被减少movedLength
+    const adjustedToNodeRightValue = toNodeRightValue > rightValue
+      ? toNodeRightValue - movedLength
+      : toNodeRightValue;
 
     const sqls: string[] = [
-      // 调整目标节点及其后代节点的左右值
+      // 第1步：为目标位置腾出空间（在调整后的目标节点右值之前，作为最后一个子节点）
       this._sql(`
-                UPDATE ${this.tableName} 
-                SET 
-                    ${this.keyFields.leftValue} = ${this.keyFields.leftValue} + ${movedLength}                              
-                WHERE 
-                    {__TREE_ID__} 
-                    ${this.keyFields.leftValue} > (SELECT ${this.keyFields.rightValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )                
-            `),
-      this._sql(`
-                UPDATE ${this.tableName} 
-                SET 
-                    ${this.keyFields.rightValue} =  ${this.keyFields.rightValue} + ${movedLength}
-                WHERE 
-                    {__TREE_ID__} 
-                    ${this.keyFields.rightValue} >= (SELECT ${this.keyFields.rightValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )
-            `),
-      // 修复源节点的左右值
-      this._sql(`
-                UPDATE ${this.tableName} 
-                SET 
-                    ${this.keyFields.leftValue} = (SELECT ${this.keyFields.rightValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )
-                                                  -  ${movedLength} + (-${this.keyFields.leftValue} - ${leftValue}),                                                  
-                    ${this.keyFields.level} = ${toNode[this.keyFields.level]} +  ${this.keyFields.level} - ${fromNode[this.keyFields.level]} + 1
-                WHERE 
-                    {__TREE_ID__} ${this.keyFields.leftValue} < 0  
+                UPDATE ${this.tableName}
+                SET
+                    ${leftValueField} = ${leftValueField} + ${movedLength}
+                WHERE
+                    {__TREE_ID__}
+                    ${leftValueField} > ${adjustedToNodeRightValue}
             `),
 
       this._sql(`
-                UPDATE ${this.tableName} 
-                SET 
-                    ${this.keyFields.rightValue} = (SELECT ${this.keyFields.leftValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${fromNode[this.keyFields.id]} ) 
-                    + (-${this.keyFields.rightValue} -${leftValue}) 
-                WHERE 
-                    {__TREE_ID__} ${this.keyFields.rightValue} < 0
+                UPDATE ${this.tableName}
+                SET
+                    ${rightValueField} = ${rightValueField} + ${movedLength}
+                WHERE
+                    {__TREE_ID__}
+                    ${rightValueField} > ${adjustedToNodeRightValue}
+            `),
+
+      // 第2步：将已逻辑删除的节点移动到新位置并恢复为正数
+      // 源节点应该插入到adjustedToNodeRightValue之前（作为目标节点的最后一个子节点）
+      this._sql(`
+                UPDATE ${this.tableName}
+                SET
+                    ${leftValueField} = ${adjustedToNodeRightValue} + (-${leftValueField} - ${leftValue}),
+                    ${levelField} = ${toNode[this.keyFields.level]} + ${levelField} - ${fromNode[this.keyFields.level]} + 1
+                WHERE
+                    {__TREE_ID__} ${leftValueField} < 0
+            `),
+
+      this._sql(`
+                UPDATE ${this.tableName}
+                SET
+                    ${rightValueField} = ${adjustedToNodeRightValue} + (-${rightValueField} - ${leftValue})
+                WHERE
+                    {__TREE_ID__} ${rightValueField} < 0
+            `),
+
+      // 第3步：更新目标节点本身的rightValue（因为它现在包含了新的子树）
+      this._sql(`
+                UPDATE ${this.tableName}
+                SET
+                    ${rightValueField} = ${rightValueField} + ${movedLength}
+                WHERE
+                    {__TREE_ID__} ${idField} = ${toNode[this.keyFields.id]}
             `),
     ];
     return sqls;
@@ -224,43 +280,81 @@ export class MoveNodeMixin<
       fromNode[this.keyFields.rightValue] - fromNode[this.keyFields.leftValue] + 1;
 
     const leftValue = fromNode[this.keyFields.leftValue];
+    const rightValue = fromNode[this.keyFields.rightValue];
+
+    // 保存目标节点的原始位置
+    const toNodeLeftValue = toNode[this.keyFields.leftValue];
+    const toNodeRightValue = toNode[this.keyFields.rightValue];
+
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
+    const levelField = this.escaper.escapeId(this.keyFields.level);
+    const idField = this.escaper.escapeId(this.keyFields.id);
+
+    // 计算目标节点在deleteNode调整后的位置
+    // 如果目标节点在源节点右边，它的leftValue和rightValue会被减少movedLength
+    const adjustedToNodeLeftValue = toNodeLeftValue > rightValue
+      ? toNodeLeftValue - movedLength
+      : toNodeLeftValue;
+    const adjustedToNodeRightValue = toNodeRightValue > rightValue
+      ? toNodeRightValue - movedLength
+      : toNodeRightValue;
 
     const sqls: string[] = [
-      // 调整目标节点及其后代节点的左右值
+      // 第1步：为目标位置腾出空间（在调整后的目标节点左值之后，作为第一个子节点）
+      // 更新所有leftValue大于目标节点leftValue的节点，包括目标节点的子节点和后续兄弟节点
       this._sql(`
-                UPDATE ${this.tableName} 
-                SET 
-                    ${this.keyFields.leftValue} = ${this.keyFields.leftValue} + ${movedLength}                              
-                WHERE 
-                    {__TREE_ID__} 
-                    ${this.keyFields.leftValue} > (SELECT ${this.keyFields.leftValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )                
+                UPDATE ${this.tableName}
+                SET
+                    ${leftValueField} = ${leftValueField} + ${movedLength}
+                WHERE
+                    {__TREE_ID__}
+                    ${leftValueField} > ${adjustedToNodeLeftValue}
             `),
+
+      // rightValue更新：只更新目标节点及其后续兄弟节点
+      // 排除祖先节点：ancestors.leftValue < toNode.leftValue
       this._sql(`
-                UPDATE ${this.tableName} 
-                SET 
-                    ${this.keyFields.rightValue} =  ${this.keyFields.rightValue} + ${movedLength}
-                WHERE 
-                    {__TREE_ID__} 
-                    ${this.keyFields.rightValue} >= (SELECT ${this.keyFields.leftValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )
+                UPDATE ${this.tableName}
+                SET
+                    ${rightValueField} = ${rightValueField} + ${movedLength}
+                WHERE
+                    {__TREE_ID__}
+                    ${rightValueField} > ${adjustedToNodeLeftValue} AND
+                    ${leftValueField} >= ${adjustedToNodeLeftValue}
             `),
-      //  修复源节点的左右值
+
+      // 第2步：将已逻辑删除的节点移动到新位置并恢复为正数
+      // 源节点应该插入到adjustedToNodeLeftValue之后（作为目标节点的第一个子节点）
       this._sql(`
-                UPDATE ${this.tableName} 
-                SET 
-                    ${this.keyFields.leftValue} = (SELECT ${this.keyFields.leftValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${toNode[this.keyFields.id]} )
-                                                 + (-${this.keyFields.leftValue} - ${leftValue}) + 1 ,                                                  
-                    ${this.keyFields.level} = ${toNode[this.keyFields.level]} +  ${this.keyFields.level} - ${fromNode[this.keyFields.level]} + 1
-                WHERE 
-                    {__TREE_ID__} ${this.keyFields.leftValue} < 0  
+                UPDATE ${this.tableName}
+                SET
+                    ${leftValueField} = ${adjustedToNodeLeftValue} + (-${leftValueField} - ${leftValue}) + 1,
+                    ${levelField} = ${toNode[this.keyFields.level]} + ${levelField} - ${fromNode[this.keyFields.level]} + 1
+                WHERE
+                    {__TREE_ID__} ${leftValueField} < 0
             `),
 
       this._sql(`
-                UPDATE ${this.tableName} 
-                SET 
-                    ${this.keyFields.rightValue} = (SELECT ${this.keyFields.leftValue} FROM ${this.tableName} WHERE {__TREE_ID__} ${this.keyFields.id}=${fromNode[this.keyFields.id]} ) 
-                    + (-${this.keyFields.rightValue} -${leftValue})  
-                WHERE 
-                    {__TREE_ID__} ${this.keyFields.rightValue} < 0
+                UPDATE ${this.tableName}
+                SET
+                    ${rightValueField} = ${adjustedToNodeLeftValue} + (-${rightValueField} - ${leftValue}) + 1
+                WHERE
+                    {__TREE_ID__} ${rightValueField} < 0
+            `),
+
+      // 第3步：更新目标节点的所有祖先节点的rightValue
+      // 使用更精确的条件，只包含真正的祖先节点，避免更新后续兄弟节点
+      // 祖先节点的特征是：leftValue < adjustedToNodeLeftValue 且 rightValue > adjustedToNodeRightValue
+      this._sql(`
+                UPDATE ${this.tableName}
+                SET
+                    ${rightValueField} = ${rightValueField} + ${movedLength}
+                WHERE
+                    {__TREE_ID__}
+                    ${leftValueField} < ${adjustedToNodeLeftValue} AND
+                    ${rightValueField} > ${adjustedToNodeRightValue}
             `),
     ];
 
@@ -392,15 +486,12 @@ export class MoveNodeMixin<
     }
 
     const sqls: string[] = [];
-    // 1. 将源节点及其子节点标记为已删除, 没有真正删除，只是标记为已删除, 执行后要移动的节点就从树中脱离，但是数据还在，仅是左右值变成负数
-    await this.deleteNode(srcNode.id, {
-      onlyMark: true,
-      onExecuteBefore: (delSqls) => {
-        sqls.push(...delSqls);
-        return false;
-      },
-    });
 
+    // 按照核心算法：调用deleteNode标记源节点为删除，这保证了树的完整性
+    await this.deleteNode(srcNode, { onlyMark: true });
+
+    // 根据移动位置和节点树的长度，重新计算受影响节点的left,right值
+    // 将已逻辑删除的节点的左右值更新
     if (pos === FlexNodeRelPosition.LastChild) {
       sqls.push(...this._moveToLastChild(srcNode, targetNode));
     } else if (pos === FlexNodeRelPosition.FirstChild) {
@@ -427,19 +518,31 @@ export class MoveNodeMixin<
   ) {
     this._assertWriteable();
     const srcNode = (await this.getNodeData(node)) as unknown as TreeNode;
+    const srcNodeId = srcNode[this.keyFields.id as string] as NodeId;
+
     let preNode = await this.getPreviousSibling(srcNode);
     if (preNode) {
-      await this.moveNode(srcNode.id, preNode.id, FlexNodeRelPosition.PreviousSibling);
+      const preNodeId = preNode[this.keyFields.id as string] as NodeId;
+      await this.moveNode(srcNodeId, preNodeId, FlexNodeRelPosition.PreviousSibling);
     } else {
-      const parentNode = await this.getParent(srcNode.id);
-      if (parentNode) {
-        try {
-          await this.moveNode(srcNode.id, parentNode.id, FlexNodeRelPosition.PreviousSibling);
-        } catch {
+      try {
+        const parentNode = await this.getParent(srcNodeId);
+        if (parentNode) {
+          try {
+            const parentNodeId = parentNode[this.keyFields.id as string] as NodeId;
+            await this.moveNode(srcNodeId, parentNodeId, FlexNodeRelPosition.PreviousSibling);
+          } catch {
+            throw new FlexTreeNodeInvalidOperationError();
+          }
+        } else {
           throw new FlexTreeNodeInvalidOperationError();
         }
-      } else {
-        throw new FlexTreeNodeInvalidOperationError();
+      } catch (error) {
+        // 捕获FlexTreeNodeNotFoundError并转换为FlexTreeNodeInvalidOperationError
+        if (error instanceof FlexTreeNodeNotFoundError) {
+          throw new FlexTreeNodeInvalidOperationError();
+        }
+        throw error;
       }
     }
   }
@@ -456,19 +559,31 @@ export class MoveNodeMixin<
   ) {
     this._assertWriteable();
     const srcNode = (await this.getNodeData(node)) as unknown as TreeNode;
+    const srcNodeId = srcNode[this.keyFields.id as string] as NodeId;
+
     let nextNode = await this.getNextSibling(srcNode);
     if (nextNode) {
-      await this.moveNode(srcNode.id, nextNode.id, FlexNodeRelPosition.NextSibling);
+      const nextNodeId = nextNode[this.keyFields.id as string] as NodeId;
+      await this.moveNode(srcNodeId, nextNodeId, FlexNodeRelPosition.NextSibling);
     } else {
-      const parentNode = await this.getParent(srcNode.id);
-      if (parentNode) {
-        try {
-          await this.moveNode(srcNode.id, parentNode.id, FlexNodeRelPosition.NextSibling);
-        } catch {
+      try {
+        const parentNode = await this.getParent(srcNodeId);
+        if (parentNode) {
+          try {
+            const parentNodeId = parentNode[this.keyFields.id as string] as NodeId;
+            await this.moveNode(srcNodeId, parentNodeId, FlexNodeRelPosition.NextSibling);
+          } catch {
+            throw new FlexTreeNodeInvalidOperationError();
+          }
+        } else {
           throw new FlexTreeNodeInvalidOperationError();
         }
-      } else {
-        throw new FlexTreeNodeInvalidOperationError();
+      } catch (error) {
+        // 捕获FlexTreeNodeNotFoundError并转换为FlexTreeNodeInvalidOperationError
+        if (error instanceof FlexTreeNodeNotFoundError) {
+          throw new FlexTreeNodeInvalidOperationError();
+        }
+        throw error;
       }
     }
   }

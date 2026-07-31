@@ -31,6 +31,9 @@ export class UpdateNodeMixin<
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     node: Partial<TreeNode> | Partial<TreeNode>[],
   ) {
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const idField = this.escaper.escapeId(this.keyFields.id);
+
     const nodes = Array.isArray(node) ? node : [node];
     const sqls: string[] = nodes.map((node) => {
       const id = node[this.keyFields.id];
@@ -46,7 +49,7 @@ export class UpdateNodeMixin<
       if (fields.length === 0) {
         throw new FlexTreeInvalidUpdateError();
       }
-      return `UPDATE ${this.tableName} SET ${fields.join(",")} WHERE ${this.keyFields.id}=${id}`;
+      return `UPDATE ${this.tableName} SET ${fields.join(",")} WHERE ${idField}=${this.escaper.escape(id)}`;
     });
     await this.onExecuteSql(sqls);
   }

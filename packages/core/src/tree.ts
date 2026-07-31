@@ -13,7 +13,7 @@ import { FlexTreeManager, type FlexTreeManagerOptions } from "./manager";
 import { FlexTreeNode, type FlexTreeNodeStatus } from "./node";
 import { FlexTreeNotFoundError } from "./errors";
 
-export type FlexTreeOptions<TreeIdType = number> = FlexTreeManagerOptions<TreeIdType> & {
+export type FlexTreeOptions<TreeIdType = any> = FlexTreeManagerOptions<TreeIdType> & {
   lazy?: boolean; // 是否懒加载树
 };
 export type FlexTreeStatus = FlexTreeNodeStatus;

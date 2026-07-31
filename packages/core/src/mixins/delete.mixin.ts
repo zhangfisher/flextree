@@ -35,16 +35,21 @@ export class DeleteNodeMixin<
     const nodeData = (await this.getNodeData(nodeId)) as unknown as TreeNode;
     const leftValue = nodeData[this.keyFields.leftValue];
     const rightValue = nodeData[this.keyFields.rightValue];
+
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
+
     const sqls: string[] = [];
     if (onlyMark) {
       sqls.push(
         this._sql(`
                 UPDATE ${this.tableName}
                 SET
-                    ${this.keyFields.leftValue} = -${this.keyFields.leftValue},
-                    ${this.keyFields.rightValue} = -${this.keyFields.rightValue}
+                    ${leftValueField} = -${leftValueField},
+                    ${rightValueField} = -${rightValueField}
                 WHERE {__TREE_ID__}
-                ${this.keyFields.leftValue}>=${leftValue} AND ${this.keyFields.rightValue}<=${rightValue}
+                ${leftValueField}>=${leftValue} AND ${rightValueField}<=${rightValue}
             `),
       );
     } else {
@@ -52,29 +57,30 @@ export class DeleteNodeMixin<
         this._sql(`
                 DELETE FROM ${this.tableName}
                 WHERE {__TREE_ID__}
-                ${this.keyFields.leftValue}>=${leftValue} AND ${this.keyFields.rightValue}<=${rightValue}
+                ${leftValueField}>=${leftValue} AND ${rightValueField}<=${rightValue}
             `),
       );
     }
-    // 删除节点及其子节点
+    // 删除节点及其子节点后，调整其他节点
     sqls.push(
       this._sql(`
                 UPDATE ${this.tableName}
-                SET 
-                    ${this.keyFields.leftValue} = ${this.keyFields.leftValue} - (${rightValue} - ${leftValue} + 1)
+                SET
+                    ${leftValueField} = ${leftValueField} - (${rightValue} - ${leftValue} + 1)
                 WHERE {__TREE_ID__}
-                ${this.keyFields.leftValue}>${leftValue}
+                ${leftValueField}>${leftValue}
             `),
     );
     sqls.push(
       this._sql(`
                 UPDATE ${this.tableName}
-                SET 
-                    ${this.keyFields.rightValue} = ${this.keyFields.rightValue} - (${rightValue} - ${leftValue} + 1)
+                SET
+                    ${rightValueField} = ${rightValueField} - (${rightValue} - ${leftValue} + 1)
                 WHERE {__TREE_ID__}
-                ${this.keyFields.rightValue}>${rightValue}
+                ${rightValueField}>${rightValue}
             `),
     );
+
     if (typeof onExecuteBefore === "function") {
       if (onExecuteBefore(sqls) === false) {
         return;

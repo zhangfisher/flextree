@@ -1,4 +1,3 @@
-import sqlstring from "sqlstring";
 import type { FlexTreeManager } from "../manager";
 import type {
   CustomTreeKeyFields,
@@ -23,8 +22,12 @@ export class RootNodeMixin<
    *
    */
   async hasRoot(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>) {
-    const sql = this._sql(`select count(*) from ${this.tableName} 
-            where {__TREE_ID__} ${this.keyFields.leftValue}=1 and ${this.keyFields.level}=0`);
+    // 预计算转义后的字段名以提高性能和代码可读性
+    const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+    const levelField = this.escaper.escapeId(this.keyFields.level);
+
+    const sql = this._sql(`select count(*) from ${this.tableName}
+            where {__TREE_ID__} ${leftValueField}=1 and ${levelField}=0`);
     return (await this.getScalar(sql)) === 1;
   }
 

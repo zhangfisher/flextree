@@ -62,27 +62,32 @@ export class RelationMixin<
       } else if (leftValue < relLeftValue && rightValue > relRightValue) {
         result = FlexTreeNodeRelation.Ancestors; // 一个节点是另一个节点的祖先
       } else {
+        // 预计算转义后的字段名以提高性能和代码可读性
+        const idField = this.escaper.escapeId(this.keyFields.id);
+        const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
+        const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
+
         const treeCondition = this.treeId
           ? `Node.${this.escaper.escapeId(this.keyFields.treeId)}=${this.escaper.escape(this.treeId)} AND`
           : "";
         const sql = `SELECT
                 CASE
-                    WHEN t1.${this.keyFields.id}  = t2.${this.keyFields.id}  THEN 1 ELSE 0
+                    WHEN t1.${idField}  = t2.${idField}  THEN 1 ELSE 0
                 END as isSiblings
                 FROM
                     ( SELECT Node.* FROM  ${this.tableName} Node
-                        JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id} = ${nodeId}
+                        JOIN ${this.tableName} RelNode ON RelNode.${idField} = ${nodeId}
                         WHERE (${treeCondition}
-                        Node.${this.keyFields.leftValue} < RelNode.${this.keyFields.leftValue}
-                        AND Node.${this.keyFields.rightValue} > RelNode.${this.keyFields.rightValue}
-                        ) ORDER BY ${this.keyFields.leftValue} DESC LIMIT 1
+                        Node.${leftValueField} < RelNode.${leftValueField}
+                        AND Node.${rightValueField} > RelNode.${rightValueField}
+                        ) ORDER BY ${leftValueField} DESC LIMIT 1
                     ) AS t1,
                     ( SELECT Node.* FROM  ${this.tableName} Node
-                        JOIN ${this.tableName} RelNode ON RelNode.${this.keyFields.id}  = ${relNodeId}
+                        JOIN ${this.tableName} RelNode ON RelNode.${idField}  = ${relNodeId}
                         WHERE (${treeCondition}
-                        Node.${this.keyFields.leftValue} < RelNode.${this.keyFields.leftValue}
-                        AND Node.${this.keyFields.rightValue} > RelNode.${this.keyFields.rightValue}
-                        ) ORDER BY ${this.keyFields.leftValue} DESC LIMIT 1
+                        Node.${leftValueField} < RelNode.${leftValueField}
+                        AND Node.${rightValueField} > RelNode.${rightValueField}
+                        ) ORDER BY ${leftValueField} DESC LIMIT 1
                     ) AS t2`;
         const r = await this.onGetScalar(sql); // 两个节点在同一棵树中
         if (r === 1) {
