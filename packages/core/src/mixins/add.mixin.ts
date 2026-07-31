@@ -8,14 +8,7 @@ import type {
 } from "../types";
 import { FlexNodeRelPosition } from "../types";
 import { FlexTreeError } from "../errors";
-
-// 内部处理用的扁平化节点结构
-interface FlattenedNode<Fields, KeyFields> {
-  node: Partial<IFlexTreeNodeFields<any, KeyFields>>; // 已排除children字段
-  level: number;
-  parentIndex?: number; // 在扁平化数组中的父节点索引
-  originalIndex: number; // 在原始嵌套结构中的位置
-}
+import { forEachNestTree } from "../utils/forEachNestTree";
 
 export class AddNodeMixin<
   Fields extends Record<string, any> = object,
@@ -46,53 +39,6 @@ export class AddNodeMixin<
     }
 
     return false;
-  }
-
-  /**
-   * 将嵌套节点结构扁平化
-   * @param nodes 嵌套节点数组
-   * @param baseLevel 基础层级
-   * @param childrenField 可选的自定义子节点字段名
-   * @returns 扁平化的节点数组
-   */
-  private flattenNestedNodes(
-    this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-    nodes: FlexTreeNodeInput<Fields, KeyFields>[],
-    baseLevel: number,
-    childrenField?: string,
-  ): FlattenedNode<Fields, KeyFields>[] {
-    const flattened: FlattenedNode<Fields, KeyFields>[] = [];
-    const childField = childrenField || "children";
-
-    const traverse = (
-      nodeInputs: FlexTreeNodeInput<Fields, KeyFields>[],
-      level: number,
-      parentIndex?: number,
-    ) => {
-      nodeInputs.forEach((nodeInput, index) => {
-        const nodeData = { ...nodeInput };
-        delete (nodeData as any)[childField]; // 移除子节点字段
-
-        const currentIndex = flattened.length;
-        const flattenedNode: FlattenedNode<Fields, KeyFields> = {
-          node: nodeData,
-          level,
-          parentIndex,
-          originalIndex: currentIndex,
-        };
-
-        flattened.push(flattenedNode);
-
-        // 递归处理子节点，使用当前节点索引作为父索引
-        const children = (nodeInput as any)[childField];
-        if (children && children.length > 0) {
-          traverse(children, level + 1, currentIndex);
-        }
-      });
-    };
-
-    traverse(nodes, baseLevel);
-    return flattened;
   }
 
   /**
@@ -458,11 +404,11 @@ export class AddNodeMixin<
     pos: FlexNodeRelPosition,
     childrenField?: string,
   ) {
-    // 获取参考节点的层级
-    const baseLevel = relNode[this.keyFields.level] + 1;
+    // 计算基础左值
+    const baseLeftValue = this.calculateBaseLeftValue(relNode, pos);
 
-    // 扁平化嵌套结构
-    const flattened = this.flattenNestedNodes(nodes, baseLevel, childrenField);
+    // 直接在嵌套结构上计算位置
+    const positions = this.calculateNestedPositions(nodes, baseLeftValue, childrenField);
 
     // 构建字段列表
     const fields: string[] = [
@@ -475,81 +421,67 @@ export class AddNodeMixin<
       fields.push(this.keyFields.treeId);
     }
 
-    // 从第一个节点提取自定义字段
-    const customFields = Object.keys(flattened[0].node).filter((f) => !fields.includes(f));
+    // 从第一个节点提取自定义字段（排除children字段）
+    const customFields = Object.keys(nodes[0]).filter(
+      (f) => !fields.includes(f) && f !== 'children' && f !== childrenField
+    );
     fields.push(...customFields);
 
-    // 计算位置并生成SQL
-    const sqls = this.generateNestedSql(flattened, relNode, pos, fields);
+    // 生成SQL
+    const sqls = this.generateNestedSql(nodes, positions, relNode, pos, fields, childrenField);
 
     await this.onExecuteWriteSql(sqls);
   }
 
   /**
-   * 计算嵌套节点位置 - 使用深度优先分配
+   * 计算基础左值 - 根据相对位置确定起始位置
+   */
+  private calculateBaseLeftValue(
+    this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+    relNode: TreeNode,
+    pos: FlexNodeRelPosition,
+  ): number {
+    switch (pos) {
+      case FlexNodeRelPosition.LastChild:
+        return relNode[this.keyFields.rightValue];
+      case FlexNodeRelPosition.FirstChild:
+        return relNode[this.keyFields.leftValue];
+      case FlexNodeRelPosition.NextSibling:
+        return relNode[this.keyFields.rightValue];
+      case FlexNodeRelPosition.PreviousSibling:
+        return relNode[this.keyFields.leftValue];
+      default:
+        return relNode[this.keyFields.rightValue];
+    }
+  }
+
+  /**
+   * 计算嵌套节点位置 - 使用 forEachNestTree 简化实现
+   * 利用 forEachNestTree 的双次调用机制（进入/退出节点）来分配左右值
    */
   private calculateNestedPositions(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-    flattened: FlattenedNode<Fields, KeyFields>[],
+    nodes: FlexTreeNodeInput<Fields, KeyFields>[],
     baseLeftValue: number,
-  ): Map<number, { left: number; right: number }> {
-    const positions = new Map<number, { left: number; right: number }>();
+    childrenField?: string,
+  ): Map<FlexTreeNodeInput<Fields, KeyFields>, { left: number; right: number }> {
+    const positions = new Map<FlexTreeNodeInput<Fields, KeyFields>, { left: number; right: number }>();
+    let counter = baseLeftValue;
 
-    // 构建父子关系映射
-    const parentToChildren = new Map<number, number[]>();
-    const childToParent = new Map<number, number>();
-
-    flattened.forEach((node, index) => {
-      if (node.parentIndex !== undefined) {
-        if (!parentToChildren.has(node.parentIndex)) {
-          parentToChildren.set(node.parentIndex, []);
-        }
-        parentToChildren.get(node.parentIndex)!.push(index);
-        childToParent.set(index, node.parentIndex);
-      }
-    });
-
-    let currentValue = baseLeftValue;
-
-    // 按原始索引顺序遍历节点，使用深度优先分配位置
-    const assignPosition = (nodeIndex: number): { left: number; right: number } => {
-      if (positions.has(nodeIndex)) {
-        return positions.get(nodeIndex)!;
-      }
-
-      const node = flattened[nodeIndex];
-      const children = parentToChildren.get(nodeIndex) || [];
-
-      if (children.length === 0) {
-        // 叶子节点
-        const pos = { left: currentValue, right: currentValue + 1 };
-        currentValue += 2;
-        positions.set(nodeIndex, pos);
-        return pos;
+    // forEachNestTree 的双次调用机制完美匹配 Nested Set Model：
+    // - 第一次调用（进入节点）: 设置左值
+    // - 第二次调用（退出节点）: 设置右值
+    forEachNestTree(nodes, (node: any, level: number) => {
+      if (!node.leftValue) {
+        // 第一次访问（进入节点） - 设置左值
+        node.leftValue = counter++;
       } else {
-        // 非叶子节点，先为子节点分配位置
-        const leftBoundary = currentValue;
-        currentValue += 1; // 跳过父节点的左边界
-
-        children.forEach((childIndex) => {
-          assignPosition(childIndex);
-        });
-
-        const rightBoundary = currentValue;
-        currentValue += 1; // 跳过父节点的右边界
-
-        const pos = { left: leftBoundary, right: rightBoundary };
-        positions.set(nodeIndex, pos);
-        return pos;
+        // 第二次访问（退出节点） - 设置右值
+        node.rightValue = counter++;
       }
-    };
-
-    // 处理所有根节点（没有父节点的节点）
-    flattened.forEach((node, index) => {
-      if (!childToParent.has(index)) {
-        assignPosition(index);
-      }
-    });
+      // 存储位置映射
+      positions.set(node, { left: node.leftValue, right: node.rightValue });
+    }, { childrenKey: childrenField || 'children' });
 
     return positions;
   }
@@ -559,69 +491,31 @@ export class AddNodeMixin<
    */
   private generateNestedSql(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-    flattened: FlattenedNode<Fields, KeyFields>[],
+    nodes: FlexTreeNodeInput<Fields, KeyFields>[],
+    positions: Map<FlexTreeNodeInput<Fields, KeyFields>, { left: number; right: number }>,
     relNode: TreeNode,
     pos: FlexNodeRelPosition,
     fields: string[],
+    childrenField?: string,
   ): string[] {
-    // 根据不同位置计算基础值
-    let baseLeftValue: number;
-
-    switch (pos) {
-      case FlexNodeRelPosition.LastChild:
-        baseLeftValue = relNode[this.keyFields.rightValue];
-        break;
-      case FlexNodeRelPosition.FirstChild:
-        baseLeftValue = relNode[this.keyFields.leftValue];
-        break;
-      case FlexNodeRelPosition.NextSibling:
-        baseLeftValue = relNode[this.keyFields.rightValue];
-        break;
-      case FlexNodeRelPosition.PreviousSibling:
-        baseLeftValue = relNode[this.keyFields.leftValue];
-        break;
-      default:
-        baseLeftValue = relNode[this.keyFields.rightValue];
-    }
-
-    // 计算所有节点的位置
-    const positions = this.calculateNestedPositions(flattened, baseLeftValue);
-
-    // 验证位置计算
-    if (positions.size !== flattened.length) {
-      const missing = flattened.filter((n) => !positions.has(n.originalIndex));
-      throw new Error(
-        `Position calculation failed: ${positions.size} positions for ${flattened.length} nodes. Missing: ${missing.map((n) => n.node.name).join(", ")}`,
-      );
-    }
-
-    // 生成批量插入值
     const isMultiTree = this.isMultiTree;
     const treeIdField = this.keyFields.treeId;
     const treeIdValue = this.treeId;
 
-    if (flattened.length !== positions.size) {
-      const missing = flattened.filter((n) => !positions.has(n.originalIndex));
-      throw new Error(
-        `Position calculation failed: ${positions.size} positions for ${flattened.length} nodes. Missing: ${missing.map((n) => n.node.name).join(", ")}`,
-      );
-    }
+    // 使用 forEachNestTree 处理节点并生成 SQL 值
+    const values: string[] = [];
 
-    const values = flattened
-      .map((flatNode) => {
-        const nodePos = positions.get(flatNode.originalIndex);
+    forEachNestTree(nodes, (node: any, level: number) => {
+      // 仅在第一次访问时处理（进入节点）
+      if (node.leftValue && !node._processed) {
+        node._processed = true;
+
+        const nodePos = positions.get(node);
         if (!nodePos) {
-          const errorMsg = `Missing position for node ${flatNode.node.name || "unknown"} at index ${flatNode.originalIndex}`;
-          const availableInfo = Array.from(positions.entries())
-            .map(([idx, pos]) => {
-              const node = flattened[idx];
-              return `Index ${idx} (${node.node.name}): left=${pos.left}, right=${pos.right}`;
-            })
-            .join(", ");
-          throw new Error(`${errorMsg}. Available: ${availableInfo}`);
+          throw new Error(`Missing position for node ${node.name || "unknown"}`);
         }
 
-        const row = [flatNode.level, nodePos.left, nodePos.right] as any[];
+        const row = [level, nodePos.left, nodePos.right] as any[];
 
         // 添加其他字段
         for (let i = 3; i < fields.length; i++) {
@@ -629,16 +523,24 @@ export class AddNodeMixin<
           if (isMultiTree && fieldName === treeIdField) {
             row.push(this.escaper.escape(treeIdValue));
           } else {
-            row.push(this.escaper.escape(flatNode.node[fieldName]));
+            row.push(this.escaper.escape(node[fieldName]));
           }
         }
 
-        return `(${row.join(",")})`;
-      })
-      .join(",");
+        values.push(`(${row.join(",")})`);
+      }
+    }, { childrenKey: childrenField || 'children' });
+
+    // 清理临时属性
+    Object.keys(nodes).forEach((key) => {
+      if (key === '_processed') {
+        delete (nodes as any)[key];
+      }
+    });
 
     // 生成SQL语句
-    const totalNodes = flattened.length;
+    const totalNodes = values.length;
+    const baseLeftValue = this.calculateBaseLeftValue(relNode, pos);
     const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
     const rightValueField = this.escaper.escapeId(this.keyFields.rightValue);
 
@@ -687,7 +589,7 @@ export class AddNodeMixin<
       `),
       this._sql(`
         INSERT INTO ${this.tableName} (${fields.map((f) => this.escaper.escapeId(f)).join(",")})
-        VALUES ${values}
+        VALUES ${values.join(",")}
       `),
     ];
   }

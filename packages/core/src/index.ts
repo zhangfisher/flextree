@@ -7,3 +7,4 @@ export * from "./manager";
 export * from "./errors";
 export * from "./adapter";
 export * from "./consts";
+export * from "./utils/forEachNestTree";
