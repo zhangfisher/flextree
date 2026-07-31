@@ -44,6 +44,19 @@ export interface FlexTreeManagerOptions<TreeIdType = any> {
     rightValue?: string;
   };
   adapter: IFlexTreeAdapter;
+  /**
+   * 单例模式
+   * 默认为true,当表名一样时，采用单例模式。
+   *
+   * const tree1 = new FlexTreeManager("file")
+   * const tree2 = new FlexTreeManager("file")
+   * const tree3 = new FlexTreeManager("xxx")
+   *
+   * tree1===tree2 !==tree3
+   *
+   *
+   */
+  singleton?: boolean;
 }
 
 export interface FlexTreeManager<

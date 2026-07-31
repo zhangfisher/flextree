@@ -16,7 +16,14 @@ export interface IFlexTreeAdapter {
   getRows: (sql: string) => Promise<any[]>;
   // 执行查询并返回标量
   getScalar: <T = number>(sql: string) => Promise<T>;
+
   open: (config?: any) => Promise<any>;
+  /**
+   * 在数据库事件中执行函数
+   * @param callback
+   * @returns
+   */
+  transaction: (callback: () => void) => void;
   // 返回一个数据库实例对象
   db: any;
   /**

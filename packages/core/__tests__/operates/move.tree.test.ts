@@ -797,4 +797,196 @@ describe("移动树节点", () => {
       expect(await verifyTree(tree)).toBe(true);
     });
   });
+
+  describe("错误处理和边界条件", () => {
+    test("移动节点到不存在的节点应抛出错误", async () => {
+      const a = (await tree.findNode({ name: "A" }))!;
+      const nonExistentId = 999999;
+
+      await expect(async () => {
+        await tree.write(async () => {
+          await tree.moveNode(a.id, nonExistentId, NextSibling);
+        });
+      }).toThrow();
+    });
+
+    test("使用不存在的源节点ID进行移动应抛出错误", async () => {
+      const b = (await tree.findNode({ name: "B" }))!;
+      const nonExistentId = 888888;
+
+      await expect(async () => {
+        await tree.write(async () => {
+          await tree.moveNode(nonExistentId, b.id, PreviousSibling);
+        });
+      }).toThrow();
+    });
+
+    test("使用不存在的节点ID进行移动到最后子节点应抛出错误", async () => {
+      const c = (await tree.findNode({ name: "C" }))!;
+      const nonExistentId = 777777;
+
+      await expect(async () => {
+        await tree.write(async () => {
+          await tree.moveNode(nonExistentId, c.id, LastChild);
+        });
+      }).toThrow();
+    });
+
+    test("使用不存在的节点ID移动到第一个子节点应抛出错误", async () => {
+      const a = (await tree.findNode({ name: "A" }))!;
+      const nonExistentId = 666666;
+
+      await expect(async () => {
+        await tree.write(async () => {
+          await tree.moveNode(nonExistentId, a.id, FirstChild);
+        });
+      }).toThrow();
+    });
+
+    test("两个节点都不存在时应抛出错误", async () => {
+      const nonExistentId1 = 555555;
+      const nonExistentId2 = 444444;
+
+      await expect(async () => {
+        await tree.write(async () => {
+          await tree.moveNode(nonExistentId1, nonExistentId2, NextSibling);
+        });
+      }).toThrow();
+    });
+
+    test("移动根节点到不存在位置应抛出错误", async () => {
+      const root = (await tree.findNode({ name: "root" }))!;
+      const nonExistentId = 333333;
+
+      await expect(async () => {
+        await tree.write(async () => {
+          await tree.moveNode(root.id, nonExistentId, NextSibling);
+        });
+      }).toThrow();
+    });
+
+    test("使用无效节点ID（负数）应抛出错误", async () => {
+      const a = (await tree.findNode({ name: "A" }))!;
+      const negativeId = -1;
+
+      await expect(async () => {
+        await tree.write(async () => {
+          await tree.moveNode(negativeId, a.id, NextSibling);
+        });
+      }).toThrow();
+    });
+
+    test("使用无效节点ID（零）应抛出错误", async () => {
+      const b = (await tree.findNode({ name: "B" }))!;
+      const zeroId = 0;
+
+      await expect(async () => {
+        await tree.write(async () => {
+          await tree.moveNode(b.id, zeroId, PreviousSibling);
+        });
+      }).toThrow();
+    });
+
+    test("使用不存在的节点ID向上移动应抛出错误", async () => {
+      const nonExistentId = 222222;
+
+      await expect(async () => {
+        await tree.write(async () => {
+          await tree.moveUpNode(nonExistentId);
+        });
+      }).toThrow();
+    });
+
+    test("使用不存在的节点ID向下移动应抛出错误", async () => {
+      const nonExistentId = 111111;
+
+      await expect(async () => {
+        await tree.write(async () => {
+          await tree.moveDownNode(nonExistentId);
+        });
+      }).toThrow();
+    });
+
+    test("移动节点到已删除的节点应抛出错误", async () => {
+      const a = (await tree.findNode({ name: "A" }))!;
+      const b = (await tree.findNode({ name: "B" }))!;
+
+      // 先删除节点B
+      await tree.write(async () => {
+        await tree.deleteNode(b.id);
+      });
+
+      // 尝试移动A到已删除的B
+      await expect(async () => {
+        await tree.write(async () => {
+          await tree.moveNode(a.id, b.id, NextSibling);
+        });
+      }).toThrow();
+    });
+
+    test("使用已删除的节点ID作为源节点应抛出错误", async () => {
+      const c = (await tree.findNode({ name: "C" }))!;
+      const a = (await tree.findNode({ name: "A" }))!;
+      const cId = c.id;
+
+      // 先删除节点C
+      await tree.write(async () => {
+        await tree.deleteNode(cId);
+      });
+
+      // 尝试移动已删除的C节点
+      await expect(async () => {
+        await tree.write(async () => {
+          await tree.moveNode(cId, a.id, NextSibling);
+        });
+      }).toThrow();
+    });
+
+    test("连续多次移动到不存在的节点应持续抛出错误", async () => {
+      const a = (await tree.findNode({ name: "A" }))!;
+      const nonExistentId = 123456;
+
+      // 第一次尝试应该失败
+      await expect(async () => {
+        await tree.write(async () => {
+          await tree.moveNode(a.id, nonExistentId, NextSibling);
+        });
+      }).toThrow();
+
+      // 第二次尝试也应该失败（确保树结构没有被破坏）
+      await expect(async () => {
+        await tree.write(async () => {
+          await tree.moveNode(a.id, nonExistentId, PreviousSibling);
+        });
+      }).toThrow();
+
+      // 验证树结构仍然完整
+      expect(await verifyTree(tree)).toBe(true);
+    });
+
+    test("移动操作失败后树结构应保持完整", async () => {
+      const beforeTree = await tree.getNodes();
+      const a = (await tree.findNode({ name: "A" }))!;
+
+      try {
+        await tree.write(async () => {
+          await tree.moveNode(a.id, 999999, NextSibling);
+        });
+      } catch (error) {
+        // 预期会抛出错误
+      }
+
+      const afterTree = await tree.getNodes();
+
+      // 验证树结构没有被改变
+      expect(beforeTree.length).toBe(afterTree.length);
+      expect(await verifyTree(tree)).toBe(true);
+
+      // 验证A节点仍然在原位置
+      const afterA = (await tree.findNode({ name: "A" }))!;
+      expect(afterA.id).toBe(a.id);
+      expect(afterA.leftValue).toBe(a.leftValue);
+      expect(afterA.rightValue).toBe(a.rightValue);
+    });
+  });
 });

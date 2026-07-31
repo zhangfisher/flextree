@@ -11,7 +11,7 @@ export default class BunSqliteAdapter implements IFlexTreeAdapter {
   private _dbPath?: string; // 数据库文件路径
 
   constructor(db?: Database | string) {
-    if (typeof db === 'string') {
+    if (typeof db === "string") {
       // 传入的是数据库文件路径
       this._dbPath = db;
       this._ready = false;
@@ -112,6 +112,11 @@ export default class BunSqliteAdapter implements IFlexTreeAdapter {
       for (const sql of sqls) {
         this.db.run(sql);
       }
+    })();
+  }
+  transaction(callback: () => void) {
+    this.db.transaction(() => {
+      callback();
     })();
   }
 }

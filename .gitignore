@@ -68,5 +68,4 @@ packages/core/__tests__/**/*.db
 packages/core/__tests__/*.db
 
 packages/tests/**/*.db
-
-.turbo
+packages/core/examples/tree_example.db
