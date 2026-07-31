@@ -115,6 +115,15 @@ export type FlexTreeExportJsonFormat<
         children?: FlexTreeExportJsonFormat<Fields, KeyFields, TreeNode, NodeId>[]
     }
 
+// 嵌套节点输入类型，支持递归结构
+// 注意：children字段仅用于输入格式，不会插入数据库
+export type FlexTreeNodeInput<
+    Fields extends Record<string, any> = object,
+    KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
+> = Partial<IFlexTreeNodeFields<Fields, KeyFields>> & {
+    children?: FlexTreeNodeInput<Fields, KeyFields>[]
+}
+
 export interface FlexTreeExportListOptions<
     Fields extends Record<string, any> = object,
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,

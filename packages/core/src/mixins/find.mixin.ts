@@ -1,4 +1,3 @@
-import sqlstring from "sqlstring";
 import type { FlexTreeManager } from "../manager";
 import type {
   CustomTreeKeyFields,
@@ -60,7 +59,7 @@ export class FindNodeMixin<
     const sql = this._sql(`select * from ${this.tableName}
             where  {__TREE_ID__} ${keys
               .map((key) => {
-                return `${sqlstring.escapeId(key)}=${this.escaper.escape(condition[key])}`;
+                return `${this.escaper.escapeId(key)}=${this.escaper.escape(condition[key])}`;
               })
               .join(" AND ")}
         `);
