@@ -4,6 +4,18 @@ import { Buffer } from "node:buffer";
 
 export type { Raw, SqlValue, TemporalValue, Timezone, DatabaseType, Escaper } from "./types";
 
+/**
+ * 创建原始 SQL 对象
+ * 这是一个独立的导出函数，可以直接使用而无需创建 escaper 实例
+ * @param sqlString 原始 SQL 字符串
+ */
+export const raw = (sqlString: string): Raw => {
+  if (typeof sqlString !== "string") throw new TypeError("argument sql must be a string");
+  return {
+    toSqlString: () => sqlString,
+  };
+};
+
 // 数据库配置接口
 interface DatabaseConfig {
   identifierStart: string;
@@ -731,13 +743,6 @@ export const createEscaper = (type: DatabaseType): Escaper => {
     return result;
   };
 
-  const raw = (sqlString: string): Raw => {
-    if (typeof sqlString !== "string") throw new TypeError("argument sql must be a string");
-    return {
-      toSqlString: () => sqlString,
-    };
-  };
-
   return {
     escape,
     format,
@@ -747,6 +752,6 @@ export const createEscaper = (type: DatabaseType): Escaper => {
     dateToString,
     temporalToString,
     bufferToString,
-    raw,
+    raw, // 使用独立的 raw 函数
   };
 };

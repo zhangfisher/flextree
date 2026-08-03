@@ -285,13 +285,13 @@ export class AddNodeMixin<
    *
    */
   // 新API：使用options对象（推荐）
-  async addNodes(
+  async addNodes<Children extends string = "children">(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-    nodes: Partial<TreeNode>[] | FlexTreeNodeInput<Fields, KeyFields>[],
+    nodes: FlexTreeNodeInput<Fields, KeyFields, Children>[],
     options?: {
       at?: NodeId | TreeNode | null;
       pos?: FlexNodeRelPosition;
-      childrenField?: string;
+      childrenField?: Children;
     },
   ): Promise<void>;
 
@@ -304,9 +304,9 @@ export class AddNodeMixin<
   ): Promise<void>;
 
   // 统一实现方法
-  async addNodes(
+  async addNodes<Children extends string = "children">(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-    nodes: Partial<TreeNode>[] | FlexTreeNodeInput<Fields, KeyFields>[],
+    nodes: FlexTreeNodeInput<Fields, KeyFields, Children>[] | Partial<TreeNode>[],
     optionsOrAt?: any,
     pos?: FlexNodeRelPosition,
   ): Promise<void> {
@@ -423,7 +423,7 @@ export class AddNodeMixin<
 
     // 从第一个节点提取自定义字段（排除children字段）
     const customFields = Object.keys(nodes[0]).filter(
-      (f) => !fields.includes(f) && f !== 'children' && f !== childrenField
+      (f) => !fields.includes(f) && f !== "children" && f !== childrenField,
     );
     fields.push(...customFields);
 
@@ -465,23 +465,30 @@ export class AddNodeMixin<
     baseLeftValue: number,
     childrenField?: string,
   ): Map<FlexTreeNodeInput<Fields, KeyFields>, { left: number; right: number }> {
-    const positions = new Map<FlexTreeNodeInput<Fields, KeyFields>, { left: number; right: number }>();
+    const positions = new Map<
+      FlexTreeNodeInput<Fields, KeyFields>,
+      { left: number; right: number }
+    >();
     let counter = baseLeftValue;
 
     // forEachNestTree 的双次调用机制完美匹配 Nested Set Model：
     // - 第一次调用（进入节点）: 设置左值
     // - 第二次调用（退出节点）: 设置右值
-    forEachNestTree(nodes, (node: any, level: number) => {
-      if (!node.leftValue) {
-        // 第一次访问（进入节点） - 设置左值
-        node.leftValue = counter++;
-      } else {
-        // 第二次访问（退出节点） - 设置右值
-        node.rightValue = counter++;
-      }
-      // 存储位置映射
-      positions.set(node, { left: node.leftValue, right: node.rightValue });
-    }, { childrenKey: childrenField || 'children' });
+    forEachNestTree(
+      nodes,
+      (node: any, level: number) => {
+        if (!node.leftValue) {
+          // 第一次访问（进入节点） - 设置左值
+          node.leftValue = counter++;
+        } else {
+          // 第二次访问（退出节点） - 设置右值
+          node.rightValue = counter++;
+        }
+        // 存储位置映射
+        positions.set(node, { left: node.leftValue, right: node.rightValue });
+      },
+      { childrenKey: childrenField || "children" },
+    );
 
     return positions;
   }
@@ -505,35 +512,39 @@ export class AddNodeMixin<
     // 使用 forEachNestTree 处理节点并生成 SQL 值
     const values: string[] = [];
 
-    forEachNestTree(nodes, (node: any, level: number) => {
-      // 仅在第一次访问时处理（进入节点）
-      if (node.leftValue && !node._processed) {
-        node._processed = true;
+    forEachNestTree(
+      nodes,
+      (node: any, level: number) => {
+        // 仅在第一次访问时处理（进入节点）
+        if (node.leftValue && !node._processed) {
+          node._processed = true;
 
-        const nodePos = positions.get(node);
-        if (!nodePos) {
-          throw new Error(`Missing position for node ${node.name || "unknown"}`);
-        }
-
-        const row = [level, nodePos.left, nodePos.right] as any[];
-
-        // 添加其他字段
-        for (let i = 3; i < fields.length; i++) {
-          const fieldName = fields[i];
-          if (isMultiTree && fieldName === treeIdField) {
-            row.push(this.escaper.escape(treeIdValue));
-          } else {
-            row.push(this.escaper.escape(node[fieldName]));
+          const nodePos = positions.get(node);
+          if (!nodePos) {
+            throw new Error(`Missing position for node ${node.name || "unknown"}`);
           }
-        }
 
-        values.push(`(${row.join(",")})`);
-      }
-    }, { childrenKey: childrenField || 'children' });
+          const row = [level, nodePos.left, nodePos.right] as any[];
+
+          // 添加其他字段
+          for (let i = 3; i < fields.length; i++) {
+            const fieldName = fields[i];
+            if (isMultiTree && fieldName === treeIdField) {
+              row.push(this.escaper.escape(treeIdValue));
+            } else {
+              row.push(this.escaper.escape(node[fieldName]));
+            }
+          }
+
+          values.push(`(${row.join(",")})`);
+        }
+      },
+      { childrenKey: childrenField || "children" },
+    );
 
     // 清理临时属性
     Object.keys(nodes).forEach((key) => {
-      if (key === '_processed') {
+      if (key === "_processed") {
         delete (nodes as any)[key];
       }
     });

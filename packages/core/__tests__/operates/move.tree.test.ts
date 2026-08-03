@@ -972,7 +972,7 @@ describe("移动树节点", () => {
         await tree.write(async () => {
           await tree.moveNode(a.id, 999999, NextSibling);
         });
-      } catch (error) {
+      } catch {
         // 预期会抛出错误
       }
 

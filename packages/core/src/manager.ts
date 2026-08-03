@@ -44,19 +44,6 @@ export interface FlexTreeManagerOptions<TreeIdType = any> {
     rightValue?: string;
   };
   adapter: IFlexTreeAdapter;
-  /**
-   * 单例模式
-   * 默认为true,当表名一样时，采用单例模式。
-   *
-   * const tree1 = new FlexTreeManager("file")
-   * const tree2 = new FlexTreeManager("file")
-   * const tree3 = new FlexTreeManager("xxx")
-   *
-   * tree1===tree2 !==tree3
-   *
-   *
-   */
-  singleton?: boolean;
 }
 
 export interface FlexTreeManager<
@@ -113,6 +100,9 @@ export class FlexTreeManager<
   NodeId = NonUndefined<KeyFields["id"]>[1],
   TreeId = NonUndefined<KeyFields["treeId"]>[1],
 > {
+  // 单例实例存储 Map<tableName, instance>
+  private static _instances = new Map<string, FlexTreeManager>();
+
   private _options: RequiredDeep<FlexTreeManagerOptions<TreeId>>;
   private _isWriting = false;
   private _tableName: string;
@@ -123,13 +113,16 @@ export class FlexTreeManager<
   private _ready: boolean = false; // 当driver准备就绪时,ready为true时,才允许执行读写操作
   private _emitter = mitt<FlexTreeEvents>();
   private _lastUpdateAt = 0;
+
   constructor(
     tableName: string,
     options?: FlexTreeManagerOptions<NonUndefined<KeyFields["treeId"]>[1]>,
   ) {
+    // 深度合并选项
     this._options = deepMerge(
       {
         treeId: undefined,
+        singleton: true,
         fields: {
           id: "id",
           name: "name",
@@ -139,11 +132,14 @@ export class FlexTreeManager<
           rightValue: "rightValue",
         },
       },
-      options,
+      options || {},
     ) as RequiredDeep<FlexTreeManagerOptions<TreeId>>;
+
     if (!this._options.adapter) {
       throw new FlexTreeError("not found database adapter");
     }
+
+    // 初始化实例属性
     this._fields = this._options.fields;
     this._treeId = this.options.treeId;
     this._adapter = this.options.adapter;
@@ -151,6 +147,38 @@ export class FlexTreeManager<
     this._escaper = createEscaper(this._adapter.type || "postgresql");
     this._tableName = this._escaper.escapeId(tableName);
   }
+
+  /**
+   * 获取 FlexTreeManager 单例实例
+   * 根据 singleton 选项决定是否使用单例模式
+   * @param tableName 表名
+   * @param options 配置选项
+   * @returns FlexTreeManager 实例
+   */
+  static getInstance<
+    Fields extends Record<string, any> = object,
+    KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
+  >(tableName: string, options?: FlexTreeManagerOptions<any>): FlexTreeManager<Fields, KeyFields> {
+    // 单例模式处理：总是返回相同 tableName 的实例
+    const existingInstance = FlexTreeManager._instances.get(tableName);
+    if (existingInstance) {
+      return existingInstance as FlexTreeManager<Fields, KeyFields>;
+    }
+
+    // 创建新实例并注册到单例Map（构造函数会处理 options 和 adapter 检查）
+    const newInstance = new FlexTreeManager<Fields, KeyFields>(tableName, options);
+    FlexTreeManager._instances.set(tableName, newInstance as any);
+    return newInstance;
+  }
+
+  static clearInstance(tableName: string) {
+    if (tableName) {
+      FlexTreeManager._instances.delete(tableName);
+    } else {
+      FlexTreeManager._instances.clear();
+    }
+  }
+
   get options() {
     return this._options;
   }
@@ -293,11 +321,4 @@ export class FlexTreeManager<
     await tree.load();
     return tree.toList(options);
   }
-  /**
-   *
-   * 从外部直接导入节点到树中
-   * 适有于指快速导入
-   *
-   */
-  async import(nodes: Record<string, any> | Record<string, any>[], relId?: NodeId) {}
 }

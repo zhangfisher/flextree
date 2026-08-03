@@ -26,8 +26,8 @@
     "type": "module",
     "main": "src/index.ts",
     "scripts": {
-        "test": "vitest",
-        "coverage": "vitest --ui --coverage",
+        "test": "bun test",
+        "coverage": "bun test --coverage",
         "build": "tsup"
     },
     "dependencies": {

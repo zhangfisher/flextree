@@ -32,8 +32,38 @@ export function createMockAdapter(
         }];
       }
 
+      // 模拟所有节点查询
+      if (sql.includes('SELECT * FROM') && sql.includes('ORDER BY') && sql.includes('leftValue')) {
+        return [
+          {
+            id: 0,
+            name: 'root',
+            treeId: currentTreeId,
+            level: 0,
+            leftValue: 1,
+            rightValue: 10,
+          },
+          {
+            id: 1,
+            name: 'node1',
+            treeId: currentTreeId,
+            level: 1,
+            leftValue: 2,
+            rightValue: 3,
+          },
+          {
+            id: 2,
+            name: 'node2',
+            treeId: currentTreeId,
+            level: 1,
+            leftValue: 4,
+            rightValue: 5,
+          }
+        ];
+      }
+
       // 模拟ID为1的节点查询
-      if (sql.includes('id=1') || sql.includes('id = 1')) {
+      if (sql.includes('id=1') || sql.includes('id = 1') || sql.includes('= 1') && sql.includes('WHERE')) {
         return [{
           id: 1,
           name: 'node1',
@@ -44,8 +74,8 @@ export function createMockAdapter(
         }];
       }
 
-      // 模拟子节点查询
-      if (sql.includes('leftValue') && sql.includes('rightValue')) {
+      // 模拟子节点查询（包含 leftValue 和 rightValue 条件）
+      if (sql.includes('leftValue') && sql.includes('rightValue') && sql.includes('>')) {
         return [{
           id: 1,
           name: 'node1',

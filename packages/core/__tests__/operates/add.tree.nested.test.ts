@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import type { FlexTreeManager } from "../../src";
 import { FlexNodeRelPosition } from "../../src";
 import type { DemoFlexTreeManager } from "./createTree";
 import { createTreeManager } from "./createTree";
@@ -144,7 +143,7 @@ describe("添加嵌套树节点", () => {
             {
               name: "Parent",
               subNodes: [{ name: "Child 1" }, { name: "Child 2" }],
-            },
+            } as any,
           ],
           { childrenField: "subNodes" },
         );
@@ -174,7 +173,7 @@ describe("添加嵌套树节点", () => {
             {
               name: "Parent2",
               subNodes: [{ name: "Child2" }],
-            },
+            } as any,
           ],
           { childrenField: "subNodes" },
         );
@@ -442,6 +441,77 @@ describe("添加嵌套树节点", () => {
       const children = await tree.getChildren(parent!);
       expect(children).toHaveLength(1);
       expect(children[0].level).toBe(2); // Parent 的子节点
+    });
+  });
+
+  describe("类型安全：自定义字段名称", () => {
+    let tree: DemoFlexTreeManager;
+    beforeEach(async () => {
+      tree = await createTreeManager();
+      await tree.write(async () => await tree.createRoot({ name: "root" }));
+    });
+
+    test("使用subNodes字段名称（类型安全）", async () => {
+      await tree.write(async () => {
+        // 使用泛型参数指定自定义字段名称，完全类型安全，无需 as any
+        await tree.addNodes<"subNodes">(
+          [
+            {
+              name: "Parent",
+              subNodes: [{ name: "Child1" }, { name: "Child2" }],
+            },
+          ],
+          { childrenField: "subNodes" }
+        );
+      });
+
+      // 验证树结构
+      const nodes = await tree.getNodes();
+      const parent = nodes.find((n) => n.name === "Parent");
+      expect(parent).toBeDefined();
+      expect(parent!.level).toBe(1);
+
+      const children = await tree.getChildren(parent!);
+      expect(children).toHaveLength(2);
+      expect(children[0].name).toBe("Child1");
+      expect(children[0].level).toBe(2);
+      expect(children[1].name).toBe("Child2");
+      expect(children[1].level).toBe(2);
+    });
+
+    test("使用items字段名称（多层嵌套）", async () => {
+      await tree.write(async () => {
+        // 多层嵌套，类型自动推断
+        await tree.addNodes<"items">(
+          [
+            {
+              name: "Level1",
+              items: [
+                {
+                  name: "Level2",
+                  items: [{ name: "Level3" }],
+                },
+              ],
+            },
+          ],
+          { childrenField: "items" }
+        );
+      });
+
+      // 验证层级关系
+      const nodes = await tree.getNodes();
+      const level1 = nodes.find((n) => n.name === "Level1");
+      expect(level1!.level).toBe(1);
+
+      const level2Children = await tree.getChildren(level1!);
+      expect(level2Children).toHaveLength(1);
+      expect(level2Children[0].name).toBe("Level2");
+      expect(level2Children[0].level).toBe(2);
+
+      const level3Children = await tree.getChildren(level2Children[0]);
+      expect(level3Children).toHaveLength(1);
+      expect(level3Children[0].name).toBe("Level3");
+      expect(level3Children[0].level).toBe(3);
     });
   });
 });

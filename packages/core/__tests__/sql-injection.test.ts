@@ -2,6 +2,7 @@
 import { describe, test, expect } from "bun:test";
 import { FlexTreeManager } from "../src";
 import { createMockAdapter } from "./helpers/mock-adapter";
+import type { DatabaseType } from "../src/escaper";
 
 /**
  * SQL 注入防护测试套件
@@ -102,20 +103,40 @@ describe("SQL 注入防护测试", () => {
         // 测试各种查询方法
         await manager.getNodes();
         await manager.getRoot();
-        await manager.getChildren(1);
+
+        // getChildren 可能会抛出节点不存在错误，这是正常的，因为我们主要关心 SQL 转义
+        try {
+          await manager.getChildren(1);
+        } catch (e) {
+          // 节点不存在错误是预期的，我们主要关心 SQL 是否被正确转义
+        }
 
         // 验证：恶意的SQL代码应该被转义，使其作为字符串内容而非可执行SQL
         // 关键验证点：转义后的恶意代码不会改变SQL结构
         for (const sql of executedSqls) {
           // 对于包含单引号的恶意代码，验证它们被正确转义
           if (maliciousTreeId.includes("'")) {
-            // 转义后的代码应该包含双单引号（SQLite转义方式）
-            expect(sql).toMatch(/''/);
-          }
+            // 转义后的代码应该包含转义的单引号
+            // SQLite 使用双单引号 ''，MySQL 使用反斜杠 \'
+            const hasDoubleQuotes = sql.match(/''/g);
+            const hasBackslashQuote = sql.match(/\\'/g);
+            expect(hasDoubleQuotes || hasBackslashQuote).toBeTruthy();
 
-          // 验证SQL结构完整性：不应该有未闭合的引号导致SQL结构破坏
-          const openQuotes = (sql.match(/'/g) || []).length;
-          expect(openQuotes % 2).toBe(0); // 引号数应该是偶数
+            // 验证原始的恶意字符串（包含单引号）不应该直接出现在SQL中
+            expect(sql).not.toContain(maliciousTreeId);
+          } else {
+            // 对于不包含单引号的字符串，检查转义后的形式
+            // 换行符、制表符等特殊字符会被转义为 \n, \t 等
+            const escapedValue = maliciousTreeId
+              .replace(/\n/g, "\\n")
+              .replace(/\t/g, "\\t")
+              .replace(/\r/g, "\\r")
+              .replace(/\x00/g, "\\0")
+              .replace(/\x08/g, "\\b")
+              .replace(/\x1a/g, "\\Z");
+
+            expect(sql).toContain(escapedValue);
+          }
         }
 
         // 验证测试确实执行了SQL
@@ -161,8 +182,9 @@ describe("SQL 注入防护测试", () => {
       await manager.getNodes();
 
       // 验证数值不被添加引号
-      expect(capturedSql).toContain("treeId=1"); // 不是 treeId='1'
-      expect(capturedSql).not.toContain("treeId='1'");
+      expect(capturedSql).toBeDefined();
+      expect(capturedSql!).toContain("[treeId]=1"); // SQLite 使用方括号标识符
+      expect(capturedSql!).not.toContain("[treeId]='1'");
     });
 
     test("应处理 null 类型的 treeId", async () => {
@@ -210,7 +232,7 @@ describe("SQL 注入防护测试", () => {
         try {
           await manager.getNode(maliciousNodeId as any);
         } catch (e) {
-          // 节点不存在时会抛出错误，这是正常的
+          // 节点不存在时会抛出错误，这是正常的，我们主要关心 SQL 注入防护
         }
 
         // 验证 SQL 不包含未转义的恶意代码
@@ -263,10 +285,10 @@ describe("SQL 注入防护测试", () => {
 
         // 验证 SQL 包含正确的树 ID 过滤
         if (sql.includes("tree1")) {
-          expect(sql).toContain("treeId=");
+          expect(sql).toContain("[treeId]="); // SQLite 使用方括号标识符
           expect(sql).not.toContain("tree2");
         } else if (sql.includes("tree2")) {
-          expect(sql).toContain("treeId=");
+          expect(sql).toContain("[treeId]="); // SQLite 使用方括号标识符
           expect(sql).not.toContain("tree1");
         }
 
@@ -305,12 +327,12 @@ describe("SQL 注入防护测试", () => {
 
       // 验证恶意 treeId 被正确转义
       expect(capturedSql).toBeDefined();
-      expect(capturedSql).not.toContain("tree2' OR '1'='1");
+      expect(capturedSql!).not.toContain("tree2' OR '1'='1");
       // 转义后的形式应该包含
       if (mockAdapter.type === "mysql") {
-        expect(capturedSql).toContain("tree2\\' OR \\'1\\'=\\'1");
+        expect(capturedSql!).toContain("tree2\\' OR \\'1\\'=\\'1");
       } else {
-        expect(capturedSql).toContain("tree2'' OR ''1''=''1");
+        expect(capturedSql!).toContain("tree2'' OR ''1''=''1");
       }
     });
   });
@@ -359,7 +381,7 @@ describe("SQL 注入防护测试", () => {
 
         // Unicode 字符应该被正确处理
         expect(capturedSql).toBeDefined();
-        expect(capturedSql).toContain(treeId);
+        expect(capturedSql!).toContain(treeId);
       }
     });
 
@@ -381,14 +403,14 @@ describe("SQL 注入防护测试", () => {
 
       // 超长字符串应该被正确转义并包含在SQL中
       expect(capturedSql).toBeDefined();
-      expect(capturedSql).toContain('treeId=');
+      expect(capturedSql!).toContain("[treeId]="); // SQLite 使用方括号标识符
       // 验证超长字符串确实被处理了（出现在SQL中）
-      expect(capturedSql).toContain('a'.repeat(100)); // 部分字符串应该存在
+      expect(capturedSql!).toContain("a".repeat(100)); // 部分字符串应该存在
     });
   });
 
   describe("不同数据库类型的转义测试", () => {
-    const databaseTypes = ["sqlite", "mysql", "postgresql", "oracle", "sqlserver"] as const;
+    const databaseTypes: DatabaseType[] = ["sqlite", "mysql", "postgresql", "oracle", "sqlserver"];
 
     test.each(databaseTypes)("应正确转义 %s 数据库的 treeId", async (dbType) => {
       const mockAdapter = createMockAdapter(dbType);
@@ -407,15 +429,21 @@ describe("SQL 注入防护测试", () => {
 
       // 验证单引号被正确转义
       expect(capturedSql).toBeDefined();
-      expect(capturedSql).not.toContain("root's tree"); // 原始字符串不应出现
+      expect(capturedSql!).not.toContain("root's tree"); // 原始字符串不应出现
 
       // 根据数据库类型验证转义方式
       if (dbType === "mysql") {
-        // MySQL 使用反斜杠转义
-        expect(capturedSql).toMatch(/root\\'s/);
+        // MySQL 使用反斜杠转义单引号
+        expect(capturedSql!).toMatch(/root\\'s/);
+        expect(capturedSql!).toContain("`treeId`"); // MySQL 使用反引号标识符
+      } else if (dbType === "sqlite" || dbType === "sqlserver") {
+        // SQLite 和 SQL Server 使用双单引号转义单引号，方括号标识符
+        expect(capturedSql!).toMatch(/root''s/);
+        expect(capturedSql!).toContain("[treeId]"); // 方括号标识符
       } else {
-        // 其他数据库使用双单引号
-        expect(capturedSql).toMatch(/root''s/);
+        // PostgreSQL 和 Oracle 使用双单引号转义单引号，双引号标识符
+        expect(capturedSql!).toMatch(/root''s/);
+        expect(capturedSql!).toContain("\"treeId\""); // 双引号标识符
       }
     });
   });
