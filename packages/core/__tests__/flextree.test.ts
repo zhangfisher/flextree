@@ -2,7 +2,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import type { Equal, Expect, NotAny } from "@type-challenges/utils";
 import { FlexTree, FlexTreeNode } from "../src/index";
-import { createFlexTree, type TestFlexTree } from "./test-helpers";
+import { createFlexTree, type TestFlexTree } from "./helpers";
 
 describe("FlexTree 类型系统测试", () => {
   test("字段类型", () => {

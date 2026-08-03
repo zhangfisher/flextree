@@ -100,6 +100,6 @@ export class DeleteNodeMixin<
     } else {
       sql = `DELETE FROM ${this.tableName}`;
     }
-    return await this.onExecuteWriteSql([sql]);
+    return await this.onExecuteSql([sql]);
   }
 }

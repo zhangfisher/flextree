@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test"
-import type { DemoFlexTree } from './createTree'
-import { createDemoTree, createFlexTree, dumpTree, verifyTree } from './createTree'
+import type { DemoFlexTree } from '../helpers'
+import { createDemoTree, createFlexTree, dumpTree, verifyTree } from '../helpers'
 
 describe('访问树对象实例', () => {
     let tree: DemoFlexTree

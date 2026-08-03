@@ -6,8 +6,8 @@ import {
   NextSibling,
   PreviousSibling,
 } from "../../src";
-import type { DemoFlexTreeManager } from "./createTree";
-import { createTreeManager } from "./createTree";
+import type { DemoFlexTreeManager } from "../helpers";
+import { createTreeManager } from "../helpers";
 
 describe("添加树节点", () => {
   describe("创建根节点", () => {

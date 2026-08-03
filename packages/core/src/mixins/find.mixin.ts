@@ -63,6 +63,6 @@ export class FindNodeMixin<
               })
               .join(" AND ")}
         `);
-    return await this.onExecuteReadSql(sql);
+    return await this.getRows(sql);
   }
 }

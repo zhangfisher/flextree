@@ -4,8 +4,8 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { FirstChild, LastChild, NextSibling, PreviousSibling } from "../../src";
 import { FlexTreeNodeInvalidOperationError } from "../../src";
-import type { DemoFlexTreeManager } from "./createTree";
-import { createDemoTree, createTreeManager, verifyTree } from "./createTree";
+import type { DemoFlexTreeManager } from "../helpers";
+import { createDemoTree, createTreeManager, verifyTree } from "../helpers";
 
 describe("移动树节点", () => {
   let tree: DemoFlexTreeManager;

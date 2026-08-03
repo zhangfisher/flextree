@@ -6,8 +6,10 @@ import { DatabaseType } from "./escaper";
 import type * as manager from "./manager";
 
 export interface IFlexTreeAdapter {
-  // 当数据库打开准备就绪时
-  ready: boolean;
+  /**
+   * 当数据库是否已连接
+   */
+  connected: boolean;
   // 绑定树管理器
   bind: (treeManager: manager.FlexTreeManager) => void;
   // 执行sql，并返回结果
@@ -24,8 +26,6 @@ export interface IFlexTreeAdapter {
    * @returns
    */
   transaction: (callback: () => void) => void;
-  // 返回一个数据库实例对象
-  db: any;
   /**
    * 返回数据库为类型，取值: "sqlite" | "mysql" | "postgresql" | "oracle" | "sqlserver";
    *

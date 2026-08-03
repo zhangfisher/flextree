@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test"
 import { FlexNodeRelPosition, FlexTreeNodeError, NextSibling, PreviousSibling } from "../../src"
-import type { CustomDemoFlexTreeManager } from './createCustomTree'
-import { createCustomTreeManager, dumpCustomTree } from './createCustomTree'
+import type { CustomDemoFlexTreeManager } from '../helpers'
+import { createCustomTreeManager, dumpCustomTree } from '../helpers'
 
 describe('自定义-添加树节点', () => {
     describe('创建根节点', () => {

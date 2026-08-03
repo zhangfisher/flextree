@@ -110,7 +110,7 @@ export class FlexTreeManager<
   private _fields: RequiredDeep<NonUndefined<FlexTreeManagerOptions["fields"]>>;
   private _adapter: IFlexTreeAdapter;
   private _escaper: Escaper;
-  private _ready: boolean = false; // 当driver准备就绪时,ready为true时,才允许执行读写操作
+  private _connected: boolean = false;
   private _emitter = mitt<FlexTreeEvents>();
   private _lastUpdateAt = 0;
 
@@ -230,24 +230,24 @@ export class FlexTreeManager<
     return this._emitter.emit.bind(this);
   }
 
-  async ready() {
-    if (this._adapter && this._ready) {
+  async connected() {
+    if (this._adapter && this._connected) {
       return true;
     }
     return false;
   }
-  async assertDriverReady() {
+  async assertConnected() {
     try {
       if (!this._adapter) {
         throw new FlexTreeDriverError();
       }
-      if (!this._adapter.ready) {
+      if (!this._adapter.connected) {
         await this._adapter.open();
       }
     } catch (e: any) {
       throw new FlexTreeDriverError(e.message);
     }
-    if (!this._adapter.ready) {
+    if (!this._adapter.connected) {
       throw new FlexTreeDriverError();
     }
   }

@@ -391,7 +391,7 @@ export class AddNodeMixin<
     } else if (pos === FlexNodeRelPosition.PreviousSibling) {
       sqls = this._addPreviousSiblings(relNode, nodes, fields);
     }
-    await this.onExecuteWriteSql(sqls);
+    await this.onExecuteSql(sqls);
   }
 
   /**
@@ -430,7 +430,7 @@ export class AddNodeMixin<
     // 生成SQL
     const sqls = this.generateNestedSql(nodes, positions, relNode, pos, fields, childrenField);
 
-    await this.onExecuteWriteSql(sqls);
+    await this.onExecuteSql(sqls);
   }
 
   /**
@@ -476,7 +476,7 @@ export class AddNodeMixin<
     // - 第二次调用（退出节点）: 设置右值
     forEachNestTree(
       nodes,
-      (node: any, level: number) => {
+      (node: any) => {
         if (!node.leftValue) {
           // 第一次访问（进入节点） - 设置左值
           node.leftValue = counter++;

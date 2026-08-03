@@ -5,12 +5,12 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { FirstChild, LastChild, NextSibling, PreviousSibling } from "../../src";
 import { FlexTreeNodeInvalidOperationError } from "../../src";
-import type { CustomDemoFlexTreeManager } from "./createCustomTree";
+import type { CustomDemoFlexTreeManager } from "../helpers";
 import {
   createCustomDemoTree,
   createCustomTreeManager,
   verifyCustomTree,
-} from "./createCustomTree";
+} from "../helpers";
 
 describe("移动树节点", () => {
   let tree: CustomDemoFlexTreeManager;

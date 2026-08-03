@@ -9,7 +9,7 @@ import {
   createCustomDemoTree,
   createCustomFlexTree,
   createCustomTreeManager,
-} from "./createCustomTree";
+} from "../helpers";
 
 describe("自定义关键字段名称", async () => {
   let tree: CustomDemoFlexTreeManager;

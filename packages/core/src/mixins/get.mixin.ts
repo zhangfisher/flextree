@@ -102,7 +102,7 @@ export class GetNodeMixin<
         `);
     }
 
-    return await this.onExecuteReadSql(sql);
+    return await this.getRows(sql);
   }
 
   /**
@@ -116,7 +116,7 @@ export class GetNodeMixin<
     const idField = this.escaper.escapeId(this.keyFields.id);
     const sql = this._sql(`SELECT * FROM ${this.tableName}
             WHERE {__TREE_ID__} (${idField}=${this.escaper.escape(nodeId as any)})`);
-    const result = await this.onExecuteReadSql(sql);
+    const result = await this.getRows(sql);
     if (result.length === 0) {
       throw new FlexTreeNodeNotFoundError();
     }
@@ -163,7 +163,7 @@ export class GetNodeMixin<
             ORDER BY Node.${leftValueField} ${index < 0 ? "DESC" : ""}
             LIMIT 1 OFFSET ${Math.abs(index) - 1}
         `;
-    const result = await this.onExecuteReadSql(sql);
+    const result = await this.getRows(sql);
     return result.length > 0 ? (result[0] as TreeNode) : undefined;
   }
 
@@ -225,7 +225,7 @@ export class GetNodeMixin<
             `;
     }
     // 得到的平面形式的节点列表
-    return await this.onExecuteReadSql(sql);
+    return await this.getRows(sql);
   }
 
   /**
@@ -314,7 +314,7 @@ export class GetNodeMixin<
             )
             ORDER BY ${leftValueField}
         `;
-    return await this.getNodeList(sql);
+    return await this.getRows(sql);
   }
 
   /**
@@ -376,7 +376,7 @@ export class GetNodeMixin<
             )
             ORDER BY ${leftValueField} DESC LIMIT 1
         `;
-    const result = await this.onExecuteReadSql(sql);
+    const result = await this.getRows(sql);
     if (result.length === 0) {
       throw new FlexTreeNodeNotFoundError();
     }
@@ -444,7 +444,7 @@ export class GetNodeMixin<
             )
             ORDER BY ${leftValueField}
         `;
-    return await this.getNodeList(sql);
+    return await this.getRows(sql);
   }
 
   /**

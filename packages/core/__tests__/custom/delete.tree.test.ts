@@ -4,7 +4,7 @@ import {
   createCustomDemoTree,
   createCustomTreeManager,
   CustomDemoFlexTreeManager,
-} from "./createCustomTree";
+} from "../helpers";
 
 describe("自定义关键字段-删除树节点", () => {
   let tree: CustomDemoFlexTreeManager;

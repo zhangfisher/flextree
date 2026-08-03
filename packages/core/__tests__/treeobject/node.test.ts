@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test"
-import type { ReturnPromiseType } from './createTree'
-import { createDemoTree, createFlexTree, dumpTree } from './createTree'
+import type { ReturnPromiseType } from '../helpers'
+import { createDemoTree, createFlexTree, dumpTree } from '../helpers'
 
 describe('访问树节点实例', () => {
     let tree: ReturnPromiseType<typeof createFlexTree>

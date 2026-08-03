@@ -89,7 +89,7 @@ export class RelationMixin<
                         AND Node.${rightValueField} > RelNode.${rightValueField}
                         ) ORDER BY ${leftValueField} DESC LIMIT 1
                     ) AS t2`;
-        const r = await this.onGetScalar(sql); // 两个节点在同一棵树中
+        const r = await this.getScalar(sql); // 两个节点在同一棵树中
         if (r === 1) {
           result = FlexTreeNodeRelation.Siblings; // 两个节点是兄弟节点
         } else if (level === relLevel) {

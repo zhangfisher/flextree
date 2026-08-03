@@ -4,8 +4,8 @@
  *
  */
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import type { ReturnPromiseType } from './createTree';
-import { createDemoTree, createFlexTree } from './createTree';
+import type { ReturnPromiseType } from "../helpers";
+import { createDemoTree, createFlexTree } from "../helpers";
 
 describe("懒加载访问树对象实例", () => {
   let tree: ReturnPromiseType<typeof createFlexTree>;

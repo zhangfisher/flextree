@@ -6,7 +6,11 @@ import type {
   NonUndefined,
 } from "../types";
 import { FlexNodeRelPosition, FlexTreeNodeRelation } from "../types";
-import { FlexTreeError, FlexTreeNodeInvalidOperationError, FlexTreeNodeNotFoundError } from "../errors";
+import {
+  FlexTreeError,
+  FlexTreeNodeInvalidOperationError,
+  FlexTreeNodeNotFoundError,
+} from "../errors";
 
 export class MoveNodeMixin<
   Fields extends Record<string, any> = object,
@@ -83,9 +87,8 @@ export class MoveNodeMixin<
 
     // 计算目标节点在deleteNode调整后的rightValue
     // 如果目标节点在源节点右边，它的rightValue会被减少movedLength
-    const adjustedToNodeRightValue = toNodeRightValue > rightValue
-      ? toNodeRightValue - movedLength
-      : toNodeRightValue;
+    const adjustedToNodeRightValue =
+      toNodeRightValue > rightValue ? toNodeRightValue - movedLength : toNodeRightValue;
 
     const sqls: string[] = [
       // 第1步：为目标位置腾出空间（在调整后的目标节点之后）
@@ -148,9 +151,8 @@ export class MoveNodeMixin<
 
     // 计算目标节点在deleteNode调整后的leftValue
     // 如果目标节点在源节点右边，它的leftValue会被减少movedLength
-    const adjustedToNodeLeftValue = toNodeLeftValue > rightValue
-      ? toNodeLeftValue - movedLength
-      : toNodeLeftValue;
+    const adjustedToNodeLeftValue =
+      toNodeLeftValue > rightValue ? toNodeLeftValue - movedLength : toNodeLeftValue;
 
     const sqls: string[] = [
       // 第1步：为目标位置腾出空间（在调整后的目标节点之前）
@@ -216,9 +218,8 @@ export class MoveNodeMixin<
 
     // 计算目标节点在deleteNode调整后的rightValue
     // 如果目标节点在源节点右边，它的rightValue会被减少movedLength
-    const adjustedToNodeRightValue = toNodeRightValue > rightValue
-      ? toNodeRightValue - movedLength
-      : toNodeRightValue;
+    const adjustedToNodeRightValue =
+      toNodeRightValue > rightValue ? toNodeRightValue - movedLength : toNodeRightValue;
 
     const sqls: string[] = [
       // 第1步：为目标位置腾出空间（在调整后的目标节点右值之前，作为最后一个子节点）
@@ -294,12 +295,10 @@ export class MoveNodeMixin<
 
     // 计算目标节点在deleteNode调整后的位置
     // 如果目标节点在源节点右边，它的leftValue和rightValue会被减少movedLength
-    const adjustedToNodeLeftValue = toNodeLeftValue > rightValue
-      ? toNodeLeftValue - movedLength
-      : toNodeLeftValue;
-    const adjustedToNodeRightValue = toNodeRightValue > rightValue
-      ? toNodeRightValue - movedLength
-      : toNodeRightValue;
+    const adjustedToNodeLeftValue =
+      toNodeLeftValue > rightValue ? toNodeLeftValue - movedLength : toNodeLeftValue;
+    const adjustedToNodeRightValue =
+      toNodeRightValue > rightValue ? toNodeRightValue - movedLength : toNodeRightValue;
 
     const sqls: string[] = [
       // 第1步：为目标位置腾出空间（在调整后的目标节点左值之后，作为第一个子节点）
@@ -502,7 +501,7 @@ export class MoveNodeMixin<
       sqls.push(...this._moveToPreviousSibling(srcNode, targetNode));
     }
 
-    await this.onExecuteWriteSql(sqls);
+    await this.onExecuteSql(sqls);
   }
 
   /**

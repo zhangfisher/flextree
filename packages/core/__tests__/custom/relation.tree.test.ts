@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { FlexTreeNodeRelation } from "../../src";
-import type { CustomDemoFlexTreeManager } from "./createCustomTree";
+import type { CustomDemoFlexTreeManager } from "../helpers";
 import {
   createCustomDemoTree,
   createCustomTreeManager,
   verifyCustomTree,
-} from "./createCustomTree";
+} from "../helpers";
 
 describe("查询节点关系", () => {
   let tree: CustomDemoFlexTreeManager;

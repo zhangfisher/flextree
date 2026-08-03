@@ -18,14 +18,13 @@ export class SqlMixin<
    * @param {string} sql  执行的sql
    * @returns  返回查询结果
    */
-  async onExecuteReadSql(
+  protected async getRows(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     sql: string,
   ): Promise<any> {
-    await this.assertDriverReady();
+    await this.assertConnected();
     return await this.adapter.getRows(sql);
   }
-
   /**
    * 执行操作，无返回值
    * @param {string[]} sqls
@@ -35,24 +34,12 @@ export class SqlMixin<
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     sqls: string[],
   ): Promise<any> {
-    await this.assertDriverReady();
-    return await this.adapter.exec(sqls);
-  }
-
-  async onExecuteWriteSql(
-    this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-    sqls: string[],
-  ): Promise<any> {
-    await this.assertDriverReady();
-    return await this.adapter.exec(sqls);
-  }
-
-  async onGetScalar(
-    this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-    sql: string,
-  ): Promise<any> {
-    await this.assertDriverReady();
-    return await this.adapter.getScalar(sql);
+    await this.assertConnected();
+    return new Promise<any>((resolve, reject) => {
+      this.adapter.transaction(() => {
+        Promise.resolve(this.adapter.exec(sqls)).then(resolve).catch(reject);
+      });
+    });
   }
 
   /**
@@ -81,21 +68,15 @@ export class SqlMixin<
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     sql: string,
   ): Promise<TreeNode | null> {
-    const result = await this.onExecuteReadSql(sql);
+    const result = await this.getRows(sql);
     return result.length > 0 ? (result[0] as TreeNode) : null;
-  }
-
-  protected async getNodeList(
-    this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-    sql: string,
-  ): Promise<TreeNode[]> {
-    return await this.onExecuteReadSql(sql);
   }
 
   protected async getScalar<T = number>(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     sql: string,
   ): Promise<T> {
+    await this.assertConnected();
     return (await this.adapter.getScalar(sql)) as T;
   }
 }

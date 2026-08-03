@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { FlexTreeNodeRelation } from "../../src";
-import type { DemoFlexTreeManager } from "./createTree";
-import { createDemoTree, createTreeManager, verifyTree } from "./createTree";
+import type { DemoFlexTreeManager } from "../helpers";
+import { createDemoTree, createTreeManager, verifyTree } from "../helpers";
 
 describe("查询节点关系", () => {
   let tree: DemoFlexTreeManager;

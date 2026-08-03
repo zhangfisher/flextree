@@ -72,6 +72,6 @@ export class RootNodeMixin<
       .join(",");
 
     const sql = `INSERT INTO ${this.tableName} (${keys}) VALUES (${values})`;
-    await this.onExecuteWriteSql([sql]);
+    await this.onExecuteSql([sql]);
   }
 }

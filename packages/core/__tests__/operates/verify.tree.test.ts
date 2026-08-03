@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import type { DemoFlexTreeManager } from "./createTree";
-import { createDemoTree, createTreeManager } from "./createTree";
+import type { DemoFlexTreeManager } from "../helpers";
+import { createDemoTree, createTreeManager } from "../helpers";
 
 describe("检查树的完整性", () => {
   let tree: DemoFlexTreeManager;

@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { FlexTreeManager } from "../src";
 import BunSqliteAdapter from "../../bun-sqlite/src";
-import { toTree } from "./toTree";
+import { toTree } from "./helpers";
 
 interface TestFields {
   status: number;

@@ -4,7 +4,7 @@ import { Database } from "bun:sqlite";
 export type BunSqliteDatabase = Database;
 export default class BunSqliteAdapter implements IFlexTreeAdapter {
   _db?: BunSqliteDatabase;
-  _ready: boolean = false;
+  _connected: boolean = false;
   _treeManager?: FlexTreeManager;
   type = "sqlite" as const;
   private _externalDb: boolean = false; // 标记是否使用外部传入的数据库
@@ -14,17 +14,17 @@ export default class BunSqliteAdapter implements IFlexTreeAdapter {
     if (typeof db === "string") {
       // 传入的是数据库文件路径
       this._dbPath = db;
-      this._ready = false;
+      this._connected = false;
     } else if (db instanceof Database) {
       // 传入的是已有的 Database 对象
       this._db = db;
       this._externalDb = true;
-      this._ready = this._isDatabaseOpen();
+      this._connected = this._isDatabaseOpen();
     }
   }
 
-  get ready() {
-    return this._ready;
+  get connected() {
+    return this._connected;
   }
   get db() {
     return this._db! as BunSqliteDatabase;
@@ -57,7 +57,7 @@ export default class BunSqliteAdapter implements IFlexTreeAdapter {
       try {
         // 如果已经通过外部传入数据库，则不需要再次打开
         if (this._externalDb && this._db) {
-          this._ready = true;
+          this._connected = true;
           resolve(this._db);
           return;
         }
@@ -70,29 +70,21 @@ export default class BunSqliteAdapter implements IFlexTreeAdapter {
           this._db = new Database(":memory:");
         }
 
-        this._ready = true;
+        this._connected = true;
         resolve(this._db);
       } catch (e: any) {
-        this._ready = false;
+        this._connected = false;
         reject(e);
       }
     });
   }
 
-  assertDbIsOpen() {
-    if (!this.db) {
-      throw new Error("Sqlite database is not opened.");
-    }
-  }
-
   async getRows<T>(sql: string): Promise<T[]> {
-    this.assertDbIsOpen();
     const stmt = this.db.query(sql);
     return stmt.all() as T[];
   }
 
   async getScalar<T>(sql: string): Promise<T> {
-    this.assertDbIsOpen();
     const stmt = this.db.query(sql);
     const result = stmt.get();
     if (!result) {
@@ -103,16 +95,12 @@ export default class BunSqliteAdapter implements IFlexTreeAdapter {
   }
 
   async exec(sqls: string | string[]) {
-    this.assertDbIsOpen();
     if (typeof sqls === "string") {
       sqls = [sqls];
     }
-    // Bun SQLite 默认在事务中执行，这里使用手动事务
-    this.db.transaction(() => {
-      for (const sql of sqls) {
-        this.db.run(sql);
-      }
-    })();
+    for (const sql of sqls) {
+      this.db.run(sql);
+    }
   }
   transaction(callback: () => void) {
     this.db.transaction(() => {

@@ -1,6 +1,6 @@
 // oxlint-disable no-unused-vars
 import { describe, test, expect, beforeEach } from "bun:test";
-import { createFlexTree, type TestFlexTree } from "./test-helpers";
+import { createFlexTree, type TestFlexTree } from "./helpers";
 
 describe("FlexTree 导出功能测试", () => {
   describe("JSON 格式导出", () => {

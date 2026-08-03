@@ -5,7 +5,7 @@ import {
   createDemoTree,
   verifyTree,
   type TestFlexTreeManager,
-} from "./test-helpers";
+} from "./helpers";
 
 describe("FlexTreeManager CRUD 操作", () => {
   describe("创建根节点", () => {

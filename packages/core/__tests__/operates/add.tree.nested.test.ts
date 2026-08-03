@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { FlexNodeRelPosition } from "../../src";
-import type { DemoFlexTreeManager } from "./createTree";
-import { createTreeManager } from "./createTree";
+import type { DemoFlexTreeManager } from "../helpers";
+import { createTreeManager } from "../helpers";
 
 describe("添加嵌套树节点", () => {
   describe("基础嵌套结构（新API）", () => {

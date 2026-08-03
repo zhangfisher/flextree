@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test"
-import { createCustomDemoTree, createCustomTreeManager, CustomDemoFlexTreeManager, dumpCustomTree } from './createCustomTree'
+import { createCustomDemoTree, createCustomTreeManager, CustomDemoFlexTreeManager, dumpCustomTree } from '../helpers'
 
 describe('自定义关键字段-访问树', () => {
     let nodeCount: number = 0
