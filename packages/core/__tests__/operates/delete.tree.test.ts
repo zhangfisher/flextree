@@ -91,7 +91,7 @@ describe("删除树节点", () => {
     const a = await tree.findNode({ name: "A" });
     const deleteCount = (a.rightValue - a.leftValue - 1) / 2 + 1;
     await tree.write(async () => {
-      await tree.deleteNode(a, { onlyMark: true });
+      await tree.deleteNode(a, { detach: true });
     });
     nodes = await tree.getNodes();
     expect(nodes.length).toBe(oldCount - deleteCount);

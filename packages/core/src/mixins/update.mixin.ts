@@ -3,7 +3,6 @@
  * 更新节点数据
  *
  */
-import sqlstring from "sqlstring";
 import { FlexTreeInvalidUpdateError, FlexTreeNodeError } from "../errors";
 import type { FlexTreeManager } from "../manager";
 import type {
@@ -52,5 +51,6 @@ export class UpdateNodeMixin<
       return `UPDATE ${this.tableName} SET ${fields.join(",")} WHERE ${idField}=${this.escaper.escape(id)}`;
     });
     await this.onExecuteSql(sqls);
+    this.emit("node:updated", { tree: this.treeId, node });
   }
 }

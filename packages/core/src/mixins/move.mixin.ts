@@ -408,8 +408,8 @@ export class MoveNodeMixin<
    * - 不允许将根节点作为兄弟节点移动（`NextSibling` 或 `PreviousSibling`）
    * - 只允许将其他节点移动为根节点的子节点（`FirstChild` 或 `LastChild`）
    *
-   * ### 步骤 4: 源节点脱离（标记删除）
-   * 通过 `deleteNode()` 方法的 `onlyMark` 模式将源节点从树中暂时脱离：
+   * ### 步骤 4: 源节点脱离
+   * 通过 `_buildDetachSqls()` 生成脱离 SQL，将源节点从树中暂时脱离：
    * - **不执行真正的删除操作**，只是将源节点及其所有后代节点的 `leftValue` 和 `rightValue` 转换为**负数**
    * - 转换为负数的目的是：在后续调整目标节点位置的值时，避免与源节点的值发生冲突
    * - 此时源节点在逻辑上已从原位置脱离，但数据仍然存在
@@ -484,24 +484,27 @@ export class MoveNodeMixin<
       }
     }
 
-    const sqls: string[] = [];
+    const moveSqls: string[] = [];
 
-    // 按照核心算法：调用deleteNode标记源节点为删除，这保证了树的完整性
-    await this.deleteNode(srcNode, { onlyMark: true });
+    // 按照核心算法：让源节点脱离原位置（取负 + 回缩右侧左右值），
+    // 这保证了后续移动 SQL 计算时树的完整性（源子树已不在原位置占位）。
+    // 脱离 SQL 与下方的移动 SQL 拼接后，在同一个事务中执行，保证整个移动操作原子完成。
+    const detachSqls = this._buildDetachSqls(srcNode, { detach: true });
 
     // 根据移动位置和节点树的长度，重新计算受影响节点的left,right值
-    // 将已逻辑删除的节点的左右值更新
+    // 将已脱离（取负）的节点的左右值更新到新位置并翻正
     if (pos === FlexNodeRelPosition.LastChild) {
-      sqls.push(...this._moveToLastChild(srcNode, targetNode));
+      moveSqls.push(...this._moveToLastChild(srcNode, targetNode));
     } else if (pos === FlexNodeRelPosition.FirstChild) {
-      sqls.push(...this._moveToFirstChild(srcNode, targetNode));
+      moveSqls.push(...this._moveToFirstChild(srcNode, targetNode));
     } else if (pos === FlexNodeRelPosition.NextSibling) {
-      sqls.push(...this._moveToNextSibling(srcNode, targetNode));
+      moveSqls.push(...this._moveToNextSibling(srcNode, targetNode));
     } else if (pos === FlexNodeRelPosition.PreviousSibling) {
-      sqls.push(...this._moveToPreviousSibling(srcNode, targetNode));
+      moveSqls.push(...this._moveToPreviousSibling(srcNode, targetNode));
     }
-
-    await this.onExecuteSql(sqls);
+    // 一个事务：先脱离源位置，再挂载到目标位置
+    await this.onExecuteSql([...detachSqls, ...moveSqls]);
+    this.emit("node:moved", { tree: this.treeId, from: node, to: toNode, pos });
   }
 
   /**

@@ -94,7 +94,7 @@ describe("自定义关键字段-删除树节点", () => {
     const a = await tree.findNode({ title: "A" });
     const deleteCount = (a.rgt - a.lft - 1) / 2 + 1;
     await tree.write(async () => {
-      await tree.deleteNode(a, { onlyMark: true });
+      await tree.deleteNode(a, { detach: true });
     });
     nodes = await tree.getNodes();
     expect(nodes.length).toBe(oldCount - deleteCount);
@@ -442,7 +442,7 @@ describe("详细删除测试套件 - Root->A,B,C,D->子节点", () => {
     const a = await tree.findNode({ title: "A" });
 
     await tree.write(async () => {
-      await tree.deleteNode(a, { onlyMark: true });
+      await tree.deleteNode(a, { detach: true });
     });
 
     const nodesAfter = await tree.getNodes();

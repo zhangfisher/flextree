@@ -30,6 +30,8 @@ import { RootNodeMixin } from "./mixins/root.mixin";
 import { RelationMixin } from "./mixins/relation.mixin";
 import { UpdateNodeMixin } from "./mixins/update.mixin";
 import { VerifyTreeMixin } from "./mixins/verify.mixin";
+import { ForEachMixin } from "./mixins/forEach.mixin";
+import { RepairMixin } from "./mixins/repair.mixin";
 import { createEscaper, Escaper } from "./escaper";
 import { FlexTree, type FlexTreeOptions } from "./tree";
 
@@ -64,7 +66,9 @@ export interface FlexTreeManager<
     RootNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     RelationMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     UpdateNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-    VerifyTreeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId> {}
+    VerifyTreeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+    ForEachMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+    RepairMixin<Fields, KeyFields, TreeNode, NodeId, TreeId> {}
 
 /**
  *
@@ -89,6 +93,8 @@ export interface FlexTreeManager<
   RelationMixin,
   UpdateNodeMixin,
   VerifyTreeMixin,
+  ForEachMixin,
+  RepairMixin,
 )
 // eslint-disable-next-line ts/no-unsafe-declaration-merging
 export class FlexTreeManager<

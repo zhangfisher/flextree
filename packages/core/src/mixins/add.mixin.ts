@@ -42,6 +42,36 @@ export class AddNodeMixin<
   }
 
   /**
+   * 构建字段列表 - 统一字段处理逻辑
+   * @param node 节点对象（用于提取自定义字段）
+   * @param excludeFields 需要排除的字段（如 'children'）
+   * @returns 字段名数组
+   */
+  private buildFieldsList(
+    this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+    node: Partial<TreeNode> | FlexTreeNodeInput<Fields, KeyFields>,
+    excludeFields: string[] = [],
+  ): string[] {
+    const fields: string[] = [
+      this.keyFields.level,
+      this.keyFields.leftValue,
+      this.keyFields.rightValue,
+    ];
+
+    if (this.isMultiTree) {
+      fields.push(this.keyFields.treeId);
+    }
+
+    // 提取自定义字段（排除系统字段和指定的排除字段）
+    const customFields = Object.keys(node).filter(
+      (f) => !fields.includes(f) && !excludeFields.includes(f),
+    );
+    fields.push(...customFields);
+
+    return fields;
+  }
+
+  /**
    *
    * 将nodes添加到relNode的子节点集的最后面
    *
@@ -344,20 +374,24 @@ export class AddNodeMixin<
         throw new FlexTreeError("Root node can not have next and previous sibling node");
       }
     }
-
     // 检测是否为嵌套结构
     const isNested = this.detectNestedStructure(nodes, childrenField);
-
     if (isNested) {
-      return this.addNodesNested(
+      this.addNodesNested(
         nodes as FlexTreeNodeInput<Fields, KeyFields>[],
         relNode,
         actualPos,
         childrenField,
       );
     } else {
-      return this.addNodesFlat(nodes as Partial<TreeNode>[], relNode, actualPos);
+      this.addNodesFlat(nodes as Partial<TreeNode>[], relNode, actualPos);
     }
+    this.emit("node:added", {
+      tree: this.treeId,
+      at: relNode,
+      nodes,
+      pos: actualPos,
+    });
   }
 
   /**
@@ -369,16 +403,8 @@ export class AddNodeMixin<
     relNode: TreeNode,
     pos: FlexNodeRelPosition,
   ) {
-    // 处理节点数据:   单树表不需要增加treeId字段
-    const fields: string[] = [
-      this.keyFields.level,
-      this.keyFields.leftValue,
-      this.keyFields.rightValue,
-    ];
-    if (this.isMultiTree) {
-      fields.push(this.keyFields.treeId);
-    }
-    fields.push(...Object.keys(nodes[0]).filter((f) => !fields.includes(f))); // 添加其他字段
+    // 使用统一的字段构建方法
+    const fields = this.buildFieldsList(nodes[0]);
 
     let sqls: string[] = [];
 
@@ -410,22 +436,9 @@ export class AddNodeMixin<
     // 直接在嵌套结构上计算位置
     const positions = this.calculateNestedPositions(nodes, baseLeftValue, childrenField);
 
-    // 构建字段列表
-    const fields: string[] = [
-      this.keyFields.level,
-      this.keyFields.leftValue,
-      this.keyFields.rightValue,
-    ];
-
-    if (this.isMultiTree) {
-      fields.push(this.keyFields.treeId);
-    }
-
-    // 从第一个节点提取自定义字段（排除children字段）
-    const customFields = Object.keys(nodes[0]).filter(
-      (f) => !fields.includes(f) && f !== "children" && f !== childrenField,
-    );
-    fields.push(...customFields);
+    // 使用统一的字段构建方法，排除 children 相关字段
+    const excludeFields = ["children", childrenField || "children"].filter(Boolean);
+    const fields = this.buildFieldsList(nodes[0], excludeFields);
 
     // 生成SQL
     const sqls = this.generateNestedSql(nodes, positions, relNode, pos, fields, childrenField);
@@ -535,7 +548,6 @@ export class AddNodeMixin<
               row.push(this.escaper.escape(node[fieldName]));
             }
           }
-
           values.push(`(${row.join(",")})`);
         }
       },

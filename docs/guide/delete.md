@@ -10,10 +10,10 @@
 
 ```ts
 async deleteNode(
-    nodeId: NodeId | TreeNode, 
-    options?: { 
-        onlyMark?: boolean, 
-        onExecuteBefore?: (sqls: string[]) => boolean }
+    nodeId: NodeId | TreeNode,
+    options?: {
+        detach?: boolean
+    }
 ): Promise<void> {
 
 ```
@@ -24,21 +24,15 @@ async deleteNode(
 | --- | --- | --- | --- |
 | `nodeId` | NodeId \| TreeNode| 无 | 节点`id`或节点对象 |
 | `options` |  | 无 | 可选的，配置选项 |
-| `options.onlyMark` | boolean | false | 可选的，是否仅标记删除 |
-| `options.onExecuteBefore` | (sqls: string[]) => boolean | 无 | 可选的，执行前回调函数 |
+| `options.detach` | boolean | false | 可选的，是否假删除（脱离） |
 
 - **说明**
 
-**`onlyMark`**
+**`detach`**
 
 默认情况下，删除节点会删除节点以及其后代节点。
-如果设置为`true`，则仅标记删除节点，不会删除节点以及其后代节点。
-所有标记为删除的节点其`leftValue`和`rightValue`值会被设置为`负值`。
-
-
-**`onExecuteBefore`**
-
-执行前回调函数，用于在执行删除操作前，可以对`sql`进行修改。如果返回`false`，则不执行删除操作。
+如果设置为`true`，则仅将目标子树从树结构中脱离（假删除）：其`leftValue`和`rightValue`会被设置为`负值`，并回缩右侧节点的左右值，但记录本身保留。
+该模式供`moveNode`内部复用（源节点先脱离原位置，再由移动 SQL 重新挂载到目标位置），普通删除无需设置。
 
 
 ## 清空树
