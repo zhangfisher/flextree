@@ -277,3 +277,60 @@ async getPreviousSibling(nodeId: NodeId | TreeNode) : Promise<TreeNode | undefin
 | --- | --- | --- | --- |
 | `nodeId` | NodeId \| TreeNode| 无 | 节点`id`或节点对象 |
 
+
+## 遍历节点
+
+除了上述按关系查询节点外，`FlexTreeManager`还提供了`forEach`方法用于遍历树（或子树）的所有节点，支持**深度优先（DFS）**与**广度优先（BFS）**两种模式。
+
+```ts
+async forEach(
+    callback: (node: TreeNode, children: TreeNode[]) => boolean,
+    options?: ForEachOptions
+): Promise<void>
+
+interface ForEachOptions {
+    mode?: 'dfs' | 'bfs'           // 遍历模式，默认 'dfs'
+    startFrom?: NodeId | TreeNode  // 起始节点，默认根节点
+    maxLevel?: number              // 最大遍历层级，默认无限
+    includeStartNode?: boolean     // 是否包含起始节点，默认 true
+}
+```
+
+- **参数**
+
+| 参数 | 类型 | 默认 | 描述 |
+| --- | --- | --- | --- |
+| `callback` | `(node, children) => boolean` | 无 | 遍历回调，接收当前节点与其直接子节点；返回`false`可中断遍历 |
+| `options.mode` | `'dfs' \| 'bfs'` | `'dfs'` | 遍历模式 |
+| `options.startFrom` | `NodeId \| TreeNode` | 根节点 | 遍历的起始节点 |
+| `options.maxLevel` | `number` | `Infinity` | 最大遍历层级 |
+| `options.includeStartNode` | `boolean` | `true` | 是否包含起始节点 |
+
+- **示例**
+
+```ts
+// 深度优先遍历整棵树
+await tree.forEach((node, children) => {
+    console.log(`节点 ${node.name} 有 ${children.length} 个子节点`)
+    return true // 返回 false 可提前中断
+})
+
+// 广度优先遍历，并限制最多 2 层
+await tree.forEach((node) => {
+    console.log(node.name)
+    return true
+}, { mode: 'bfs', maxLevel: 2 })
+
+// 从指定节点开始遍历
+const nodeA = await tree.getNode(2)
+await tree.forEach((node) => {
+    console.log(node.name)
+    return true
+}, { startFrom: nodeA })
+```
+
+- **说明**
+
+    - 回调返回`false`会中断遍历；返回`true`或其它值则继续。
+    - `maxLevel`按层级（`level`）限制，超出层级的节点不会被访问。
+

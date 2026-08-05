@@ -54,6 +54,59 @@ enum FlexNodeRelPosition {
 | `atNode` | `NodeId \| TreeNode` | null  | 可选的，指定在哪个节点下添加 |
 | `pos` | `FlexNodeRelPosition` | `FlexNodeRelPosition.LastChild` | 可选的，添加位置 |
 
+### 嵌套批量添加
+
+除了传入扁平的节点数组外，`addNodes`还支持**嵌套结构**，即在一次调用中传入一棵完整的子树，通过`children`字段描述节点之间的父子关系。此时推荐使用`options`对象形式的参数：
+
+```ts
+async addNodes(
+    nodes: FlexTreeNodeInput[],
+    options?: {
+        at?: NodeId | TreeNode | null   // 父节点，默认根节点
+        pos?: FlexNodeRelPosition       // 添加位置，默认 LastChild
+        childrenField?: string          // 子节点字段名，默认 'children'
+    }
+): Promise<void>
+```
+
+- **示例**
+
+```ts
+await tree.write(async () => {
+    await tree.addNodes([
+        {
+            name: "A",
+            children: [            // A 的子节点
+                { name: "A1" },
+                { name: "A2" },
+            ],
+        },
+        {
+            name: "B",
+            children: [
+                { name: "B1" },
+            ],
+        },
+    ])
+})
+```
+
+生成的树结构如下：
+
+<LiteTree>
+Root
+    A
+        A1
+        A2
+    B
+        B1
+</LiteTree>
+
+- **说明**
+
+    - 嵌套结构中的`children`字段**仅用于描述添加时的层级关系**，不会被写入数据库（数据库通过左右值维护层级）。
+    - 默认子节点字段名为`children`，可通过`options.childrenField`自定义（例如某些数据源使用`subs`、`child`等字段名时）。
+
 ### 最后子节点
 
 将一个或多个节点添加为`atNode`节点的最后一个子节点。

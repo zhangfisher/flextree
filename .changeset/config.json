@@ -6,7 +6,8 @@
         [
             "flextree",
             "flextree-sqlite-adapter",
-            "flextree-prisma-adapter"
+            "flextree-prisma-adapter",
+            "flextree-bun-sqlite-adapter"
         ]
     ],
     "linked": [],

@@ -42,3 +42,15 @@ const tree = new FlexTree('tree', {
 })
 ```
 
+- **说明**
+
+    - `treeId`既可以是数字，也可以是字符串。当使用字符串`treeId`时，数据库表中对应的`treeId`字段类型应为字符串类型（如`VARCHAR`）。
+
+```ts
+// 字符串 treeId 示例
+const treeB = new FlexTreeManager('org', {
+    adapter: new PrismaAdapter(prisma),
+    treeId: "company-a"   // 使用字符串作为 treeId
+})
+```
+

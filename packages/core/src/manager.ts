@@ -8,6 +8,7 @@ import { deepMerge } from "flex-tools/object/deepMerge";
 import type { RequiredDeep } from "type-fest";
 import { mix } from "ts-mixer";
 import mitt from "mitt";
+import { AsyncLocalStorage } from "node:async_hooks";
 import type { IFlexTreeAdapter } from "./adapter";
 import { FlexTreeDriverError, FlexTreeError, FlexTreeInvalidUpdateError } from "./errors";
 import type {
@@ -119,6 +120,9 @@ export class FlexTreeManager<
   private _connected: boolean = false;
   private _emitter = mitt<FlexTreeEvents>();
   private _lastUpdateAt = 0;
+  // 写事务上下文与完成 Promise：用于读守卫，避免外部读看到 write 事务的中间态
+  private _writeCtx = new AsyncLocalStorage<boolean>();
+  private _txPromise?: Promise<void>;
 
   constructor(
     tableName: string,
@@ -280,10 +284,22 @@ export class FlexTreeManager<
     }
     this._isWriting = true;
     this._emitter.emit("beforeWrite");
+    // 外部读守卫的完成信号：write 结束（提交/回滚）后 resolve，外部读据此解除等待
+    let releaseTx!: () => void;
+    this._txPromise = new Promise<void>((r) => {
+      releaseTx = r;
+    });
     try {
-      await fn(this as FlexTreeManager);
+      // adapter.transaction 包住整个 fn：多个 onExecuteSql 共享一个事务，任一失败整体回滚（跨方法原子）。
+      // _writeCtx.run 标记 write 调用链：fn 内的读（getStore 非空）直接放行看事务内状态；
+      // 外部并发读（getStore 空）由 _guardRead 等待此事务完成，避免读到中间态（脏读）。
+      await this.adapter.transaction(async () => {
+        await this._writeCtx.run(true, async () => fn(this as FlexTreeManager));
+      });
       this._lastUpdateAt = Date.now();
     } finally {
+      releaseTx();
+      this._txPromise = undefined;
       this._isWriting = false;
       this._emitter.emit("afterWrite");
     }
@@ -304,6 +320,17 @@ export class FlexTreeManager<
       throw new FlexTreeInvalidUpdateError(
         "The tree write operation must be performed within write(async ()=>{....})",
       );
+    }
+  }
+
+  /**
+   * 读守卫：write 进行中时，外部读（不在 write 调用链）等待 write 完成，避免读到事务中间态；
+   * write fn 内的读（_writeCtx.getStore 非空）直接放行——它要看同事务内的状态（操作间互相可见）。
+   */
+  protected async _guardRead() {
+    // getStore() === true 表示在 write 调用链内（内部读，放行）；否则为外部读，等待 write 完成
+    if (this._txPromise && this._writeCtx.getStore() !== true) {
+      await this._txPromise;
     }
   }
   getTree(options?: FlexTreeOptions) {

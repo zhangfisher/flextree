@@ -219,3 +219,29 @@ tree.toList();
 :::warning 提示
 `toList`和`toJson`方法均支持`level`参数，用于限定导出的级别。可以在`FlexTree`和`FlexTreeNode`中调用。
 :::
+
+## getTree
+
+`FlexTreeManager`提供了`getTree`方法，用于基于当前管理器构建一个内存中的`FlexTree`对象，从而可以使用`FlexTree`提供的丰富`API`（如`getByPath`、`find`、`toJson`、`toList`等）。
+
+```ts
+getTree(options?: FlexTreeOptions): FlexTree<Fields, KeyFields>
+```
+
+- **示例**
+
+```ts
+const tree = manager.getTree()
+await tree.load()           // FlexTree 需手动加载后才能访问
+tree.getByPath('/A/A-1')
+```
+
+:::tip 提示
+`FlexTreeManager`还提供了`toJson`与`toList`两个**异步**便捷方法，内部会自动通过`getTree`构建并加载树后再导出：
+
+```ts
+await manager.toJson()
+await manager.toList()
+```
+
+:::

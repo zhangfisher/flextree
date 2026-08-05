@@ -51,6 +51,8 @@ npm install flextree
 yarn add flextree
 // or
 pnpm add flextree
+// or
+bun add flextree
 ```
 
 ## 第2步：配置数据库适配器
@@ -65,6 +67,8 @@ npm install flextree-sqlite-adapter
 yarn add flextree-sqlite-adapter
 // or
 pnpm add flextree-sqlite-adapter
+// or
+bun add flextree-sqlite-adapter
 ```
 
 `flextree-sqlite-driver`是`flextree`的`sqlite3`数据库驱动，基于`sqlite3`数据库存储。
@@ -127,6 +131,10 @@ const orgManager = new FlexTreeManager("org",{
     adapter: sqliteAdapter     
 })
 ```
+
+:::tip 提示
+推荐使用单例方法 `FlexTreeManager.getInstance("org", { adapter: sqliteAdapter })` 创建管理器，相同表名会返回同一个实例。详见[管理器](../guide/manager.md)。
+:::
 
 ## 第5步：添加树节点
 

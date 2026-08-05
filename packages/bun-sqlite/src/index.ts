@@ -94,6 +94,12 @@ export default class BunSqliteAdapter implements IFlexTreeAdapter {
     return Object.values(result)[0] as T;
   }
 
+  /**
+   * 执行多条 SQL（不自带事务）。
+   *
+   * 原子性由外层 transaction 保证：独立调用时由 onExecuteSql 的 transaction 包裹，
+   * write(fn) 内由 write 的 transaction 包裹。exec 本身只负责顺序执行。
+   */
   async exec(sqls: string | string[]) {
     if (typeof sqls === "string") {
       sqls = [sqls];
@@ -102,9 +108,29 @@ export default class BunSqliteAdapter implements IFlexTreeAdapter {
       this.db.run(sql);
     }
   }
-  transaction(callback: () => void) {
-    this.db.transaction(() => {
-      callback();
-    })();
+  private _inTransaction = false;
+  /**
+   * 在数据库事务中执行异步回调。
+   *
+   * 用显式 BEGIN/COMMIT/ROLLBACK 包裹 callback：原子提交，抛错整体回滚。通过 await callback
+   * 等待异步操作完成，故 async exec 的错误能经 Promise 链正确触发 ROLLBACK（不依赖同步 throw）。
+   * 嵌套调用（事务内再开事务）时直接复用外层事务，不重复 BEGIN。
+   */
+  async transaction(callback: () => Promise<void>): Promise<void> {
+    if (this._inTransaction) {
+      await callback();
+      return;
+    }
+    this._inTransaction = true;
+    this.db.run("BEGIN");
+    try {
+      await callback();
+      this.db.run("COMMIT");
+    } catch (e) {
+      this.db.run("ROLLBACK");
+      throw e;
+    } finally {
+      this._inTransaction = false;
+    }
   }
 }

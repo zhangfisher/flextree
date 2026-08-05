@@ -127,5 +127,53 @@ const manager4 = FlexTreeManager.getInstance("a",{....})
 
 // manager1===manager2
 // manager3===manager4
+```
 
+- `getInstance`始终基于`tableName`返回同一个实例，相同表名不会重复创建。
+- 当不再需要某个单例时（例如测试隔离），可以使用`clearInstance`清除：
+
+```ts
+// 清除指定表名的单例
+FlexTreeManager.clearInstance("filesys")
+// 传入空值则清除所有单例
+FlexTreeManager.clearInstance()
+```
+
+## 事件
+
+`FlexTreeManager` 基于[`mitt`](https://github.com/developit/mitt)提供了事件机制，可以通过`on`/`off`/`emit`订阅、移除和触发事件。
+
+除了在写操作前后触发的`beforeWrite`与`afterWrite`外，还新增了一系列节点级事件，便于业务侧感知树的结构变更。
+
+| 事件 | 触发时机 | 载荷（payload） |
+| --- | --- | --- |
+| `beforeWrite` | 执行写操作之前 | 无 |
+| `afterWrite` | 执行写操作之后 | 无 |
+| `node:added` | 添加节点后 | `{ tree, nodes, at, pos }` |
+| `node:deleted` | 删除节点后 | `{ tree, node }` |
+| `node:cleared` | 清空树后 | `{ tree }` |
+| `node:updated` | 更新节点后 | `{ tree, node }` |
+| `node:moved` | 移动节点后 | `{ tree, from, to, pos }` |
+
+- **示例**
+
+```ts
+import { FlexTreeManager } from "flextree"
+
+const tree = FlexTreeManager.getInstance("tree", { adapter })
+
+// 监听节点添加事件
+tree.on("node:added", ({ nodes }) => {
+    console.log(`新增了 ${nodes.length} 个节点`)
+})
+
+// 监听节点删除事件
+tree.on("node:deleted", ({ node }) => {
+    console.log(`删除了节点 ${node.name}`)
+})
+
+// 移除监听
+const handler = ({ node }) => console.log("updated:", node.name)
+tree.on("node:updated", handler)
+tree.off("node:updated", handler)
 ```

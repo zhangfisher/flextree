@@ -21,11 +21,14 @@ export interface IFlexTreeAdapter {
 
   open: (config?: any) => Promise<any>;
   /**
-   * 在数据库事件中执行函数
-   * @param callback
-   * @returns
+   * 在事务中执行异步回调：callback 内的所有数据库操作（exec/getRows 等）原子提交，
+   * callback 抛错则整体回滚。callback 支持 async；嵌套调用（事务内再开事务）时直接复用外层事务。
+   *
+   * 这是跨方法/多操作原子性的承载者：write(fn) 用它包住 fn，fn 内多个 onExecuteSql 共享一个事务。
+   * @param callback 事务体（可为 async）
+   * @returns callback 完成（事务已提交/回滚）
    */
-  transaction: (callback: () => void) => void;
+  transaction: (callback: () => Promise<void>) => Promise<void>;
   /**
    * 返回数据库为类型，取值: "sqlite" | "mysql" | "postgresql" | "oracle" | "sqlserver";
    *

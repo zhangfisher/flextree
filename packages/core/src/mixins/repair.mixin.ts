@@ -249,54 +249,57 @@ export class RepairMixin<
    * repairTree 本身不感知 treeId，但通过展开原节点保留 treeId 等所有字段。
    */
   async repair(this: any): Promise<void> {
-    // 预计算转义后的字段名
-    const idField = this.escaper.escapeId(this.keyFields.id);
-    const levelField = this.escaper.escapeId(this.keyFields.level);
-    const leftField = this.escaper.escapeId(this.keyFields.leftValue);
-    const rightField = this.escaper.escapeId(this.keyFields.rightValue);
+    // repair 是独立的修复操作（允许在 write 外调用），内部走 write 复用完整的写机制：
+    // 事务（跨方法原子）+ _writeCtx（内部读放行）+ _txPromise（外部读隔离）+ _isWriting（写串行）。
+    await this.write(async () => {
+      // 预计算转义后的字段名
+      const idField = this.escaper.escapeId(this.keyFields.id);
+      const levelField = this.escaper.escapeId(this.keyFields.level);
+      const leftField = this.escaper.escapeId(this.keyFields.leftValue);
+      const rightField = this.escaper.escapeId(this.keyFields.rightValue);
 
-    // 1. 直接用 SQL 获取所有节点（树可能被破坏，不能用 getNodes）
-    const selectSql = this._sql(`
-      SELECT ${idField}, ${levelField}, ${leftField}, ${rightField}
-      FROM ${this.tableName}
-      WHERE {__TREE_ID__} 1=1
-      ORDER BY ${leftField}
-    `);
-    const nodes: Record<string, any>[] = await this.getRows(selectSql);
+      // 1. 直接用 SQL 获取所有节点（树可能被破坏，不能用 getNodes）
+      const selectSql = this._sql(`
+        SELECT ${idField}, ${levelField}, ${leftField}, ${rightField}
+        FROM ${this.tableName}
+        WHERE {__TREE_ID__} 1=1
+        ORDER BY ${leftField}
+      `);
+      const nodes: Record<string, any>[] = await this.getRows(selectSql);
 
-    if (nodes.length === 0) {
-      return;
-    }
+      if (nodes.length === 0) {
+        return;
+      }
 
-    // 2. 修复树结构（传入 treeId：单树表为空，多树表 repairTree 会将其注入结果节点）
-    const repairedNodes = repairTree(nodes, {
-      keyFields: this.keyFields,
-      tableName: this.tableName,
-      treeId: this.treeId,
+      // 2. 修复树结构（传入 treeId：单树表为空，多树表 repairTree 会将其注入结果节点）
+      const repairedNodes = repairTree(nodes, {
+        keyFields: this.keyFields,
+        tableName: this.tableName,
+        treeId: this.treeId,
+      });
+
+      // 3. 过滤出值发生变化的节点（repairTree 在值变化时写入 _level/_leftValue/_rightValue 元数据）
+      const changedNodes = repairedNodes.filter(
+        (node: Record<string, any>) =>
+          "_level" in node || "_leftValue" in node || "_rightValue" in node,
+      );
+
+      if (changedNodes.length === 0) {
+        return;
+      }
+
+      // 4. 更新变化节点的 level/leftValue/rightValue（复用本方法的事务）
+      const updateSqls = changedNodes.map((node: Record<string, any>) =>
+        this._sql(`
+          UPDATE ${this.tableName}
+          SET ${levelField} = ${this.escaper.escape(node[this.keyFields.level])},
+              ${leftField} = ${this.escaper.escape(node[this.keyFields.leftValue])},
+              ${rightField} = ${this.escaper.escape(node[this.keyFields.rightValue])}
+          WHERE {__TREE_ID__} ${idField} = ${this.escaper.escape(node[this.keyFields.id])}
+        `),
+      );
+
+      await this.onExecuteSql(updateSqls);
     });
-
-    // 3. 过滤出值发生变化的节点（repairTree 在值变化时写入 _level/_leftValue/_rightValue 元数据）
-    const changedNodes = repairedNodes.filter(
-      (node: Record<string, any>) =>
-        "_level" in node || "_leftValue" in node || "_rightValue" in node,
-    );
-
-    if (changedNodes.length === 0) {
-      return;
-    }
-
-    // 4. 在事务中更新变化节点的 level/leftValue/rightValue
-    //    onExecuteSql 内部封装 adapter.transaction，保证多条 UPDATE 原子执行
-    const updateSqls = changedNodes.map((node: Record<string, any>) =>
-      this._sql(`
-        UPDATE ${this.tableName}
-        SET ${levelField} = ${this.escaper.escape(node[this.keyFields.level])},
-            ${leftField} = ${this.escaper.escape(node[this.keyFields.leftValue])},
-            ${rightField} = ${this.escaper.escape(node[this.keyFields.rightValue])}
-        WHERE {__TREE_ID__} ${idField} = ${this.escaper.escape(node[this.keyFields.id])}
-      `),
-    );
-
-    await this.onExecuteSql(updateSqls);
   }
 }

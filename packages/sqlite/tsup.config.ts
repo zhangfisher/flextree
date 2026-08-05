@@ -14,5 +14,5 @@ export default defineConfig({
         'ts-mixer',
         'sqlstring',
     ],
-    external: ['bun:sqlite'],
+    external: ['bun:sqlite', 'better-sqlite3'],
 })

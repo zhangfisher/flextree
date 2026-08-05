@@ -30,6 +30,7 @@ export class UpdateNodeMixin<
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     node: Partial<TreeNode> | Partial<TreeNode>[],
   ) {
+    this._assertWriteable();
     // 预计算转义后的字段名以提高性能和代码可读性
     const idField = this.escaper.escapeId(this.keyFields.id);
 

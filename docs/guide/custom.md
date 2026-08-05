@@ -34,6 +34,7 @@ const tree = new FlexTreeManager<{},
 
 - 以上将`id`字段改为`pk`，`treeId`字段改为`tree`，`name`字段改为`title`，`leftValue`字段改为`lft`，`rightValue`字段改为`rgt`，`level`字段改为`lv`。
 - 通过泛型参数重新声明关键字段的名称和类型。
+- `treeId`字段的类型可以是`number`或`string`。当业务上树的标识为字符串（如`"org"`、`"dept"`）时，可声明为`treeId:['tree',string]`。
 
 
 ## 扩展字段

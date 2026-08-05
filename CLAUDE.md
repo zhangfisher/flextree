@@ -146,13 +146,14 @@ FlexTreeManager 使用 Mixin 模式将功能模块化，每个 Mixin 负责特�
 
 ```typescript
 interface IFlexTreeAdapter {
-    ready: boolean
+    connected: boolean                                  // 是否已连接
+    type?: DatabaseType                                 // 数据库方言: sqlite/mysql/postgresql/oracle/sqlserver，默认 postgresql
     bind: (treeManager: FlexTreeManager) => void
-    exec: (sqls: string | string[]) => Promise<void>
+    exec: (sqls: string | string[]) => Promise<void>    // 执行写 SQL（自身不自带事务）
     getRows: (sql: string) => Promise<any[]>
-    getScalar: <T>(sql: string) => Promise<T>
+    getScalar: <T = number>(sql: string) => Promise<T>
     open: (config?: any) => Promise<any>
-    db: any
+    transaction: (callback: () => Promise<void>) => Promise<void>  // 事务：write(fn) 用它包裹，承载跨操作原子性
 }
 ```
 
