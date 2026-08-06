@@ -26,10 +26,10 @@
     },
     "devDependencies": {
         "@types/bun": "^1.3.14",
-        "flextree": "workspace:^"
+        "flextree": "^3"
     },
     "peerDependencies": {
         "typescript": "^6",
-        "flextree": "workspace:^"
+        "flextree": "^3"
     }
 }

@@ -29,19 +29,16 @@
     "scripts": {
         "build": "tsup"
     },
-    "dependencies": {
-        "flextree": "workspace:^"
-    },
     "devDependencies": {
         "@types/better-sqlite3": "^7.6.11",
         "@types/bun": "^1.1.6",
-        "flextree": "workspace:^",
+        "flextree": "^3",
         "tsup": "^8.1.0",
         "typescript": "^5.8.3"
     },
     "peerDependencies": {
         "bun": ">=1.0.0",
-        "flextree": "workspace:^"
+        "flextree": "^3"
     },
     "peerDependenciesMeta": {
         "bun": {

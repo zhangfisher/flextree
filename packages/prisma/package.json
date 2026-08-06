@@ -29,13 +29,13 @@
     },
     "peerDependencies": {
         "@prisma/client": "^5.17.0",
-        "flextree": "workspace:^",
+        "flextree": "^3",
         "prisma": "^5.17.0"
     },
     "devDependencies": {
         "@prisma/client": "^5.17.0",
         "@types/better-sqlite3": "^7.6.11",
-        "flextree": "workspace:^",
+        "flextree": "^3",
         "prisma": "^5.17.0",
         "tsup": "^8.1.0",
         "typescript": "^5.8.3"

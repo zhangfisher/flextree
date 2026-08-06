@@ -7,7 +7,7 @@
     "homepage": "https://zhangfisher.github.io/flextree/",
     "repository": {
         "type": "git",
-        "url": "git@github.com:zhangfisher/flextree.git"
+        "url": "git+ssh://git@github.com/zhangfisher/flextree.git"
     },
     "keywords": [
         "flextree",
