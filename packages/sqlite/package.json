@@ -40,7 +40,6 @@
         "typescript": "^5.8.3"
     },
     "peerDependencies": {
-        "better-sqlite3": "^11.1.2",
         "bun": ">=1.0.0",
         "flextree": "workspace:^"
     },
