@@ -1,50 +1,75 @@
 # flextree
 
+## 3.0.0
+
+### Major Changes
+
+-   0b71346: 3.0 重大升级：围绕数据安全、数据库兼容性与开发体验。
+
+    主要变更：
+
+    -   自研多数据库 SQL 转义器（移除 sqlstring 依赖，支持 mysql/postgresql/sqlite/oracle/sqlserver）
+    -   事务化写入 + 并发脏读修复（适配器新增 transaction()，AsyncLocalStorage 上下文隔离 + 读守卫 \_guardRead）
+    -   单例模式（getInstance/clearInstance，singleton 选项默认开启）
+    -   树遍历 forEach（DFS/BFS）、树修复 repair/repairTree
+    -   节点事件系统（node:added/deleted/cleared/updated/moved）
+    -   嵌套节点批量添加、FlexTree 懒加载、树导出（getTree/toJson/toList）、细粒度校验
+    -   新增 Bun SQLite 适配器（flextree-bun-sqlite-adapter）
+    -   工具链迁移至 Bun 1.3.14、TypeScript 6、Bun Test API
+
+    破坏性变更：
+
+    -   IFlexTreeAdapter: ready → connected，新增必需方法 transaction(callback)，新增可选 type 字段
+    -   Manager: ready() → connected()，assertDriverReady() → assertConnected()
+    -   移除 sqlstring 依赖，TypeScript 版本要求提升至 6
+
+    完整说明见根 CHANGELOG.md。
+
 ## 2.0.4
 
 ### Patch Changes
 
-- 3c5317c: 修复 isValidNode 的判定条件错误
+-   3c5317c: 修复 isValidNode 的判定条件错误
 
 ## 2.0.3
 
 ### Patch Changes
 
-- a1b13b0: 修复 getNodeData 中对无效节点数据的判断逻辑错误
+-   a1b13b0: 修复 getNodeData 中对无效节点数据的判断逻辑错误
 
 ## 2.0.2
 
 ### Patch Changes
 
-- 7e63e70: 当`node.get`输入条件函数时，包括当前节点
+-   7e63e70: 当`node.get`输入条件函数时，包括当前节点
 
 ## 1.1.1
 
 ### Patch Changes
 
-- 827f089: fix tree.get
+-   827f089: fix tree.get
 
 ## 1.1.0
 
 ### Minor Changes
 
-- f01b923: 新增加 foreach 方法用于遍历树
+-   f01b923: 新增加 foreach 方法用于遍历树
 
 ## 1.0.3
 
 ### Patch Changes
 
-- b63c6b0: 修复 node typescript 类型
+-   b63c6b0: 修复 node typescript 类型
 
 ## 1.0.2
 
 ### Patch Changes
 
-- 1cd6626: - [fix] 优化类型
-  - [feat] 将`node.data`更名为`node.fields`
+-   1cd6626: - [fix] 优化类型
+    -   [feat] 将`node.data`更名为`node.fields`
 
 ## 1.0.1
 
 ### Patch Changes
 
-- 6e5ead5: initial release
+-   6e5ead5: initial release
