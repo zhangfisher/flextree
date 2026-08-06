@@ -40,7 +40,7 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        run: bun install --omit=peer
+        run: bun install --omit=peer --ignore-scripts
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
