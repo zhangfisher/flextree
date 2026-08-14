@@ -6,15 +6,28 @@ Moving a node is a data write operation and must be performed inside the `write`
 
 ## Moving a Node
 
-To move a node from one location to another, use the `move` method.
+To move a node from one location to another, use the `moveNode` method.
 
 ```ts
 async moveNode(
     node: NodeId | TreeNode, 
     toNode?: NodeId | TreeNode, 
-    pos: FlexNodeRelPosition = FlexNodeRelPosition.NextSibling
+    posOrOptions?: FlexNodeRelPosition | FlexTreeMoveOptions
 ):Promise<void>
 ```
+
+The third parameter can be either a `pos` enum (legacy style, kept for backward compatibility) or an options object:
+
+```ts
+interface FlexTreeMoveOptions {
+    pos?: FlexNodeRelPosition          // Relative position, defaults to NextSibling
+    treeId?: TreeId                    // Target tree for cross-tree moves, see "Cross-Tree Move"
+}
+```
+
+:::warning Note
+When `pos` is omitted, it defaults to `NextSibling` (next sibling), **not** `LastChild`.
+:::
 
 - **Parameters**
 
@@ -22,7 +35,7 @@ async moveNode(
 | --- | --- | --- | --- |
 | `node` | NodeId \| TreeNode| None | Node `id` or node object |
 | `toNode` | NodeId \| TreeNode | null | Optional. Specifies the target node |
-| `pos` | FlexNodeRelPosition | FlexNodeRelPosition.NextSibling | Optional. Move position |
+| `posOrOptions` | FlexNodeRelPosition \| FlexTreeMoveOptions | NextSibling | Optional. Move position or options object |
 
 The following uses a simple tree to illustrate node move operations:
 
@@ -54,11 +67,9 @@ await tree.write(async ()=>{
     const anode = await tree.findNode({name:"A"})
     const bnode = await tree.findNode({name:"B"})
     // Move node A under node B
-    await tree.moveNode(anode,bnode)      // [!code ++]
-    // LastChild is the default value, equivalent to the line above
-    await tree.moveNode(anode,bnode,LastChild)// [!code ++]
+    await tree.moveNode(anode,bnode,LastChild)      // [!code ++]
 })
-``` 
+```
 
 The tree structure after the move is as follows:
 
@@ -216,7 +227,8 @@ The `canMoveNode` method is used to determine whether a node can be moved.
 ```ts
 async canMoveTo(
     node: NodeId | TreeNode, 
-    toNode?: NodeId | TreeNode
+    toNode?: NodeId | TreeNode,
+    options?: FlexTreeMoveOptions
 ):Promise<boolean>
 
 ```
@@ -227,6 +239,7 @@ async canMoveTo(
 | --- | --- | --- | --- |
 | `node` | NodeId \| TreeNode | None | Node `id` or node object |
 | `toNode` | NodeId \| TreeNode | None | Target node `id` or node object |
+| `options` | FlexTreeMoveOptions | None | Optional. `treeId` specifies the target tree (cross-tree pre-check, same semantics as `moveNode`) |
 
 - **Return Value**
 
@@ -238,4 +251,97 @@ async canMoveTo(
 - **Notes**
 
     - In general, any node cannot be moved into any of its descendant nodes.
+    - For cross-tree pre-checks: moving the root node returns `true` (equivalent to deleting the source tree, see "Moving the Root Node Across Trees"); if `toNode` is not found in the target tree, an error is thrown.
     - The `moveNode/moveUpNode/moveDownNode` methods above already perform this check internally, so you do not need to call it additionally.
+
+## Cross-Tree Move
+
+In a multi-tree table scenario, you can move a node (along with all its descendants) to **another tree** via `options.treeId`:
+
+```ts
+import { FlexTreeManager,LastChild } from 'flextree';
+// tree1 and tree2 manage different trees in the same multi-tree table
+const tree1 = new FlexTreeManager("org",{ adapter, treeId:1 })
+const tree2 = new FlexTreeManager("org",{ adapter, treeId:2 })
+
+await tree1.write(async ()=>{
+    const anode = await tree1.findNode({name:"A"})
+    const cnode = await tree2.findNode({name:"C"})
+    // Move subtree A of tree 1 as the last child of node C in tree 2
+    await tree1.moveNode(anode,cnode,{ treeId:2, pos:LastChild })      // [!code ++]
+})
+```
+
+- **Notes**
+
+    - `treeId` specifies the **target tree**; `toNode` then points to a node in that tree (either an `id` or a node object).
+    - **The direction is one-way**: you can only move nodes **out of** the current tree into another tree, not the other way around — nodes of another tree do not exist in the current `manager` (using one as the source throws a NotFound error). For the reverse direction, use a manager on the target tree side.
+    - After the move, the `treeId`, `level`, `leftValue`, and `rightValue` of all nodes in the subtree are recalculated for the target tree.
+    - A cross-tree move emits two events: first `node:deleted` (source-tree view — the node is removed from the source tree), then `node:moved` (with `toTree` pointing to the target tree).
+    - When `treeId` equals the current tree, it is treated as a same-tree move (same as omitting it); providing `treeId` in single-tree mode throws an error.
+    - Sibling positions (`NextSibling`/`PreviousSibling`) are not allowed when the target is the **root node of the target tree** (a root has no siblings; same rule as same-tree moves).
+    - A cross-tree move completes atomically with a fixed set of `SQL` statements — the number of database accesses is independent of the subtree size.
+
+### Moving Out as a New Tree
+
+When performing a cross-tree move with `toNode` **omitted**, the `node` and its subtree are moved out to become the **root of a new tree** specified by `treeId`:
+
+```ts
+await tree1.write(async ()=>{
+    const anode = await tree1.findNode({name:"A"})
+    // Move subtree A out as a new tree with treeId=3, A becomes its root
+    await tree1.moveNode(anode,undefined,{ treeId:3 })      // [!code ++]
+})
+```
+
+- **Notes**
+
+    - After the move, `node` becomes the root of the new tree (`level=0`, `leftValue=1`); the internal structure of the subtree is preserved.
+    - In this scenario `pos` is **ineffective** (a brand-new tree has no destination reference node; it is ignored if provided).
+    - The target `treeId` must **not already have a tree** — otherwise a `Tree already exists` error is thrown.
+    - This also applies to the source root node: equivalent to "relocating" the entire tree to a new `treeId` (the original manager becomes invalid).
+    - Event order is the same as cross-tree moves: first `node:deleted` (source-tree view), then `node:moved`.
+
+### Moving the Root Node Across Trees (Equivalent to Deleting the Source Tree)
+
+Moving the **root node** across trees is allowed — the entire source tree (the root and all its descendants) is merged into the target tree:
+
+```ts
+await tree1.write(async ()=>{
+    const root = await tree1.getRoot()
+    const cnode = await tree2.findNode({name:"C"})
+    // Merge the entire tree1 into tree2 as the last child of C
+    await tree1.moveNode(root,cnode,{ treeId:2, pos:LastChild })      // [!code ++]
+})
+```
+
+:::danger Warning
+Once this operation succeeds, **the tree managed by tree1's manager has been deleted**:
+
+- Any subsequent operation on that `manager` will **fail** — reads return empty results (`getNodes()` returns `[]`, `getRoot()` returns `null`), and write operations (such as `addNodes`/`moveNode`/`deleteNode`) throw errors because the root node no longer exists.
+- To continue using that `treeId`, you must first call `createRoot()` again to create a new tree.
+- Likewise, you cannot move the root node of one tree to the previous or next sibling position of the **target tree's root node** (a root has no siblings).
+:::
+
+## node:moved Event
+
+The `node:moved` event is emitted after a move completes:
+
+```ts
+tree.on("node:moved",(e)=>{
+    // e.tree   the source tree when the move was initiated
+    // e.toTree the tree where the destination lives (=== e.tree for same-tree moves)
+    // e.from   the moved node
+    // e.to     the destination reference node
+    // e.pos    the relative position
+})
+```
+
+**A cross-tree move additionally emits `node:deleted` first** (source-tree view — the node and its descendants are removed from the source tree):
+
+```ts
+tree.on("node:deleted",(e)=>{
+    // e.tree  the source tree
+    // e.node  the removed node (subtree root)
+})
+```

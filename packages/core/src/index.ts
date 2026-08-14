@@ -11,3 +11,4 @@ export * from "./utils/forEachNestTree";
 export * from "./mixins/forEach.mixin";
 export * from "./mixins/repair.mixin";
 export * from "./mixins/copy.mixin";
+export type { FlexTreeMoveOptions } from "./mixins/move.mixin";

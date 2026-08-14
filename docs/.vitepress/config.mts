@@ -19,16 +19,21 @@ export default defineConfig({
                 // https://vitepress.dev/reference/default-theme-config
                 nav: [
                     { text: '首页', link: '/' },
-                    { text: '指南', link: '/guide' },
+                    { text: '指南', link: '/intro/about' },
                     { text: '开源推荐', link: 'https://zhangfisher.github.io/repos/' }
                 ],
                 sidebar: [
-                    { text: '关于', link: '/intro/about' },
-                    { text: '快速入门', link: '/intro/get-started' },
-                    { text: '工作原理', link: '/intro/principle' },
-                    { text: '功能优势', link: '/intro/features' },
-                    { text: '常见问题', link: '/intro/question' },
-                    { text: '更新历史', link: '/intro/history' },
+                    {   
+                        text: '开始',
+                        items:[
+                            { text: '关于', link: '/intro/about'},
+                            { text: '快速入门', link: '/intro/get-started' },
+                            { text: '工作原理', link: '/intro/principle' },
+                            { text: '功能优势', link: '/intro/features' },
+                            { text: '常见问题', link: '/intro/question' },
+                            { text: '更新历史', link: '/intro/history' }
+                        ]
+                    },                    
                     {
                         text: '指南',
                         items: [

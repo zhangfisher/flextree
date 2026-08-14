@@ -94,7 +94,13 @@ export type FlexTreeEvents = {
   "node:deleted": { tree: any; node: any }; // 删除节点
   "node:cleared": { tree: any }; // 清空节点
   "node:updated": { tree: any; node: any }; // 清空节点
-  "node:moved": { tree: any; from: any; to: any; pos: FlexNodeRelPosition }; // 移动节点
+  "node:moved": {
+    tree: any; // 移动发起时的源树
+    toTree: any; // 落点所在树（同树移动时 === tree）
+    from: any;
+    to: any;
+    pos: FlexNodeRelPosition;
+  }; // 移动节点
 };
 
 // 两种导出格式, nested: 层级嵌套结构,使用children表示子节点集; pid: 使用pid表示父节点id
