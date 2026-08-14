@@ -42,7 +42,8 @@ export default defineConfig({
                                     { text: '添加节点', link: '/guide/add' },
                                     { text: '删除节点', link: '/guide/delete' },
                                     { text: '移动节点', link: '/guide/move' },
-                                    { text: '更新节点', link: '/guide/update' }
+                                    { text: '更新节点', link: '/guide/update' },
+                                    { text: '复制节点', link: '/guide/copy' }
                                 ]
                             },
                             { text: '查找节点', link: '/guide/find' },
@@ -102,7 +103,8 @@ export default defineConfig({
                                     { text: 'Add Node', link: '/en/guide/add' },
                                     { text: 'Delete Node', link: '/en/guide/delete' },
                                     { text: 'Move Node', link: '/en/guide/move' },
-                                    { text: 'Update Node', link: '/en/guide/update' }
+                                    { text: 'Update Node', link: '/en/guide/update' },
+                                    { text: 'Copy Node', link: '/en/guide/copy' }
                                 ]
                             },
                             { text: 'Find Node', link: '/en/guide/find' },

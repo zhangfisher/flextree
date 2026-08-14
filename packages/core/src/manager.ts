@@ -23,6 +23,7 @@ import type {
 import { MoveNodeMixin } from "./mixins/move.mixin";
 import { DeleteNodeMixin } from "./mixins/delete.mixin";
 import { AddNodeMixin } from "./mixins/add.mixin";
+import { CopyNodeMixin } from "./mixins/copy.mixin";
 import { IsNodeMixin } from "./mixins/is.mixin";
 import { SqlMixin } from "./mixins/sql.mixin";
 import { GetNodeMixin } from "./mixins/get.mixin";
@@ -60,6 +61,7 @@ export interface FlexTreeManager<
     MoveNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     DeleteNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     AddNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+    CopyNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     IsNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     SqlMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     GetNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
@@ -86,6 +88,7 @@ export interface FlexTreeManager<
   MoveNodeMixin,
   DeleteNodeMixin,
   AddNodeMixin,
+  CopyNodeMixin,
   IsNodeMixin,
   SqlMixin,
   GetNodeMixin,
