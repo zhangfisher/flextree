@@ -36,6 +36,15 @@ export interface ForEachOptions {
    * @default true
    */
   includeStartNode?: boolean;
+
+  /**
+   * 是否进入回收站（bin 及其后代）
+   * 默认 false：遍历不访问 bin、不进入其子树（getChildren 在数据库端排除）
+   * 注意：startFrom 本身不改变视角——默认视角下以 bin/站内节点为起点时，
+   * 访问起始节点但 children 为空、不下降；要遍历回收站内容必须显式置 true
+   * @default false
+   */
+  includeRecyclebin?: boolean;
 }
 
 export class ForEachMixin<
@@ -94,15 +103,22 @@ export class ForEachMixin<
     callback: (node: TreeNode, children: TreeNode[]) => boolean,
     options: ForEachOptions = {},
   ): Promise<void> {
-    const { mode = "dfs", startFrom, maxLevel = Infinity, includeStartNode = true } = options;
+    const {
+      mode = "dfs",
+      startFrom,
+      maxLevel = Infinity,
+      includeStartNode = true,
+      includeRecyclebin = false,
+    } = options;
 
-    // 确定起始节点
+    // 确定起始节点（startFrom 不改变视角：默认视角下站内节点经 getNode 过滤抛 NotFound；
+    // 传节点对象时按"对象即凭证"原则放行——children 仍按 flag 过滤，不下降）
     let startNode: TreeNode;
     if (startFrom) {
       if (typeof startFrom === "object" && startFrom !== null) {
         startNode = startFrom as TreeNode;
       } else {
-        const node = await this.getNode(startFrom as NodeId);
+        const node = await this.getNode(startFrom as NodeId, { includeRecyclebin });
         if (!node) {
           throw new FlexTreeError(`指定的起始节点不存在: ${startFrom}`);
         }
@@ -120,9 +136,10 @@ export class ForEachMixin<
       await this._forEachDFS(callback, startNode, true, startNode[this.keyFields.level] as number, {
         maxLevel,
         includeStartNode,
+        includeRecyclebin,
       });
     } else {
-      await this._forEachBFS(callback, startNode, { maxLevel, includeStartNode });
+      await this._forEachBFS(callback, startNode, { maxLevel, includeStartNode, includeRecyclebin });
     }
   }
 
@@ -135,9 +152,9 @@ export class ForEachMixin<
     currentNode: TreeNode,
     isStartNode: boolean,
     currentLevel: number,
-    options: { maxLevel: number; includeStartNode: boolean },
+    options: { maxLevel: number; includeStartNode: boolean; includeRecyclebin: boolean },
   ): Promise<boolean> {
-    const { maxLevel, includeStartNode } = options;
+    const { maxLevel, includeStartNode, includeRecyclebin } = options;
 
     // 检查层级限制
     if (currentLevel > maxLevel) {
@@ -148,8 +165,8 @@ export class ForEachMixin<
     const shouldIncludeNode = !isStartNode || includeStartNode;
 
     if (shouldIncludeNode) {
-      // 获取子节点
-      const children = (await this.getChildren(currentNode)) as TreeNode[];
+      // 获取子节点（回收站过滤透传：默认视角下不进入 bin 子树）
+      const children = (await this.getChildren(currentNode, { includeRecyclebin })) as TreeNode[];
 
       // 调用 callback
       const shouldContinue = callback(currentNode, children);
@@ -173,7 +190,7 @@ export class ForEachMixin<
       }
     } else {
       // 如果不包含起始节点，直接遍历子节点
-      const children = (await this.getChildren(currentNode)) as TreeNode[];
+      const children = (await this.getChildren(currentNode, { includeRecyclebin })) as TreeNode[];
       for (const child of children) {
         const childLevel = child[this.keyFields.level] as number;
         const shouldContinue = await this._forEachDFS(
@@ -199,9 +216,9 @@ export class ForEachMixin<
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     callback: (node: TreeNode, children: TreeNode[]) => boolean,
     startNode: TreeNode,
-    options: { maxLevel: number; includeStartNode: boolean },
+    options: { maxLevel: number; includeStartNode: boolean; includeRecyclebin: boolean },
   ): Promise<void> {
-    const { maxLevel, includeStartNode } = options;
+    const { maxLevel, includeStartNode, includeRecyclebin } = options;
 
     type QueueItem = { node: TreeNode; level: number };
     const queue: QueueItem[] = [];
@@ -211,7 +228,7 @@ export class ForEachMixin<
       queue.push({ node: startNode, level: startNode[this.keyFields.level] as number });
     } else {
       // 如果不包含起始节点，将其子节点加入队列
-      const children = (await this.getChildren(startNode)) as TreeNode[];
+      const children = (await this.getChildren(startNode, { includeRecyclebin })) as TreeNode[];
       for (const child of children) {
         queue.push({ node: child as TreeNode, level: child[this.keyFields.level] as number });
       }
@@ -226,8 +243,8 @@ export class ForEachMixin<
         continue; // 超过最大层级，跳过
       }
 
-      // 获取子节点
-      const children = (await this.getChildren(node)) as TreeNode[];
+      // 获取子节点（回收站过滤透传）
+      const children = (await this.getChildren(node, { includeRecyclebin })) as TreeNode[];
 
       // 调用 callback
       const shouldContinue = await callback(node, children);

@@ -4,6 +4,24 @@
 
 ## Language
 
+### 树形态
+
+**Multi-Root Tree（多根树）**:
+用户视角下拥有多个顶层节点的树。以"隐藏根 + 过滤"实现：物理上仍是单根嵌套集树，顶层节点实为隐藏根的子节点，此细节对外不可见。公共入口为 `MultiRootFlexTreeManager`。
+_Avoid_: 森林、Forest、多树、树的集合；类名 MultipleFlexTreeManager、MultiTreeManager（指向多物理树模型）
+
+**Hidden Root（隐藏根）**:
+多根树内部自动创建并维护的真实根节点（level=0、leftValue=1），对外不可见。承担"用户根的父节点"角色，使所有单树操作原样可用。
+_Avoid_: 虚拟根、超级根
+
+**User Root（用户根）**:
+用户可见的顶层节点。物理 level=1，对外暴露为 level=0；用户根之间是真实的兄弟关系（同一隐藏根之子），无需模拟。
+_Avoid_: 根节点（与 Hidden Root 歧义时）、一级节点
+
+**Level Normalization（level 归一化）**:
+读写链路上对 level 做 -1/+1 映射：读出的用户根显示 level=0，写入的层级语义按用户视角换算。与隐藏根过滤必须同链路成对出现。
+_Avoid_: 层级偏移
+
 ### 节点操作
 
 **Source Node（源节点）**:
@@ -25,3 +43,29 @@ _Avoid_: 新节点、副本节点
 **Position Attributes（位置属性）**:
 由落点决定、不属于被复制业务数据的字段：treeId、level、leftValue、rightValue。复制时按 Destination 重新计算，不照抄源节点。
 _Avoid_: 结构字段
+
+### 回收站
+
+**Recycle Bin（回收站）**:
+由 `recyclebin` 配置启用、悬于根节点之下的逻辑删除区。物理上是一个普通节点（Bin Node），其子树承载被逻辑删除的节点。未配置即不存在，功能整体关闭。
+_Avoid_: Trash、垃圾箱、软删除区
+
+**Bin Node（回收站节点）**:
+回收站的物理载体：恒为根节点的子节点（位置不变量：始终在根的孩子层，顺序不限、可在其中重排；不允许移往树中其他位置或跨树）。配置时指定 id 与 name。默认视角下与其后代一并不可见（Logical Invisibility）；`includeRecyclebin=true` 时是彻头彻尾的普通节点——可见、可增删改。`clearRecycleBin()` 删除其全部子孙、保留自身。
+_Avoid_: 回收站根、特殊节点、系统节点
+
+**Recycled Node（被回收节点）**:
+位于 Bin Node 子树内的节点（不含 Bin 自身），处于逻辑删除状态。level 为进站时重新编号后的实际值，不保留原位层级。
+_Avoid_: 已删除节点、软删除节点
+
+**Logical Deletion（逻辑删除）**:
+`deleteNode(node, {recycle: true})` 的语义：子树经 moveNode 进入回收站，结构保持、数据保留，但从逻辑树上消失。逻辑删除的解除（恢复）由开发者自行以 `includeRecyclebin=true` 读取后 moveNode 移出完成。事件遵循**状态跃迁规则**：`node:deleted`（带 `recycled: true`）仅在「站外→站内」跃迁时发出；站内重排、恢复移出、向站内新增节点只发各自原生事件。
+_Avoid_: 软删除、假删除（假删除另有所指——moveNode 的 detach 中间态）
+
+**Logical Invisibility（逻辑不存在）**:
+`includeRecyclebin=false`（默认）时 Bin 及其后代的统一表现：在**所有** API（find/get/delete/update/forEach/copy/move/toJson/toList）中与一个不存在的节点表现完全一致——读查不到、写抛 NotFound、遍历不进入、导出不含。应用需要展示回收站时由开发者显式传 `includeRecyclebin=true`。
+_Avoid_: 隐藏（Hidden Root 的隐藏是对外不可见但始终存在于管理器内部，两者机制不同）
+
+**includeRecyclebin**:
+所有公共 API 的统一开关。`false`（默认）：Bin 及其后代逻辑不存在；`true`：Bin 及其后当普通节点参与一切操作。
+_Avoid_: withTrash、includeDeleted

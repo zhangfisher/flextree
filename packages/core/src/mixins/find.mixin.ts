@@ -23,16 +23,18 @@ export class FindNodeMixin<
    * findNode({name:"A"})          根据name查找节点
    * findNode({name:"A",level:1})  根据组合AND条件查找节点
    *
+   * 启用回收站时默认排除 bin 及其后代（数据库端过滤），includeRecyclebin=true 时包含
    */
   async findNode(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     node: NodeId | Partial<TreeNode>,
+    options?: { includeRecyclebin?: boolean },
   ): Promise<TreeNode | null> {
     let nodes: TreeNode[] = [];
     if (typeof node === "object") {
-      nodes = await this.findNodes(node as Partial<TreeNode>);
+      nodes = await this.findNodes(node as Partial<TreeNode>, options);
     } else {
-      nodes = await this.findNodes({ [this.keyFields.id]: node } as Partial<TreeNode>);
+      nodes = await this.findNodes({ [this.keyFields.id]: node } as Partial<TreeNode>, options);
     }
     if (nodes.length === 0) {
       return null;
@@ -47,21 +49,24 @@ export class FindNodeMixin<
    * findNodes({name:"A"})          根据name查找节点
    * findNodes({name:"A",level:1})  根据组合AND条件查找节点
    *
+   * 启用回收站时默认排除 bin 及其后代（数据库端过滤），includeRecyclebin=true 时包含
    */
   async findNodes(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     condition: Partial<TreeNode>,
+    options?: { includeRecyclebin?: boolean },
   ): Promise<TreeNode[]> {
     const keys = Object.keys(condition);
     if (keys.length === 0) {
       throw new FlexTreeError("Invalid condition");
     }
+    const binFilter = await this._buildBinFilter(!!options?.includeRecyclebin);
     const sql = this._sql(`select * from ${this.tableName}
             where  {__TREE_ID__} ${keys
               .map((key) => {
                 return `${this.escaper.escapeId(key)}=${this.escaper.escape(condition[key])}`;
               })
-              .join(" AND ")}
+              .join(" AND ")}${binFilter}
         `);
     return await this.getRows(sql);
   }

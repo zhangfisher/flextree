@@ -7,7 +7,7 @@ import type {
   FlexTreeNodeInput,
 } from "../types";
 import { FlexNodeRelPosition } from "../types";
-import { FlexTreeError } from "../errors";
+import { FlexTreeError, FlexTreeNodeNotFoundError } from "../errors";
 import { forEachNestTree } from "../utils/forEachNestTree";
 
 export class AddNodeMixin<
@@ -322,6 +322,7 @@ export class AddNodeMixin<
       at?: NodeId | TreeNode | null;
       pos?: FlexNodeRelPosition;
       childrenField?: Children;
+      includeRecyclebin?: boolean;
     },
   ): Promise<void>;
 
@@ -350,6 +351,7 @@ export class AddNodeMixin<
     let atNode: NodeId | TreeNode | null | undefined;
     let actualPos: FlexNodeRelPosition = FlexNodeRelPosition.LastChild;
     let childrenField: string | undefined;
+    let includeRecyclebin = false;
 
     // 判断使用哪种调用方式
     if (typeof optionsOrAt === "object" && optionsOrAt !== null) {
@@ -357,10 +359,19 @@ export class AddNodeMixin<
       atNode = optionsOrAt.at;
       actualPos = optionsOrAt.pos ?? FlexNodeRelPosition.LastChild;
       childrenField = optionsOrAt.childrenField;
+      includeRecyclebin = !!optionsOrAt.includeRecyclebin;
     } else {
       // 旧的直接参数模式（向后兼容）
       atNode = optionsOrAt;
       actualPos = pos ?? FlexNodeRelPosition.LastChild;
+    }
+
+    // 回收站门控：默认视角下落点在站内 → NotFound（对象即凭证：对象路径放行）
+    if (this.recycleBinEnabled && !includeRecyclebin && typeof atNode !== "object") {
+      const targetNode = await this.getNodeData(atNode);
+      if (await this.isInRecycleBin(targetNode)) {
+        throw new FlexTreeNodeNotFoundError();
+      }
     }
 
     // 获取目标节点信息

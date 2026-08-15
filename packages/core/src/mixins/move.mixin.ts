@@ -27,6 +27,14 @@ export interface FlexTreeMoveOptions<_TreeNode = any, TreeId = any> {
    * 等于当前 treeId 时视为同树移动（忽略）；单树模式下提供将抛错。
    */
   treeId?: TreeId;
+  /**
+   * 回收站视角开关（启用回收站后生效）：
+   * - 默认 false：node/toNode 任一在 bin 子树内（含 bin 自身，id 路径）抛 NotFound
+   * - true：站内节点可移动（站内重排）、可移出（恢复）、可移入（手动回收）
+   *
+   * 注意：bin 自身作为移动源时保持位置不变量——落点须仍在根孩子层，跨树迁出被禁止
+   */
+  includeRecyclebin?: boolean;
 }
 
 /**
@@ -96,6 +104,19 @@ export class MoveNodeMixin<
       await this._getMoveDestNode(toNode as NodeId | TreeNode, isCrossTree ? destTreeId : undefined)
     ) as unknown as TreeNode;
 
+    // 回收站门控（与 moveNode 同视角，保证预检与执行结论一致）：
+    // 默认视角下源或落点在站内 → 不允许（moveNode 执行时抛 NotFound）。
+    // 传节点对象时按"对象即凭证"放行（能拿到引用必然已进入回收站视角）
+    if (this.recycleBinEnabled && !options?.includeRecyclebin && !isCrossTree) {
+      const srcIsObject = typeof node === "object";
+      const destIsObject = toNode !== undefined && typeof toNode === "object";
+      const srcInBin = srcIsObject ? false : await this.isInRecycleBin(srcNode);
+      const destInBin = destIsObject ? false : await this.isInRecycleBin(targetNode);
+      if (srcInBin || destInBin) {
+        return false;
+      }
+    }
+
     let isAllow: boolean = true;
     //
     if (
@@ -105,7 +126,9 @@ export class MoveNodeMixin<
       if (targetNode[this.keyFields.id] === srcNode[this.keyFields.id]) {
         isAllow = false;
       } else {
-        const r = await this.getNodeRelation(targetNode, node);
+        // 传已解析的 srcNode（对象路径）：原始参数若是 id，getNodeRelation 内部
+        // 会经 getNode 重查——启用回收站时站内节点被默认过滤而误判
+        const r = await this.getNodeRelation(targetNode, srcNode);
         if (r === FlexTreeNodeRelation.Descendants) {
           isAllow = false;
         }
@@ -806,6 +829,8 @@ export class MoveNodeMixin<
     const isCrossTree = this._resolveCrossTree(destTreeId);
     // 跨树 + toNode 缺省：迁出为新树（node 成为该 treeId 的根），pos 无效
     const isNewTree = isCrossTree && toNode === undefined;
+    // 回收站视角（启用回收站后生效；对象即凭证：仅 id 路径做门控点查）
+    const includeBin = !!options.includeRecyclebin;
 
     if (!node || (!toNode && !isNewTree)) {
       throw new Error("invalid node param");
@@ -818,6 +843,41 @@ export class MoveNodeMixin<
     // 源节点限当前树（多树表的 id 是表主键、全表唯一；getNodeData 的
     // {__TREE_ID__} 过滤保证源不在当前树时正确报 NotFound）
     const srcNode = (await this.getNodeData(node)) as unknown as TreeNode;
+
+    // ---- 回收站门控与位置不变量（启用回收站后生效）----
+    // id 路径门控：默认视角下源节点在站内（含 bin 自身后代）→ NotFound；
+    // 传节点对象时按"对象即凭证"放行（能拿到引用必然已进入回收站视角读取过）
+    let srcInBin = false;
+    if (this.recycleBinEnabled) {
+      if (typeof node !== "object" && !includeBin) {
+        if (await this.isInRecycleBin(srcNode)) {
+          throw new FlexTreeNodeNotFoundError();
+        }
+      }
+      srcInBin = await this.isInRecycleBin(srcNode);
+      // 位置不变量：bin 自身作为移动源时，落点须保持在根孩子层；跨树迁出禁止
+      if (this.isRecycleBin(srcNode)) {
+        if (isCrossTree) {
+          throw new FlexTreeError("Recyclebin node can not be moved to another tree");
+        }
+        if (
+          pos === FlexNodeRelPosition.FirstChild ||
+          pos === FlexNodeRelPosition.LastChild
+        ) {
+          // 作为根的子节点：合法（根孩子层内），但 toNode 必须是根
+          const targetForCheck = (await this._getMoveDestNode(toNode as any)) as TreeNode;
+          if (!this.isRoot(targetForCheck)) {
+            throw new FlexTreeError("Recyclebin node must stay at root's children level");
+          }
+        } else {
+          // sibling 位：目标须是根的孩子（level===1）
+          const targetForCheck = (await this._getMoveDestNode(toNode as any)) as TreeNode;
+          if (targetForCheck[this.keyFields.level] !== 1) {
+            throw new FlexTreeError("Recyclebin node must stay at root's children level");
+          }
+        }
+      }
+    }
 
     const moveSqls: string[] = [];
     // 跨树上下文：目标树腾挪条件、源树翻正条件、翻正同语句改写 treeId
@@ -858,7 +918,31 @@ export class MoveNodeMixin<
       isCrossTree ? destTreeId : undefined,
     )) as TreeNode;
 
-    if (!(await this.canMoveTo(srcNode, targetNode, isCrossTree ? { treeId: destTreeId } : undefined))) {
+    // 落点门控：默认视角下落点在站内（含 bin 自身）→ NotFound（对象即凭证原则同样适用）
+    let destInBin = false;
+    if (this.recycleBinEnabled && !isCrossTree) {
+      // 参数经 any 中转：toNode 的泛型联合会触发 TS2590（联合类型过于复杂）
+      const toNodeLocal: any = toNode;
+      if (typeof toNodeLocal !== "object" && !includeBin) {
+        if (await this.isInRecycleBin(targetNode)) {
+          throw new FlexTreeNodeNotFoundError();
+        }
+      }
+      destInBin = await this.isInRecycleBin(targetNode);
+    }
+
+    // canMoveTo 与 moveNode 同视角透传（回收站视角下落点可为 bin；跨树时透传目标树）
+    if (
+      !(await this.canMoveTo(
+        srcNode,
+        targetNode,
+        isCrossTree
+          ? { treeId: destTreeId }
+          : includeBin
+            ? { includeRecyclebin: true }
+            : undefined,
+      ))
+    ) {
       throw new FlexTreeError(
         `Can not move node<${srcNode[this.keyFields.id]}> to target node<${targetNode[this.keyFields.id]}>`,
       );
@@ -903,6 +987,11 @@ export class MoveNodeMixin<
       // 跨树移动对源树而言节点被移离：先发 node:deleted（源树视角），
       // 再发 node:moved（toTree 指向目标树）
       this.emit("node:deleted", { tree: this.treeId, node: nodeArg } as any);
+    }
+    // 回收站状态跃迁规则：仅"站外→站内"跃迁发 node:deleted(recycled)——
+    // 节点从逻辑树消失。站内重排、恢复移出（站内→站外）只发 node:moved
+    if (this.recycleBinEnabled && !srcInBin && destInBin) {
+      this.emit("node:deleted", { tree: this.treeId, node: nodeArg, recycled: true } as any);
     }
     this.emit("node:moved", event);
   }

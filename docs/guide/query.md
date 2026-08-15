@@ -280,7 +280,19 @@ async getPreviousSibling(nodeId: NodeId | TreeNode) : Promise<TreeNode | undefin
 
 ## 遍历节点
 
-除了上述按关系查询节点外，`FlexTreeManager`还提供了`forEach`方法用于遍历树（或子树）的所有节点，支持**深度优先（DFS）**与**广度优先（BFS）**两种模式。
+除了上述按关系查询节点外，`FlexTreeManager`还提供了`forEach`方法用于遍历树（或子树）的所有节点，支持`深度优先DFS`与`广度优先BFS`两种模式。
+
+:::warning 重点：一次回调 = 一个节点**及其全部子节点**
+`forEach`并不是"一次遍历一个节点"。每回调一次，处理的是**一个节点连同它的所有直接子节点**——回调签名 `(node, children)` 中的 `children` 就是该节点刚查出来的完整子节点列表（一次数据库查询取回一整层）。
+
+这带来两个关键特性：
+
+- **特别适用于大型树的懒加载**：回调拿到的 `(node, children)` 恰好就是 UI 树组件一个节点的完整渲染单元——当前节点 + 其全部子节点，天然对应"展开一个节点时加载其子层"的懒加载交互。配合 `maxLevel: 1` 从任意 `startFrom` 开始，每次只取一层，展开哪个节点就查哪个节点的子层，未展开的部分完全不产生查询。
+- **适合遍历大型树表**：遍历是流式的，内存占用为 **O(树宽度) 而非 O(节点数)**——BFS 队列只持有当前层，DFS 处理完一个子树即释放。百万级节点的树也能遍历，不需要把整棵树装进内存。
+- **SQL 次数 = 回调次数**：每个被访问节点执行一次 `getChildren` 查询（一条 SQL 取回该节点的全部子节点）。树形遍历无法用单条 SQL 表达，逐节点取子层是为流式处理刻意设计的。
+
+对比：`toJson`/`toList` 会把整棵树加载进内存再组装——大树导出请优先用 `forEach` 流式处理。
+:::
 
 ```ts
 async forEach(
@@ -293,6 +305,7 @@ interface ForEachOptions {
     startFrom?: NodeId | TreeNode  // 起始节点，默认根节点
     maxLevel?: number              // 最大遍历层级，默认无限
     includeStartNode?: boolean     // 是否包含起始节点，默认 true
+    includeRecyclebin?: boolean    // 是否进入回收站，默认 false（启用回收站后生效）
 }
 ```
 
@@ -300,11 +313,12 @@ interface ForEachOptions {
 
 | 参数 | 类型 | 默认 | 描述 |
 | --- | --- | --- | --- |
-| `callback` | `(node, children) => boolean` | 无 | 遍历回调，接收当前节点与其直接子节点；返回`false`可中断遍历 |
+| `callback` | `(node, children) => boolean` | 无 | 遍历回调，**接收当前节点与其全部直接子节点**（一次回调处理一层）；返回`false`可中断遍历 |
 | `options.mode` | `'dfs' \| 'bfs'` | `'dfs'` | 遍历模式 |
 | `options.startFrom` | `NodeId \| TreeNode` | 根节点 | 遍历的起始节点 |
 | `options.maxLevel` | `number` | `Infinity` | 最大遍历层级 |
 | `options.includeStartNode` | `boolean` | `true` | 是否包含起始节点 |
+| `options.includeRecyclebin` | `boolean` | `false` | 是否进入回收站子树（见[回收站](./recyclebin)） |
 
 - **示例**
 
@@ -327,10 +341,30 @@ await tree.forEach((node) => {
     console.log(node.name)
     return true
 }, { startFrom: nodeA })
+
+// 流式处理大树：边遍历边处理，内存与树规模解耦
+await tree.forEach((node, children) => {
+    if (children.length === 0) {
+        exportLeaf(node) // 逐个处理叶子节点，无需等待整棵树加载
+    }
+    return true
+})
+
+// 大型树的懒加载：展开哪个节点就查哪个节点的子层（每次仅 1 条 SQL）
+async function expandNode(nodeId: NodeId): Promise<TreeNode[]> {
+    // 只取该节点的直接子层，未展开的子树零查询
+    let children: TreeNode[] = []
+    await tree.forEach((node, kids) => {
+        children = kids
+        return false // 只需要一个回调即中断
+    }, { startFrom: nodeId, maxLevel: 1 })
+    return children
+}
 ```
 
 - **说明**
 
     - 回调返回`false`会中断遍历；返回`true`或其它值则继续。
     - `maxLevel`按层级（`level`）限制，超出层级的节点不会被访问。
+    - 遍历过程中**不要执行写操作**（写需在 `write()` 内且与遍历的读交错可能读到中间态）。
 

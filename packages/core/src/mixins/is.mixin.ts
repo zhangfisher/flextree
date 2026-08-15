@@ -76,4 +76,37 @@ export class IsNodeMixin<
         }
         return true
     }
+
+    /**
+     * 判断节点是否是回收站节点本身（按配置的 bin id 匹配）
+     *
+     * 未启用回收站时恒为 false
+     */
+    isRecycleBin(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, node: TreeNode | NodeId) {
+        if (!this.recycleBinEnabled) return false
+        const nodeId = typeof node === 'object' ? (node as any)[this.keyFields.id] : node
+        return nodeId === this._getBinId()
+    }
+
+    /**
+     * 判断节点是否位于回收站内（Bin 自身与其后代均返回 true——闭区间，与过滤条件形态一致）
+     *
+     * 未启用回收站或 bin 不存在时恒为 false。
+     * 注意：Partial 对象（如 update 的入参）没有坐标，按 id 点查读库后判定
+     */
+    async isInRecycleBin(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>, node: TreeNode | NodeId): Promise<boolean> {
+        if (!this.recycleBinEnabled) return false
+        const range = await this._getBinRange()
+        if (!range) return false
+        // 有完整坐标的节点对象直接判定；Partial 对象（缺 leftValue/rightValue）按 id 读库
+        let nodeData: any = typeof node === 'object' ? node : null
+        if (!nodeData || typeof nodeData[this.keyFields.leftValue] !== 'number') {
+            const id = typeof node === 'object' ? (node as any)[this.keyFields.id] : node
+            if (id === undefined || id === null) return false
+            nodeData = await this.getNodeData(id)
+        }
+        const left = nodeData[this.keyFields.leftValue]
+        const right = nodeData[this.keyFields.rightValue]
+        return left >= range.left && right <= range.right
+    }
 }

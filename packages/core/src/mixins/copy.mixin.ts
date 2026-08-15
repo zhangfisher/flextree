@@ -6,7 +6,7 @@ import type {
   NonUndefined,
 } from "../types";
 import { FlexNodeRelPosition } from "../types";
-import { FlexTreeError } from "../errors";
+import { FlexTreeError, FlexTreeNodeNotFoundError } from "../errors";
 import { isLikeNode } from "../utils/isLikeNode";
 
 /**
@@ -46,6 +46,11 @@ export interface FlexTreeCopyOptions<NodeId = any, TreeNode = any, TreeId = any>
    * 表达式会**原样拼接**进 INSERT...SELECT 语句，调用方需自行确保其安全性。
    */
   transformField?: Record<string, string>;
+  /**
+   * 回收站视角开关（启用回收站后生效）：默认 false 时源或落点在 bin 子树内
+   * （含 bin 自身，id 路径）抛 NotFound；true 时照常复制（可复制进/复制出回收站）
+   */
+  includeRecyclebin?: boolean;
 }
 
 export class CopyNodeMixin<
@@ -303,6 +308,7 @@ export class CopyNodeMixin<
       treeId,
       fields,
       transformField,
+      includeRecyclebin,
     } = options || {};
 
     // 跨树复制：options.treeId 提供且不等于当前 manager 的 treeId 时，
@@ -337,6 +343,21 @@ export class CopyNodeMixin<
               throw new FlexTreeError(`Destination node not found in tree<${treeId}>`);
             })()
           : ((await this.getNodeData(to)) as unknown as TreeNode);
+
+    // 回收站门控：默认视角下源或落点在站内（含 bin 自身）→ NotFound
+    // （对象即凭证：传节点对象放行；跨树落点属目标树，本树 bin 语义不适用）
+    if (this.recycleBinEnabled && !includeRecyclebin) {
+      if (srcIsId && (await this.isInRecycleBin(srcNode as any))) {
+        throw new FlexTreeNodeNotFoundError();
+      }
+      // 参数经 any 中转：to 的泛型联合会触发 TS2590（联合类型过于复杂）
+      const toArg: any = to;
+      if (!isCrossTree && toArg !== undefined && !isLikeNode(toArg, this.keyFields)) {
+        if (await this.isInRecycleBin(destNode)) {
+          throw new FlexTreeNodeNotFoundError();
+        }
+      }
+    }
 
     const srcLeft = srcNode[this.keyFields.leftValue];
     const srcRight = srcNode[this.keyFields.rightValue];

@@ -4,6 +4,8 @@ export * from "./tree";
 export * from "./node";
 export * from "./types";
 export * from "./manager";
+export { RecycleMixin } from "./mixins/recycle.mixin";
+export * from "./multi_root_manager";
 export * from "./errors";
 export * from "./adapter";
 export * from "./consts";

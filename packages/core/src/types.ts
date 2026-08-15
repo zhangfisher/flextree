@@ -91,7 +91,8 @@ export type FlexTreeEvents = {
   beforeWrite: undefined; // 当执行写操作前触发
   afterWrite: undefined; // 当执行写操作后触发
   "node:added": { tree: any; nodes: any[]; at: any; pos: FlexNodeRelPosition }; // 增加节点
-  "node:deleted": { tree: any; node: any }; // 删除节点
+  "node:deleted": { tree: any; node: any; recycled?: boolean }; // 删除节点；recycled=true 表示经回收站逻辑删除（站外→站内跃迁）
+  "node:recycled": { tree: any; node: any }; // 节点被移入回收站（deleteNode recycle 专用）
   "node:cleared": { tree: any }; // 清空节点
   "node:updated": { tree: any; node: any }; // 清空节点
   "node:moved": {

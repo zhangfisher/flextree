@@ -30,6 +30,7 @@ export default defineConfig({
                             { text: '快速入门', link: '/intro/get-started' },
                             { text: '工作原理', link: '/intro/principle' },
                             { text: '功能优势', link: '/intro/features' },
+                            { text: '读写成本', link: '/intro/cost' },
                             { text: '常见问题', link: '/intro/question' },
                             { text: '更新历史', link: '/intro/history' }
                         ]
@@ -59,6 +60,8 @@ export default defineConfig({
                             { text: '导出', link: '/guide/export' },
                             { text: '自定义', link: '/guide/custom' },
                             { text: '多树表', link: '/guide/multitree' },
+                            { text: '多根树', link: '/guide/multiroot' },
+                            { text: '回收站', link: '/guide/recyclebin' },
                             { text: '数据库适配', link: '/guide/adapters' },
                         ],
                     },
@@ -93,6 +96,7 @@ export default defineConfig({
                     { text: 'Getting Started', link: '/en/intro/get-started' },
                     { text: 'How It Works', link: '/en/intro/principle' },
                     { text: 'Features', link: '/en/intro/features' },
+                    { text: 'Read/Write Costs', link: '/en/intro/cost' },
                     { text: 'FAQ', link: '/en/intro/question' },
                     { text: 'Changelog', link: '/en/intro/history' },
                     {
@@ -120,6 +124,8 @@ export default defineConfig({
                             { text: 'Export', link: '/en/guide/export' },
                             { text: 'Customization', link: '/en/guide/custom' },
                             { text: 'Multi-Tree Table', link: '/en/guide/multitree' },
+                            { text: 'Multi-Root Tree', link: '/en/guide/multiroot' },
+                            { text: 'Recycle Bin', link: '/en/guide/recyclebin' },
                             { text: 'Database Adapters', link: '/en/guide/adapters' },
                         ],
                     },

@@ -25,6 +25,9 @@ export class GetNodeMixin<
    * - 如果node是节点对象，则直接返回
    * - 如果node是字符串或数字，则根据ID获取节点信息
    *
+   * 注意：这是**内部读取路径**，不过滤回收站——写操作的前置读取（deleteNode 的
+   * recycle 分支、clearRecycleBin、恢复移动等）需要读到"逻辑不存在"的节点，
+   * 由各写方法自行做门控判定。公共查询请用 getNode（默认过滤）
    */
   async getNodeData(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
@@ -41,8 +44,8 @@ export class GetNodeMixin<
     } else if (isLikeNode(param, this.keyFields)) {
       node = param as TreeNode;
     } else if (["string", "number"].includes(typeof param)) {
-      // 否则需要根据ID获取节点信息
-      node = (await this.getNode(param as any)) as TreeNode;
+      // 否则需要根据ID获取节点信息（内部路径：绕过回收站过滤）
+      node = (await this.getNode(param as any, { includeRecyclebin: true })) as TreeNode;
     } else {
       throw new FlexTreeError("Invalid node parameter");
     }
@@ -58,15 +61,24 @@ export class GetNodeMixin<
    * @param {number}  [options.level]            限定返回的层级,0表示不限制,1表示只返回根节点，2表示返回根节点和其子节点, 依次类推
    * @param {number}  [options.files]            限定返回的字段名称
    * @param {string}  [options.where]            WHERE过滤条件，确保树的完整性：父节点被过滤时，其所有后代也被过滤
+   * @param {boolean} [options.includeRecyclebin] 默认 false：回收站（bin 及其后代）在数据库端被排除；true 返回物理全集
    * @returns TreeNode[]
    */
   async getNodes(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-    options?: { level?: number; fields?: (keyof TreeNode)[]; where?: string },
+    options?: {
+      level?: number;
+      fields?: (keyof TreeNode)[];
+      where?: string;
+      includeRecyclebin?: boolean;
+    },
   ): Promise<TreeNode[]> {
     const { level, fields, where } = Object.assign({ level: 0, fields: [], where: "" }, options);
 
     const fieldList = fields.length > 0 ? fields.map((f) => `${f}`).join(",") : "*";
+
+    // 数据库端回收站过滤（数据库端过滤铁律：行数在 DB 端就已正确）
+    const binFilter = await this._buildBinFilter(!!options?.includeRecyclebin, "Node.");
 
     // 预计算转义后的字段名以提高性能和代码可读性
     const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
@@ -84,6 +96,7 @@ export class GetNodeMixin<
         WHERE {__TREE_ID__} Node.${leftValueField} > 0
           AND Node.${rightValueField} > 0
           ${levelCondition}
+          ${binFilter}
           AND ${validatedWhere}
           AND NOT EXISTS (
               SELECT 1 FROM ${this.tableName} Ancestor
@@ -98,6 +111,7 @@ export class GetNodeMixin<
             WHERE {__TREE_ID__} ${leftValueField}>0
               AND ${rightValueField}>0
               ${level > 0 ? `AND ${levelField}<=${level}` : ""}
+              ${await this._buildBinFilter(!!options?.includeRecyclebin)}
             ORDER BY ${leftValueField}
         `);
     }
@@ -107,15 +121,21 @@ export class GetNodeMixin<
 
   /**
    * 根据id获取节点
+   *
+   * 启用回收站时默认过滤：bin 及其后代按 id 查找抛 NotFound（Logical Invisibility），
+   * includeRecyclebin=true 时照常返回
    * @param nodeId
+   * @param options.includeRecyclebin 默认 false
    */
   async getNode(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     nodeId: NodeId,
+    options?: { includeRecyclebin?: boolean },
   ): Promise<TreeNode | undefined> {
     const idField = this.escaper.escapeId(this.keyFields.id);
+    const binFilter = await this._buildBinFilter(!!options?.includeRecyclebin);
     const sql = this._sql(`SELECT * FROM ${this.tableName}
-            WHERE {__TREE_ID__} (${idField}=${this.escaper.escape(nodeId as any)})`);
+            WHERE {__TREE_ID__} (${idField}=${this.escaper.escape(nodeId as any)})${binFilter}`);
     const result = await this.getRows(sql);
     if (result.length === 0) {
       throw new FlexTreeNodeNotFoundError();
@@ -137,10 +157,14 @@ export class GetNodeMixin<
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     node: NodeId | TreeNode,
     index: number = 1,
+    options?: { includeRecyclebin?: boolean },
   ): Promise<TreeNode | undefined> {
     const relNodeId = this.escaper.escape(
       isLikeNode(node, this.keyFields) ? (node as any)[this.keyFields.id] : node,
     );
+
+    // 数据库端回收站过滤（bin 及其后代不计入序号）
+    const binFilter = await this._buildBinFilter(!!options?.includeRecyclebin, "Node.");
 
     // 预计算转义后的字段名以提高性能和代码可读性
     const idField = this.escaper.escapeId(this.keyFields.id);
@@ -159,7 +183,7 @@ export class GetNodeMixin<
                     Node.${leftValueField} > RelNode.${leftValueField}
                     AND Node.${rightValueField} < RelNode.${rightValueField}
                     AND Node.${levelField} = RelNode.${levelField} + 1
-                )
+                )${binFilter}
             ORDER BY Node.${leftValueField} ${index < 0 ? "DESC" : ""}
             LIMIT 1 OFFSET ${Math.abs(index) - 1}
         `;
@@ -175,11 +199,12 @@ export class GetNodeMixin<
    * @param {object} options                    选项
    * @param {number}  [options.level]           限制返回的级别
    * @param {boolean} [options.includeSelf]     返回结果是否包括自身
+   * @param {boolean} [options.includeRecyclebin] 默认 false：回收站（bin 及其后代）在数据库端被排除
    */
   async getDescendants(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     nodeId?: NodeId | TreeNode,
-    options?: { level?: number; includeSelf?: boolean },
+    options?: { level?: number; includeSelf?: boolean; includeRecyclebin?: boolean },
   ): Promise<IFlexTreeNodeFields<Fields, KeyFields>[]> {
     if (isNull(nodeId)) {
       return await this.getNodes(options);
@@ -187,6 +212,9 @@ export class GetNodeMixin<
     const { level, includeSelf } = Object.assign({ includeSelf: false, level: 0 }, options);
     const relNode = await this.getNodeData(nodeId);
     const relNodeId = this.escaper.escape(relNode[this.keyFields.id]);
+
+    // 数据库端回收站过滤
+    const binFilter = await this._buildBinFilter(!!options?.includeRecyclebin, "Node.");
 
     // 预计算转义后的字段名以提高性能和代码可读性
     const idField = this.escaper.escapeId(this.keyFields.id);
@@ -207,7 +235,7 @@ export class GetNodeMixin<
                   ${treeCondition}
                   ((Node.${leftValueField} > RelNode.${leftValueField}
                   AND Node.${rightValueField} < RelNode.${rightValueField})
-                  ${includeSelf ? `OR Node.${idField} = ${relNodeId}` : ""})
+                  ${includeSelf ? `OR Node.${idField} = ${relNodeId}` : ""})${binFilter}
                 ORDER BY ${leftValueField}
                 `;
     } else {
@@ -220,7 +248,7 @@ export class GetNodeMixin<
                 AND Node.${rightValueField} < RelNode.${rightValueField}
                 AND Node.${levelField} > RelNode.${levelField}
                 AND Node.${levelField} <= RelNode.${levelField}+${level})
-                ${includeSelf ? `OR Node.${idField} = ${relNodeId}` : ""})
+                ${includeSelf ? `OR Node.${idField} = ${relNodeId}` : ""})${binFilter}
                 ORDER BY ${leftValueField}
             `;
     }
@@ -234,12 +262,15 @@ export class GetNodeMixin<
   async getDescendantCount(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     nodeId: NodeId | TreeNode,
-    options?: { level?: number },
+    options?: { level?: number; includeRecyclebin?: boolean },
   ) {
     const { level } = Object.assign({ level: 0 }, options);
     const relNode = await this.getNodeData(nodeId);
     const relNodeId = this.escaper.escape(relNode[this.keyFields.id]);
     const relNodeLevel = relNode[this.keyFields.level];
+
+    // 数据库端回收站过滤
+    const binFilter = await this._buildBinFilter(!!options?.includeRecyclebin, "Node.");
 
     // 预计算转义后的字段名以提高性能和代码可读性
     const idField = this.escaper.escapeId(this.keyFields.id);
@@ -258,7 +289,7 @@ export class GetNodeMixin<
                 (
                     Node.${leftValueField} > RelNode.${leftValueField}
                     AND Node.${rightValueField} < RelNode.${rightValueField}
-                ) ${level > 0 ? `AND Node.${levelField} <= ${relNodeLevel + level} ` : ""}`;
+                ) ${level > 0 ? `AND Node.${levelField} <= ${relNodeLevel + level} ` : ""}${binFilter}`;
     return await this.getScalar(sql);
   }
 
@@ -266,13 +297,18 @@ export class GetNodeMixin<
    * 获取子节点集合
    *
    * @param nodeId  节点ID或节点数据
+   * @param options.includeRecyclebin 默认 false：回收站内容在数据库端被排除
    * @returns  返回子节点集合,不包括后代节点
    */
   async getChildren(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     nodeId: NodeId | TreeNode,
+    options?: { includeRecyclebin?: boolean },
   ) {
-    return await this.getDescendants(nodeId, { level: 1 });
+    return await this.getDescendants(nodeId, {
+      level: 1,
+      includeRecyclebin: options?.includeRecyclebin,
+    });
   }
 
   /**
@@ -403,16 +439,19 @@ export class GetNodeMixin<
         ORDER BY Node.tree_left
 
      * @param node
-     * @param options
+     * @param options.includeRecyclebin 默认 false：bin 及其后代（作为兄弟时）在数据库端被排除
      */
   async getSiblings(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     nodeId: NodeId | TreeNode,
-    options?: { includeSelf?: boolean },
+    options?: { includeSelf?: boolean; includeRecyclebin?: boolean },
   ) {
     const { includeSelf } = Object.assign({ includeSelf: false }, options);
     const relNode = await this.getNodeData(nodeId);
     const relNodeId = this.escaper.escape(relNode[this.keyFields.id]);
+
+    // 数据库端回收站过滤
+    const binFilter = await this._buildBinFilter(!!options?.includeRecyclebin, "Node.");
 
     // 预计算转义后的字段名以提高性能和代码可读性
     const idField = this.escaper.escapeId(this.keyFields.id);
@@ -441,7 +480,7 @@ export class GetNodeMixin<
                     AND Node.${levelField} = ParentNode.${levelField}+1
                     ${includeSelf ? "" : `AND Node.${idField} != ${relNodeId}`}
                 )
-            )
+            )${binFilter}
             ORDER BY ${leftValueField}
         `;
     return await this.getRows(sql);
@@ -459,14 +498,21 @@ export class GetNodeMixin<
    *     AND Node.tree_id=0
    *     ) LIMIT 1
    *
+   * 启用回收站时默认跳过 bin 及其后代（数据库端条件改写，非取回后跳过）：
+   * 下一个兄弟 = 同层且 leftValue 越过当前子树右值的第一个**逻辑存在**节点
    *
+   * @param options.includeRecyclebin 默认 false
    */
   async getNextSibling(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     nodeId: NodeId | TreeNode,
+    options?: { includeRecyclebin?: boolean },
   ) {
     const relNode = await this.getNodeData(nodeId);
     const relNodeId = this.escaper.escape(relNode[this.keyFields.id]);
+
+    // 数据库端回收站过滤
+    const binFilter = await this._buildBinFilter(!!options?.includeRecyclebin, "Node.");
 
     // 预计算转义后的字段名以提高性能和代码可读性
     const idField = this.escaper.escapeId(this.keyFields.id);
@@ -485,7 +531,8 @@ export class GetNodeMixin<
                 (
                     Node.${leftValueField} = RelNode.${rightValueField}+1
                     AND Node.${levelField} = RelNode.${levelField}
-                )
+                )${binFilter}
+            ORDER BY Node.${leftValueField}
             LIMIT 1`;
     return await this.getOneNode(sql);
   }
@@ -493,13 +540,18 @@ export class GetNodeMixin<
   /**
    * 获取上一个兄弟节点
    * @param nodeId
+   * @param options.includeRecyclebin 默认 false：默认视角下跳过 bin 及其后代（数据库端过滤）
    */
   async getPreviousSibling(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     nodeId: NodeId | TreeNode,
+    options?: { includeRecyclebin?: boolean },
   ) {
     const relNode = await this.getNodeData(nodeId);
     const relNodeId = this.escaper.escape(relNode[this.keyFields.id]);
+
+    // 数据库端回收站过滤
+    const binFilter = await this._buildBinFilter(!!options?.includeRecyclebin, "Node.");
 
     // 预计算转义后的字段名以提高性能和代码可读性
     const idField = this.escaper.escapeId(this.keyFields.id);
@@ -516,7 +568,8 @@ export class GetNodeMixin<
             WHERE ${treeCondition}
                 (
                     Node.${rightValueField} = RelNode.${leftValueField}-1
-                )
+                )${binFilter}
+            ORDER BY Node.${leftValueField} DESC
             LIMIT 1`;
     return await this.getOneNode(sql);
   }

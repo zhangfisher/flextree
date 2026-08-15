@@ -34,8 +34,20 @@ import { UpdateNodeMixin } from "./mixins/update.mixin";
 import { VerifyTreeMixin } from "./mixins/verify.mixin";
 import { ForEachMixin } from "./mixins/forEach.mixin";
 import { RepairMixin } from "./mixins/repair.mixin";
+import { RecycleMixin } from "./mixins/recycle.mixin";
 import { createEscaper, Escaper } from "./escaper";
 import { FlexTree, type FlexTreeOptions } from "./tree";
+
+/**
+ * 回收站配置：提供即启用回收站功能
+ *
+ * - id：回收站节点的 id；多树表下可传 (treeId) => id 函数实现每树各自建站
+ * - name：回收站节点的名称
+ */
+export interface FlexTreeRecyclebinOptions<NodeId = any, TreeId = any> {
+  id: NodeId | ((treeId: TreeId) => NodeId);
+  name: string;
+}
 
 export interface FlexTreeManagerOptions<TreeIdType = any> {
   treeId?: TreeIdType; // 使用支持单表多树时需要提供
@@ -47,6 +59,8 @@ export interface FlexTreeManagerOptions<TreeIdType = any> {
     leftValue?: string;
     rightValue?: string;
   };
+  /** 回收站配置，提供即启用（Bin 恒为根节点的子节点，默认视角下 Bin 及其后代逻辑不存在） */
+  recyclebin?: FlexTreeRecyclebinOptions;
   adapter: IFlexTreeAdapter;
 }
 
@@ -71,7 +85,8 @@ export interface FlexTreeManager<
     UpdateNodeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     VerifyTreeMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     ForEachMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
-    RepairMixin<Fields, KeyFields, TreeNode, NodeId, TreeId> {}
+    RepairMixin<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+    RecycleMixin<Fields, KeyFields, TreeNode, NodeId, TreeId> {}
 
 /**
  *
@@ -99,6 +114,7 @@ export interface FlexTreeManager<
   VerifyTreeMixin,
   ForEachMixin,
   RepairMixin,
+  RecycleMixin,
 )
 // eslint-disable-next-line ts/no-unsafe-declaration-merging
 export class FlexTreeManager<
@@ -123,6 +139,9 @@ export class FlexTreeManager<
   private _connected: boolean = false;
   private _emitter = mitt<FlexTreeEvents>();
   private _lastUpdateAt = 0;
+  // 回收站：bin 区间缓存（null=未加载，undefined=bin 不存在）与懒创建标记
+  protected _binRange: { left: number; right: number } | null | undefined = null;
+  protected _binEnsured = false;
   // 写事务上下文与完成 Promise：用于读守卫，避免外部读看到 write 事务的中间态
   private _writeCtx = new AsyncLocalStorage<boolean>();
   private _txPromise?: Promise<void>;
@@ -297,13 +316,23 @@ export class FlexTreeManager<
       // _writeCtx.run 标记 write 调用链：fn 内的读（getStore 非空）直接放行看事务内状态；
       // 外部并发读（getStore 空）由 _guardRead 等待此事务完成，避免读到中间态（脏读）。
       await this.adapter.transaction(async () => {
-        await this._writeCtx.run(true, async () => fn(this as FlexTreeManager));
+        await this._writeCtx.run(true, async () => {
+          await fn(this as FlexTreeManager);
+          // 回收站启用时首次写操作懒创建 bin 节点（含位置不变量校验）。
+          // 放在 fn 之后：fn 可能本身就在建根（createRoot/首次 addNodes(null)），
+          // 之后 ensure 才能看到根并把 bin 挂上；须在 _writeCtx 内——
+          // ensure 内部的读（getRoot/addNodes）经 _guardRead 放行看事务内状态，
+          // 放在外层会等待 _txPromise 造成死锁
+          await this._ensureBinNode();
+        });
       });
       this._lastUpdateAt = Date.now();
     } finally {
       releaseTx();
       this._txPromise = undefined;
       this._isWriting = false;
+      // 写事务结束（提交或回滚）：失效 bin 区间缓存，下次读重新加载
+      this._invalidateBinRange();
       this._emitter.emit("afterWrite");
     }
   }
@@ -345,15 +374,29 @@ export class FlexTreeManager<
       treeId: this.treeId as any,
       adapter: this.adapter,
       fields: this._fields,
+      // 回收站配置透传：内部 FlexTreeManager 须同样启用，
+      // 否则 toJson/toList 的加载链路（getDescendants）不会过滤 bin
+      recyclebin: this.options.recyclebin,
     });
   }
-  async toJson(options?: FlexTreeExportJsonOptions<Fields, KeyFields>) {
+  async toJson(
+    options?: FlexTreeExportJsonOptions<Fields, KeyFields> & { includeRecyclebin?: boolean },
+  ) {
     const tree = this.getTree();
+    // includeRecyclebin=true：导出回收站视角（内部 manager 禁用 bin 过滤）
+    if (options?.includeRecyclebin) {
+      (tree as any).manager.recycleBinDisableFilter = true;
+    }
     await tree.load();
     return tree.toJson(options);
   }
-  async toList(options?: FlexTreeExportListOptions<Fields, KeyFields>) {
+  async toList(
+    options?: FlexTreeExportListOptions<Fields, KeyFields> & { includeRecyclebin?: boolean },
+  ) {
     const tree = this.getTree();
+    if (options?.includeRecyclebin) {
+      (tree as any).manager.recycleBinDisableFilter = true;
+    }
     await tree.load();
     return tree.toList(options);
   }

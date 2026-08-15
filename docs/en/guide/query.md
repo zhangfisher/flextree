@@ -282,6 +282,18 @@ async getPreviousSibling(nodeId: NodeId | TreeNode) : Promise<TreeNode | undefin
 
 In addition to the relationship-based queries above, `FlexTreeManager` also provides a `forEach` method to traverse all nodes of a tree (or subtree), supporting both **Depth-First Search (DFS)** and **Breadth-First Search (BFS)** modes.
 
+:::warning Key point: one callback = one node **plus all its children**
+`forEach` does not traverse "one node at a time". Each callback invocation handles **one node together with all of its direct children** — the `children` in the `(node, children)` signature is the node's freshly fetched, complete child list (one database query retrieves an entire level).
+
+This brings two key properties:
+
+- **Especially suited to lazy loading of large trees**: the `(node, children)` received by each callback is exactly the complete rendering unit of one node in a tree UI component — the current node plus all of its children, naturally matching the "load children when a node expands" lazy-loading interaction. Combined with `maxLevel: 1` from any `startFrom`, only one level is fetched at a time: expanding a node queries just that node's child level, and unexpanded parts generate no queries at all.
+- **Built for large tree tables**: the traversal is streaming, with memory usage of **O(tree breadth), not O(node count)** — the BFS queue holds only the current level, and DFS releases each subtree once processed. Trees with millions of nodes can be traversed without loading the whole tree into memory.
+- **SQL count = callback count**: each visited node performs one `getChildren` query (a single SQL fetching all of that node's children). Tree-shaped traversal cannot be expressed in a single SQL; fetching each node's child level is a deliberate streaming design.
+
+Comparison: `toJson`/`toList` load the entire tree into memory before assembling — for exporting large trees, prefer streaming with `forEach`.
+:::
+
 ```ts
 async forEach(
     callback: (node: TreeNode, children: TreeNode[]) => boolean,
@@ -293,6 +305,7 @@ interface ForEachOptions {
     startFrom?: NodeId | TreeNode  // Start node, defaults to the root node
     maxLevel?: number              // Maximum traversal level, default unlimited
     includeStartNode?: boolean     // Whether to include the start node, default true
+    includeRecyclebin?: boolean    // Whether to enter the recycle bin, default false (effective when the recycle bin is enabled)
 }
 ```
 
@@ -300,11 +313,12 @@ interface ForEachOptions {
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `callback` | `(node, children) => boolean` | None | Traversal callback; receives the current node and its direct children; return `false` to break the traversal |
+| `callback` | `(node, children) => boolean` | None | Traversal callback; **receives the current node and all of its direct children** (one callback handles one level); return `false` to break the traversal |
 | `options.mode` | `'dfs' \| 'bfs'` | `'dfs'` | Traversal mode |
 | `options.startFrom` | `NodeId \| TreeNode` | root node | Start node of the traversal |
 | `options.maxLevel` | `number` | `Infinity` | Maximum traversal level |
 | `options.includeStartNode` | `boolean` | `true` | Whether to include the start node |
+| `options.includeRecyclebin` | `boolean` | `false` | Whether to enter the recycle-bin subtree (see [Recycle Bin](./recyclebin)) |
 
 - **Example**
 
@@ -327,9 +341,29 @@ await tree.forEach((node) => {
     console.log(node.name)
     return true
 }, { startFrom: nodeA })
+
+// Stream-process a large tree: process while traversing, memory decoupled from tree size
+await tree.forEach((node, children) => {
+    if (children.length === 0) {
+        exportLeaf(node) // Process leaf nodes one by one, no need to wait for the whole tree to load
+    }
+    return true
+})
+
+// Lazy loading for large trees: expanding a node queries just its child level (1 SQL each time)
+async function expandNode(nodeId: NodeId): Promise<TreeNode[]> {
+    // Fetch only the node's direct child level; unexpanded subtrees cost zero queries
+    let children: TreeNode[] = []
+    await tree.forEach((node, kids) => {
+        children = kids
+        return false // interrupt after a single callback
+    }, { startFrom: nodeId, maxLevel: 1 })
+    return children
+}
 ```
 
 - **Notes**
 
     - Returning `false` from the callback breaks the traversal; returning `true` or any other value continues.
     - `maxLevel` limits by `level`; nodes beyond the level will not be visited.
+    - Do not perform write operations during traversal (writes must run inside `write()`, and interleaving them with traversal reads may observe intermediate states).
