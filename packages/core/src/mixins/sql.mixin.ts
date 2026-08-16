@@ -38,6 +38,8 @@ export class SqlMixin<
     await this.assertConnected();
     // 不自开事务：调用方负责提供事务——write(fn) 内由 write 的 transaction 承载（跨方法原子），
     // repair 由其自身 transaction 承载。所有调用方均经 _assertWriteable 或自包事务保证在事务内。
+    // 收集供 write 在 COMMIT 前聚合触发 write:commit（空批不触发由 write 判定）
+    this._pendingSqls.push(...sqls);
     await this.adapter.exec(sqls);
   }
 

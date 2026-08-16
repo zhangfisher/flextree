@@ -1,0 +1,43 @@
+[    2481ms] [LOG] [@alife/new-search-suggest Message]:  {version: 2.11.1, name: @alife/new-search-suggest} @ https://g.alicdn.com/main-search/pc-search-2024/1.8.52/js/main.js:0
+[    2749ms] [LOG] Sun Aug 16 2026 15:40:52 GMT+0800 (中国标准时间) @ https://g.alicdn.com/AWSC/et/1.84.2/et_f.js:2
+[    2880ms] [ERROR] MessageChannel没有初始化，请先调用initInstance @ https://g.alicdn.com/main-search/pc-search-2024/1.8.52/js/main.js:0
+[    2885ms] [LOG] [doInitBaxia]:start {baxiaCommonInit: true} @ https://g.alicdn.com/main-search/pc-search-2024/1.8.52/js/main.js:0
+[    2894ms] [LOG] [doInitBaxia]:end @ https://g.alicdn.com/main-search/pc-search-2024/1.8.52/js/main.js:0
+[    3017ms] [LOG] [imageSearchJumpSupport Start]: {clientImgSearchId: undefined} @ https://g.alicdn.com/main-search/pc-search-2024/1.8.52/js/main.js:0
+[    3311ms] [WARNING] It is recommended that a robustness level be specified. Not specifying the robustness level could result in unexpected behavior. @ https://g.alicdn.com/AWSC/fireyejs/1.234.24/fireyejs.js:0
+[    4433ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://login.taobao.com/member/login.jhtml?style=mini&newMini2=true&from=sm&full_redirect=false&redirectURL=https%3a%2f%2fh5api.m.taobao.com:443/h5/mtop.alisecurity.hellobixi.sayhello2/1.0%2F_____tmd_____%2Fpage%2Fmtoph5_close_iframe_page%3Frand%3DS3WxGHAgAt756EpznwfNzJq2AFA2qBNla3j6EINUS8We9dazM_iKElp8DwVSHZUevpC41Bx7RzivXIj9RnZgdg%26uuid%3D2100c88117868660536896685e0a2a%26_lgt_%3D2100c88117868660536896685e0a2a___257083___614500f672867c468dfa8e48f16b333a___9974e85e07d80d51ccbbe85b61d3d2571bd0a1810ac1d9df15ba0e82a854c17d1a74a61e5e4d116f1f295b6d48db5f56ec24d3063d66f08b8ed02b9332e1e090eb6c334b77d98d80f083afef05dac5eaba2f0d61c6ac656f02b5f0ec957d5298873306df84e68379dfd6a2a0bfbf8e28:0
+[    4675ms] [ERROR] Permissions policy violation: gyroscope is not allowed in this document. @ https://g.alicdn.com/secdev/sufei_data/3.9.14/index.js:0
+[    4675ms] [ERROR] Permissions policy violation: accelerometer is not allowed in this document. @ https://g.alicdn.com/secdev/sufei_data/3.9.14/index.js:0
+[    4675ms] [WARNING] The deviceorientation events are blocked by permissions policy. See https://github.com/w3c/webappsec-permissions-policy/blob/master/features.md#sensor-features @ https://g.alicdn.com/secdev/sufei_data/3.9.14/index.js:0
+[    4765ms] [LOG] Sun Aug 16 2026 15:40:54 GMT+0800 (中国标准时间) @ https://g.alicdn.com/AWSC/et/1.84.2/et_f.js:2
+[    5362ms] [LOG] Sun Aug 16 2026 15:40:55 GMT+0800 (中国标准时间) @ https://g.alicdn.com/AWSC/et/1.84.2/et_f.js:2
+[    5414ms] [ERROR] Permissions policy violation: encrypted-media is not allowed in this document. @ https://g.alicdn.com/AWSC/fireyejs/1.234.24/fireyejs.js:0
+[    5415ms] [WARNING] Encrypted Media access has been blocked because of a Feature Policy applied to the current document. See https://crbug.com/414348233 for more details. @ https://g.alicdn.com/AWSC/fireyejs/1.234.24/fireyejs.js:0
+[    5415ms] [ERROR] Permissions policy violation: encrypted-media is not allowed in this document. @ https://g.alicdn.com/AWSC/fireyejs/1.234.24/fireyejs.js:0
+[    5415ms] [WARNING] Encrypted Media access has been blocked because of a Feature Policy applied to the current document. See https://crbug.com/414348233 for more details. @ https://g.alicdn.com/AWSC/fireyejs/1.234.24/fireyejs.js:0
+[    5416ms] [ERROR] Permissions policy violation: encrypted-media is not allowed in this document. @ https://g.alicdn.com/AWSC/fireyejs/1.234.24/fireyejs.js:0
+[    5416ms] [WARNING] Encrypted Media access has been blocked because of a Feature Policy applied to the current document. See https://crbug.com/414348233 for more details. @ https://g.alicdn.com/AWSC/fireyejs/1.234.24/fireyejs.js:0
+[    5418ms] [ERROR] Permissions policy violation: encrypted-media is not allowed in this document. @ https://g.alicdn.com/AWSC/fireyejs/1.234.24/fireyejs.js:0
+[    5418ms] [WARNING] Encrypted Media access has been blocked because of a Feature Policy applied to the current document. See https://crbug.com/414348233 for more details. @ https://g.alicdn.com/AWSC/fireyejs/1.234.24/fireyejs.js:0
+[    5419ms] [ERROR] Permissions policy violation: screen-wake-lock is not allowed in this document. @ https://g.alicdn.com/AWSC/fireyejs/1.234.24/fireyejs.js:0
+[    5437ms] [ERROR] Permissions policy violation: accelerometer is not allowed in this document. @ https://g.alicdn.com/AWSC/fireyejs/1.234.24/fireyejs.js:0
+[    5438ms] [WARNING] The deviceorientation events are blocked by permissions policy. See https://github.com/w3c/webappsec-permissions-policy/blob/master/features.md#sensor-features @ https://g.alicdn.com/AWSC/fireyejs/1.234.24/fireyejs.js:0
+[    5507ms] [ERROR] Permissions policy violation: accelerometer is not allowed in this document. @ https://g.alicdn.com/AWSC/fireyejs/1.234.24/fireyejs.js:0
+[    5508ms] [WARNING] The devicemotion events are blocked by permissions policy. See https://github.com/w3c/webappsec-permissions-policy/blob/master/features.md#sensor-features @ https://g.alicdn.com/AWSC/fireyejs/1.234.24/fireyejs.js:0
+[    5739ms] [ERROR] Error fetching common config: {api: mtop.relationrecommend.wirelessrecommend.recommend, data: Object, ret: Array(1), traceId: 2100c88117868660547906714e0a2a, v: 1.0} @ https://g.alicdn.com/main-search/pc-search-2024/1.8.52/js/main.js:0
+[    5745ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:60328/:0
+[    5855ms] [ERROR] Permissions policy violation: accelerometer is not allowed in this document. @ https://g.alicdn.com/AWSC/uab/1.140.0/collina.js:1
+[    5855ms] [WARNING] The deviceorientation events are blocked by permissions policy. See https://github.com/w3c/webappsec-permissions-policy/blob/master/features.md#sensor-features @ https://g.alicdn.com/AWSC/uab/1.140.0/collina.js:1
+[    6115ms] [LOG] %c [APLUS] -- APLUS INIT SUCCESS background:#3B82FE; padding: 4px; padding-right: 8px; border-radius: 4px; color: #fff; @ :1
+[    7989ms] [LOG] Sun Aug 16 2026 15:40:57 GMT+0800 (中国标准时间) @ https://g.alicdn.com/AWSC/et/1.84.2/et_f.js:2
+[    4675ms] [ERROR] Permissions policy violation: gyroscope is not allowed in this document. @ https://g.alicdn.com/secdev/sufei_data/3.9.14/index.js:0
+[    4675ms] [ERROR] Permissions policy violation: accelerometer is not allowed in this document. @ https://g.alicdn.com/secdev/sufei_data/3.9.14/index.js:0
+[    4675ms] [WARNING] The deviceorientation events are blocked by permissions policy. See https://github.com/w3c/webappsec-permissions-policy/blob/master/features.md#sensor-features @ https://g.alicdn.com/secdev/sufei_data/3.9.14/index.js:0
+[    8020ms] [WARNING] It is recommended that a robustness level be specified. Not specifying the robustness level could result in unexpected behavior. @ https://g.alicdn.com/AWSC/fireyejs/1.234.24/fireyejs.js:0
+[    8209ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://login.taobao.com/havanaone/login/login.htm?bizName=taobao&redirectURL=https%3A%2F%2Fs.taobao.com%2Fsearch%3FclientPreloadId%3Dpreload_1786866048108%26commend%3Dall%26ie%3Dutf8%26initiative_id%3Dtbindexz_20170306%26preLoadOrigin%3Dhttps%253A%252F%252Fwww.taobao.com%26q%3D%2525E7%2525AB%25258B%2525E5%2525BC%25258F%2525E7%2525A9%2525BA%2525E8%2525B0%252583%26search_type%3Ditem%26sourceId%3Dtb.index%26spm%3Da21bo.jianhua%252Fa.search_manual.0%26ssid%3Ds5-e%26tab%3Dall:0
+[    8257ms] [ERROR] Permissions policy violation: gyroscope is not allowed in this document. @ https://g.alicdn.com/secdev/sufei_data/3.9.14/index.js:0
+[    8258ms] [ERROR] Permissions policy violation: accelerometer is not allowed in this document. @ https://g.alicdn.com/secdev/sufei_data/3.9.14/index.js:0
+[    8258ms] [WARNING] The deviceorientation events are blocked by permissions policy. See https://github.com/w3c/webappsec-permissions-policy/blob/master/features.md#sensor-features @ https://g.alicdn.com/secdev/sufei_data/3.9.14/index.js:0
+[    8376ms] [LOG] Sun Aug 16 2026 15:40:58 GMT+0800 (中国标准时间) @ https://g.alicdn.com/AWSC/et/1.84.2/et_f.js:2
+[    8388ms] [WARNING] Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://s.taobao.com') does not match the recipient window's origin ('https://login.taobao.com'). @ https://g.alicdn.com/main-search/new-search-suggest/2.14.6/bundle.js:1
+[   10028ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:60328/:0

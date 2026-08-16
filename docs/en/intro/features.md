@@ -66,7 +66,7 @@ Around the lifecycle of a tree, `FlexTree` provides a complete set of operations
 
 ## Event Mechanism
 
-`FlexTreeManager` has a built-in event mechanism. In addition to the `beforeWrite` / `afterWrite` hooks around write operations, it also provides node-level events such as `node:added`, `node:deleted`, `node:moved`, `node:updated`, and `node:cleared`, so the business layer can react to tree changes.
+`FlexTreeManager` has a built-in event mechanism. In addition to the `write:before` / `write:after` hooks around write operations, it also provides node-level events such as `node:added`, `node:deleted`, `node:moved`, `node:updated`, and `node:cleared`, so the business layer can react to tree changes. The `write:commit` event fires before a transaction commits, aggregating all SQL of the `write`.
 
 ## Limitations
 

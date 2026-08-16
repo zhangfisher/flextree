@@ -88,8 +88,10 @@ export type RemoveKeyFields<
 };
 
 export type FlexTreeEvents = {
-  beforeWrite: undefined; // 当执行写操作前触发
-  afterWrite: undefined; // 当执行写操作后触发
+  "write:before": undefined; // 当执行写操作前触发
+  "write:after": undefined; // 当执行写操作后触发
+  // 事务 COMMIT 前触发：聚合本次 write 收集到的全部 SQL（只读通知，监听器异常不回滚；空批不触发）
+  "write:commit": { tree: any; sqls: string[] };
   "node:added": { tree: any; nodes: any[]; at: any; pos: FlexNodeRelPosition }; // 增加节点
   "node:deleted": { tree: any; node: any; recycled?: boolean }; // 删除节点；recycled=true 表示经回收站逻辑删除（站外→站内跃迁）
   "node:recycled": { tree: any; node: any }; // 节点被移入回收站（deleteNode recycle 专用）
@@ -160,3 +162,5 @@ export type FlexTreeExportListFormat<
   : TreeNode) & { [P in OPTIONS["pidField"] & string]: NodeId })[];
 
 export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
+
+ 

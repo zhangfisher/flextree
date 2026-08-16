@@ -1,0 +1,187 @@
+/**
+ * demo 样式：全部圈在 .flextree-demo 命名空间内，与文档站样式完全隔离
+ * （body/:root/* 级全局规则一律不写——它们会污染整站）。
+ * 布局：树在上、事件流在下方。
+ */
+.flextree-demo {
+  color-scheme: light;
+  --border: #e2e8f0;
+  --bg: #f8fafc;
+  --accent: #0ea5e9;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: #1e293b;
+  border-radius: 8px;
+  padding: 4px;
+}
+.flextree-demo *,
+.flextree-demo *::before,
+.flextree-demo *::after { box-sizing: border-box; }
+
+.flextree-demo .app { max-width: 960px; margin: 0 auto; padding: 12px 8px; }
+
+.flextree-demo header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.flextree-demo header h1 { display: flex; align-items: center; gap: 8px; font-size: 18px; margin: 0; font-weight: 600; }
+.flextree-demo .subtitle { margin: 0; color: #64748b; font-size: 13px; }
+
+.flextree-demo .mode-switch { display: inline-flex; gap: 6px; }
+.flextree-demo .mode-switch button {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border: 1px solid var(--border); border-radius: 8px;
+  background: #fff; cursor: pointer; font-size: 13px;
+}
+.flextree-demo .mode-switch button.active { border-color: var(--accent); color: var(--accent); background: #f0f9ff; }
+
+.flextree-demo .explorer { background: #fff; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+
+.flextree-demo .toolbar {
+  display: flex; gap: 4px; padding: 8px; border-bottom: 1px solid var(--border); align-items: center;
+}
+.flextree-demo .toolbar button {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border: none; border-radius: 6px;
+  background: transparent; cursor: pointer; color: #334155;
+}
+.flextree-demo .toolbar button:hover:not(:disabled) { background: #f1f5f9; }
+.flextree-demo .toolbar button:disabled { opacity: 0.35; cursor: not-allowed; }
+.flextree-demo .toolbar button.active { background: #e0f2fe; color: var(--accent); }
+.flextree-demo .toolbar .spacer { flex: 1; }
+
+.flextree-demo .tree-table-wrap { overflow: auto; max-height: 420px; }
+.flextree-demo .tree-table { border-collapse: collapse; font-size: 13px; width: 100%; }
+.flextree-demo .tree-table th, .flextree-demo .tree-table td { border-bottom: 1px solid var(--border); padding: 5px 10px; text-align: left; }
+.flextree-demo .tree-table th { position: sticky; top: 0; background: #f8fafc; color: #475569; font-weight: 500; }
+.flextree-demo .tree-table td:nth-child(n+4) { font-variant-numeric: tabular-nums; color: #64748b; }
+.flextree-demo .tree-table .bin-row { color: #94a3b8; }
+.flextree-demo .tree-table tr:hover { background: #f1f5f9; }
+
+/* 布局：树在上，事件流在下方 */
+.flextree-demo .main { display: flex; flex-direction: column; min-height: 300px; }
+.flextree-demo .tree-pane { padding: 8px; position: relative; }
+
+.flextree-demo .tree { position: relative; outline: none; }
+.flextree-demo .tree button.treeitem-button {
+  display: block; width: 100%; border: none; background: none; padding: 0; cursor: pointer;
+  text-align: left;
+}
+.flextree-demo .treeitem {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 8px; border-radius: 6px; font-size: 14px; width: 100%;
+}
+.flextree-demo .treeitem:hover { background: #f1f5f9; }
+.flextree-demo .treeitem.focused { outline: 1px solid var(--accent); }
+.flextree-demo .treeitem.selected { background: #e0f2fe; }
+.flextree-demo .treeitem.drop-target { background: #dcfce7; outline: 1px dashed #22c55e; }
+.flextree-demo .treeitem.bin { color: #94a3b8; }
+.flextree-demo .treeitem .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flextree-demo .treeitem .ns-pos {
+  margin-left: auto;
+  font-size: 11px;
+  color: #b6c2d2;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  padding-left: 8px;
+}
+.flextree-demo .row-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0;
+}
+.flextree-demo .treeitem:hover .row-action,
+.flextree-demo .treeitem.selected .row-action { opacity: 1; }
+.flextree-demo .row-action:hover { background: #e2e8f0; color: var(--accent); }
+.flextree-demo .row-action.bin-clear:hover { color: #dc2626; background: #fef2f2; }
+.flextree-demo .chevron { color: #94a3b8; flex-shrink: 0; }
+.flextree-demo .chevron-placeholder { width: 14px; flex-shrink: 0; }
+
+.flextree-demo .dragline {
+  height: 2px; margin-top: -1px; background-color: var(--accent);
+  position: absolute; width: 100%; pointer-events: none;
+}
+.flextree-demo .dragline::before {
+  content: ""; position: absolute; left: 0; top: -3px;
+  height: 4px; width: 4px; background: #fff;
+  border: 2px solid var(--accent); border-radius: 99px;
+}
+
+.flextree-demo .rename-row { padding: 2px 8px; }
+.flextree-demo .rename-row input {
+  width: 80%; font-size: 13px; padding: 4px 6px;
+  border: 1px solid var(--accent); border-radius: 4px; outline: none;
+}
+
+/* 事件流：树下方横向面板 */
+.flextree-demo .events-pane {
+  border-top: 1px solid var(--border); padding: 12px;
+  display: flex; flex-direction: column; gap: 8px; min-width: 0;
+}
+.flextree-demo .events-pane h3 {
+  display: flex; align-items: center; gap: 6px; font-size: 13px; margin: 0; color: #475569;
+}
+.flextree-demo .events-pane .clear-events {
+  margin-left: auto; border: none; background: none; color: #94a3b8;
+  font-size: 12px; cursor: pointer;
+}
+.flextree-demo .events-pane .clear-events:hover { color: #475569; }
+.flextree-demo .events-list {
+  list-style: none; margin: 0; padding: 0; flex: 1; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 2px; max-height: 200px;
+}
+.flextree-demo .events-list .empty { color: #94a3b8; font-size: 12px; }
+.flextree-demo .evt {
+  display: flex; flex-direction: column; gap: 1px;
+  font-size: 12px; padding: 4px 6px; border-radius: 6px; background: #f8fafc;
+  border-left: 2px solid #cbd5e1;
+}
+.flextree-demo .evt-type { font-weight: 500; color: #334155; font-family: ui-monospace, monospace; font-size: 11px; }
+.flextree-demo .evt-head { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.flextree-demo .evt-detail { color: #64748b; word-break: break-all; flex: 1; min-width: 0; }
+.flextree-demo .evt-sql-trigger {
+  display: inline-flex; align-items: center; justify-content: center;
+  color: #94a3b8; cursor: pointer; flex-shrink: 0; margin-left: auto;
+}
+.flextree-demo .evt-sql-trigger:hover { color: var(--accent); }
+
+.flextree-demo .sql-modal {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgb(15 23 42 / 0.45);
+  display: flex; align-items: center; justify-content: center;
+}
+.flextree-demo .sql-modal-body {
+  width: min(720px, 90vw); max-height: 80vh;
+  background: #0f172a; border-radius: 12px; padding: 16px;
+  display: flex; flex-direction: column; gap: 10px;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.35);
+}
+.flextree-demo .sql-modal-body h4 { margin: 0; color: #e2e8f0; font-size: 14px; }
+.flextree-demo .sql-list {
+  margin: 0; overflow: auto; flex: 1;
+  color: #7dd3fc; font-size: 12px; font-family: ui-monospace, monospace;
+  white-space: pre-wrap; word-break: break-all; line-height: 1.6;
+}
+.flextree-demo .sql-close {
+  align-self: flex-end; border: none; border-radius: 6px;
+  background: #1e293b; color: #cbd5e1; padding: 6px 16px; cursor: pointer; font-size: 13px;
+}
+.flextree-demo .sql-close:hover { background: #334155; }
+.flextree-demo .evt-node-added { border-left-color: #22c55e; }
+.flextree-demo .evt-node-deleted { border-left-color: #ef4444; }
+.flextree-demo .evt-node-recycled { border-left-color: #f59e0b; }
+.flextree-demo .evt-node-moved { border-left-color: #0ea5e9; }
+.flextree-demo .evt-node-updated { border-left-color: #8b5cf6; }
+.flextree-demo .evt-node-cleared { border-left-color: #ef4444; }
+.flextree-demo .evt-write-commit { border-left-color: #94a3b8; }
+.flextree-demo .evt-write-before, .flextree-demo .evt-write-after { border-left-color: #cbd5e1; opacity: 0.75; }
+
+.flextree-demo footer { text-align: center; color: #94a3b8; font-size: 12px; margin-top: 10px; }
+.flextree-demo .loading { display: flex; justify-content: center; padding: 60px; color: #64748b; }

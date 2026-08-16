@@ -496,11 +496,11 @@ describe("MultiRootFlexTreeManager 多根树测试", () => {
       expect(fired).toEqual(["moved", "updated", "deleted", "cleared"]);
     });
 
-    test("beforeWrite/afterWrite 由 mm 发出且包裹操作", async () => {
+    test("write:before/write:after 由 mm 发出且包裹操作", async () => {
       const manager = await createPopulatedManager();
       const order: string[] = [];
-      manager.on("beforeWrite", () => order.push("before"));
-      manager.on("afterWrite", () => order.push("after"));
+      manager.on("write:before", () => order.push("before"));
+      manager.on("write:after", () => order.push("after"));
       manager.on("node:added", () => order.push("added"));
       await manager.write(async () => {
         await manager.addNodes([{ id: 99, name: "X" }]);

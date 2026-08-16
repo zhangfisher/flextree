@@ -69,3 +69,23 @@ _Avoid_: 隐藏（Hidden Root 的隐藏是对外不可见但始终存在于管�
 **includeRecyclebin**:
 所有公共 API 的统一开关。`false`（默认）：Bin 及其后代逻辑不存在；`true`：Bin 及其后当普通节点参与一切操作。
 _Avoid_: withTrash、includeDeleted
+
+### 事件
+
+**SQL Commit（SQL 提交）**:
+一次 `write` 事务内执行的全部 SQL，在事务 COMMIT 前的聚合呈现时刻。事件 `write:commit` 携带 `{ tree, sqls }` 在此时触发：只读通知（监听器异常不回滚事务）、空批不触发（未执行 SQL 的 write 不通知）、无操作归属字段（混合操作下无法明确定义，调用方意图由 node:* 事件族表达）。
+_Avoid_: beforeExecute（那是逐批执行前的语义，粒度与能力均不同）、SQL 审计钩子（暗示可改写/可中止）
+
+### 适配器
+
+**Adapter（适配器）**:
+实现 `IFlexTreeAdapter` 契约的数据库驱动封装，负责 exec/getRows/getScalar/transaction 的方言落地。核心库只面向契约编程，不感知具体驱动。
+_Avoid_: driver、connector
+
+**Injected Instance（注入实例）**:
+适配器构造契约：调用方自行完成驱动的初始化（含异步部分）后传入现成实例，适配器不负责创建与生命周期。sqlite、sqljs 适配器均属此类。
+_Avoid_: 托管模式、自建实例
+
+**Persist Hook（持久化钩子）**:
+`onPersist(db)` 回调，sqljs 适配器专属：仅在有写操作的事务成功 COMMIT 后被 await 触发，参数是 db 实例（导出与否、导出到哪由调用方决定）。抛错以 FlexTreeSqljsPersistError 包装上抛——此时内存已提交、快照未落地。
+_Avoid_: 自动保存、autosave（暗示适配器决定存储位置，实际相反）

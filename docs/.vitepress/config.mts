@@ -1,5 +1,7 @@
 import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 import { defineConfig } from 'vitepress'
+import { vitepressDemoPlugin } from 'vitepress-demo-plugin'
+import react from '@vitejs/plugin-react'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -32,7 +34,8 @@ export default defineConfig({
                             { text: '功能优势', link: '/intro/features' },
                             { text: '读写成本', link: '/intro/cost' },
                             { text: '常见问题', link: '/intro/question' },
-                            { text: '更新历史', link: '/intro/history' }
+                            { text: '更新历史', link: '/intro/history' },
+                            { text: '完整示例', link: '/demo/' }
                         ]
                     },                    
                     {
@@ -71,6 +74,7 @@ export default defineConfig({
                             { text: 'Sqlite', link: '/adapters/sqlite' },
                             { text: 'Prisma', link: '/adapters/prisma' },
                             { text: 'Bun Sqlite', link: '/adapters/bun-sqlite' },
+                            { text: 'Sql.js', link: '/adapters/sqljs' },
                         ],
                     },
                 ],
@@ -99,6 +103,7 @@ export default defineConfig({
                     { text: 'Read/Write Costs', link: '/en/intro/cost' },
                     { text: 'FAQ', link: '/en/intro/question' },
                     { text: 'Changelog', link: '/en/intro/history' },
+                    { text: 'Full Demo', link: '/en/demo/' },
                     {
                         text: 'Guide',
                         items: [
@@ -135,6 +140,7 @@ export default defineConfig({
                             { text: 'Sqlite', link: '/en/adapters/sqlite' },
                             { text: 'Prisma', link: '/en/adapters/prisma' },
                             { text: 'Bun Sqlite', link: '/en/adapters/bun-sqlite' },
+                            { text: 'Sql.js', link: '/en/adapters/sqljs' },
                         ],
                     },
                 ],
@@ -154,7 +160,21 @@ export default defineConfig({
             },
         },
     },
+    // 示例页 React demo（vitepress-demo-plugin）需要 JSX 编译支持；
+    // jsxRuntime=automatic：demo 源码没有 import React，须用自动运行时注入 jsx 工厂
+    vite: {
+        plugins: [
+            react({
+                include: [/\.vitepress\/demos\/.*\.tsx?$/],
+                jsxRuntime: "automatic",
+            }),
+        ],
+    },
     markdown: {
+        config(md) {
+            // <demo react="../.vitepress/demos/xxx.tsx" /> 组件预览（示例页）
+            md.use(vitepressDemoPlugin)
+        },
         codeTransformers: [
             transformerTwoslash({
                 // typesCache: createFileSystemTypesCache()

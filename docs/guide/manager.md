@@ -143,17 +143,20 @@ FlexTreeManager.clearInstance()
 
 `FlexTreeManager` 基于[`mitt`](https://github.com/developit/mitt)提供了事件机制，可以通过`on`/`off`/`emit`订阅、移除和触发事件。
 
-除了在写操作前后触发的`beforeWrite`与`afterWrite`外，还新增了一系列节点级事件，便于业务侧感知树的结构变更。
+除了在写操作前后触发的`write:before`与`write:after`外，还新增了一系列节点级事件，便于业务侧感知树的结构变更。
 
 | 事件 | 触发时机 | 载荷（payload） |
 | --- | --- | --- |
-| `beforeWrite` | 执行写操作之前 | 无 |
-| `afterWrite` | 执行写操作之后 | 无 |
+| `write:before` | 执行写操作之前 | 无 |
+| `write:after` | 执行写操作之后 | 无 |
+| `write:commit` | 事务提交前 | `{ tree, sqls }` |
 | `node:added` | 添加节点后 | `{ tree, nodes, at, pos }` |
 | `node:deleted` | 删除节点后 | `{ tree, node }` |
 | `node:cleared` | 清空树后 | `{ tree }` |
 | `node:updated` | 更新节点后 | `{ tree, node }` |
 | `node:moved` | 移动节点后 | `{ tree, from, to, pos }` |
+
+`write:commit` 在一次 `write` 事务提交（COMMIT）之前触发一次，`sqls` 聚合了本次事务内执行的全部 SQL 语句。它是只读通知：监听器抛出的异常会被吞掉、事务照常提交；本次 `write` 未执行任何 SQL 时不触发。
 
 - **示例**
 

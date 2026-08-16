@@ -224,7 +224,7 @@ export class MultiRootFlexTreeManager<
   /**
    * 转发子管理器的节点事件到本管理器（载荷保持原样）
    *
-   * beforeWrite/afterWrite 不转发，由本管理器的 write 自行发出
+   * write:before/write:after 不转发，由本管理器的 write 自行发出
    */
   private _forwardEvents() {
     const events = ["node:added", "node:deleted", "node:cleared", "node:updated", "node:moved"];
@@ -537,14 +537,14 @@ export class MultiRootFlexTreeManager<
    * 回调参数为本管理器实例。每次 write 结束后自动刷新 .nodes 缓存。
    */
   async write(fn: (tree: MultiRootFlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>) => Promise<void>) {
-    this._emitter.emit("beforeWrite");
+    this._emitter.emit("write:before");
     try {
       await this._manager.write(async () => {
         await fn(this);
       });
     } finally {
       await this._refreshNodes();
-      this._emitter.emit("afterWrite");
+      this._emitter.emit("write:after");
     }
   }
 

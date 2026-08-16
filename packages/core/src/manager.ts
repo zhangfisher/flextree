@@ -8,7 +8,7 @@ import { deepMerge } from "flex-tools/object/deepMerge";
 import type { RequiredDeep } from "type-fest";
 import { mix } from "ts-mixer";
 import mitt from "mitt";
-import { AsyncLocalStorage } from "node:async_hooks";
+import { AsyncLocalStorage } from "./utils/asyncLocalStage";
 import type { IFlexTreeAdapter } from "./adapter";
 import { FlexTreeDriverError, FlexTreeError, FlexTreeInvalidUpdateError } from "./errors";
 import type {
@@ -145,6 +145,8 @@ export class FlexTreeManager<
   // 写事务上下文与完成 Promise：用于读守卫，避免外部读看到 write 事务的中间态
   private _writeCtx = new AsyncLocalStorage<boolean>();
   private _txPromise?: Promise<void>;
+  // 本次 write 收集的 SQL：onExecuteSql 汇入，COMMIT 前聚合触发 write:commit
+  protected _pendingSqls: string[] = [];
 
   constructor(
     tableName: string,
@@ -305,7 +307,8 @@ export class FlexTreeManager<
       );
     }
     this._isWriting = true;
-    this._emitter.emit("beforeWrite");
+    this._pendingSqls = [];
+    this._emitter.emit("write:before");
     // 外部读守卫的完成信号：write 结束（提交/回滚）后 resolve，外部读据此解除等待
     let releaseTx!: () => void;
     this._txPromise = new Promise<void>((r) => {
@@ -324,6 +327,18 @@ export class FlexTreeManager<
           // ensure 内部的读（getRoot/addNodes）经 _guardRead 放行看事务内状态，
           // 放在外层会等待 _txPromise 造成死锁
           await this._ensureBinNode();
+          // write:commit：COMMIT 前聚合触发（须在事务回调内——回调返回后 adapter 即发 COMMIT）。
+          // 只读通知：吞掉监听器异常，事务照常提交；空批（本次 write 未执行任何 SQL）不触发
+          if (this._pendingSqls.length > 0) {
+            try {
+              this._emitter.emit("write:commit", {
+                tree: this._treeId,
+                sqls: this._pendingSqls,
+              });
+            } catch {
+              // 事件不介入执行结果
+            }
+          }
         });
       });
       this._lastUpdateAt = Date.now();
@@ -331,9 +346,10 @@ export class FlexTreeManager<
       releaseTx();
       this._txPromise = undefined;
       this._isWriting = false;
+      this._pendingSqls = [];
       // 写事务结束（提交或回滚）：失效 bin 区间缓存，下次读重新加载
       this._invalidateBinRange();
-      this._emitter.emit("afterWrite");
+      this._emitter.emit("write:after");
     }
   }
 

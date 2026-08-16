@@ -16,7 +16,6 @@ export type SqlValue =
   | boolean
   | Date
   | TemporalValue
-  | Buffer
   | Uint8Array
   | Raw
   | Record<string, unknown>
@@ -95,10 +94,10 @@ export interface Escaper {
   temporalToString(value: TemporalValue, timezone?: Timezone): string;
 
   /**
-   * 将 Buffer 转换为十六进制字符串
-   * @param buffer 要转换的 Buffer
+   * 将二进制数据转换为十六进制字符串
+   * @param data 要转换的二进制数据（Uint8Array，含 Buffer）
    */
-  bufferToString(buffer: Buffer): string;
+  bufferToString(data: Uint8Array): string;
 
   /**
    * 创建原始 SQL 对象

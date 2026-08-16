@@ -143,17 +143,20 @@ FlexTreeManager.clearInstance()
 
 `FlexTreeManager` provides an event mechanism based on [`mitt`](https://github.com/developit/mitt). You can subscribe to, remove, and trigger events via `on`/`off`/`emit`.
 
-In addition to `beforeWrite` and `afterWrite` triggered before and after write operations, a series of node-level events have been added so that the business layer can perceive structural changes to the tree.
+In addition to `write:before` and `write:after` triggered before and after write operations, a series of node-level events have been added so that the business layer can perceive structural changes to the tree.
 
-| Event           | When triggered                | Payload                  |
-| --------------- | ----------------------------- | ------------------------ |
-| `beforeWrite`   | Before a write operation      | None                     |
-| `afterWrite`    | After a write operation       | None                     |
-| `node:added`    | After nodes are added         | `{ tree, nodes, at, pos }` |
-| `node:deleted`  | After a node is deleted       | `{ tree, node }`         |
-| `node:cleared`  | After the tree is cleared     | `{ tree }`               |
-| `node:updated`  | After a node is updated       | `{ tree, node }`         |
-| `node:moved`    | After a node is moved         | `{ tree, from, to, pos }`|
+| Event               | When triggered                    | Payload                  |
+| ------------------- | --------------------------------- | ------------------------ |
+| `write:before`      | Before a write operation          | None                     |
+| `write:after`       | After a write operation           | None                     |
+| `write:commit`      | Before the transaction commits    | `{ tree, sqls }`         |
+| `node:added`        | After nodes are added             | `{ tree, nodes, at, pos }` |
+| `node:deleted`      | After a node is deleted           | `{ tree, node }`         |
+| `node:cleared`      | After the tree is cleared         | `{ tree }`               |
+| `node:updated`      | After a node is updated           | `{ tree, node }`         |
+| `node:moved`        | After a node is moved             | `{ tree, from, to, pos }`|
+
+`write:commit` fires once before a `write` transaction commits, with `sqls` aggregating all SQL statements executed within that transaction. It is a read-only notification: exceptions thrown by listeners are swallowed and the transaction still commits; it does not fire when no SQL was executed during the `write`.
 
 - **Example**
 

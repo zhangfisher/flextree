@@ -2,13 +2,6 @@
 import { describe, test, expect } from "bun:test";
 import { createEscaper, type DatabaseType, raw } from "../src/escaper";
 
-// 使用全局 Buffer 对象
-declare const Buffer: {
-  from(data: number[] | Uint8Array): Buffer;
-  prototype: Buffer;
-  isBuffer(data: unknown): data is Buffer;
-};
-
 describe("escaper 多数据库支持测试", () => {
   const dbTypes: DatabaseType[] = ["sqlite", "mysql", "postgresql", "oracle", "sqlserver"];
 
@@ -267,24 +260,32 @@ describe("escaper 多数据库支持测试", () => {
       });
     });
 
-    describe("Buffer 转换", () => {
-      test("Buffer 转十六进制", () => {
-        const buffer = Buffer.from([0x01, 0x02, 0x03]);
-        const result = escaper.bufferToString(buffer);
+    describe("二进制数据转换", () => {
+      test("Uint8Array 转十六进制", () => {
+        const data = new Uint8Array([0x01, 0x02, 0x03]);
+        const result = escaper.bufferToString(data);
         expect(result).toMatch(/X'010203'/);
       });
 
-      test("Uint8Array 转换", () => {
+      test("Uint8Array 经 escape 转换", () => {
         const uint8Array = new Uint8Array([0xff, 0xfe, 0xfd]);
         const result = escaper.escape(uint8Array);
         expect(result).toMatch(/X'.*'/);
         expect(result).toContain("FFFEFD");
       });
 
-      test("空 Buffer 转换", () => {
-        const buffer = Buffer.from([]);
-        const result = escaper.bufferToString(buffer);
+      test("空 Uint8Array 转换", () => {
+        const data = new Uint8Array([]);
+        const result = escaper.bufferToString(data);
         expect(result).toBe("X''");
+      });
+
+      test("Buffer 实例（Node 环境）与 Uint8Array 行为一致", () => {
+        // Buffer 是 Uint8Array 的子类，instanceof 分支应一并接住
+        if (typeof globalThis.Buffer === "undefined") return;
+        const buffer = new Uint8Array(globalThis.Buffer.from([0x0a, 0x0b]));
+        expect(escaper.escape(buffer)).toBe(escaper.escape(new Uint8Array([0x0a, 0x0b])));
+        expect(escaper.bufferToString(buffer)).toBe("X'0A0B'");
       });
     });
 

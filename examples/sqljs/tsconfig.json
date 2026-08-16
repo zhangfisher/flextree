@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "lib": ["ES2022", "DOM", "DOM.Iterable"],
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
+        "jsx": "react-jsx",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "noEmit": true,
+        "types": ["vite/client", "node"],
+        "paths": {
+            // workspace 根声明了 @types/react@19（供其他包用），与本例 react18 冲突：
+            // 显式钉到本包自己的 18 版类型（TS6 无需 baseUrl，相对 tsconfig 解析）
+            "react": ["./node_modules/@types/react/index.d.ts"]
+        }
+    },
+    "include": ["src"]
+}

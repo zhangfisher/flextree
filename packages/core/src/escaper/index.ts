@@ -1,6 +1,5 @@
 // oxlint-disable no-control-regex
 import type { Raw, SqlValue, TemporalValue, Timezone, DatabaseType, Escaper } from "./types";
-import { Buffer } from "node:buffer";
 
 export type { Raw, SqlValue, TemporalValue, Timezone, DatabaseType, Escaper } from "./types";
 
@@ -441,6 +440,17 @@ const createEscapeId = (config: DatabaseConfig) => {
 
 const pad2 = (value: number): string => (value < 10 ? "0" + value : "" + value);
 
+// 十六进制查找表：替代 Buffer#toString("hex")，core 保持零 node: 依赖
+const HEX_TABLE: readonly string[] = Array.from({ length: 256 }, (_, i) =>
+  i.toString(16).padStart(2, "0").toUpperCase(),
+);
+
+const toHex = (bytes: Uint8Array): string => {
+  let result = "";
+  for (let i = 0; i < bytes.length; i++) result += HEX_TABLE[bytes[i]!];
+  return result;
+};
+
 const pad3 = (value: number): string =>
   value < 10 ? "00" + value : value < 100 ? "0" + value : "" + value;
 
@@ -576,8 +586,7 @@ export const createEscaper = (type: DatabaseType): Escaper => {
     return sql;
   };
 
-  const bufferToString = (buffer: Buffer): string =>
-    `X${escapeString(buffer.toString("hex").toUpperCase())}`;
+  const bufferToString = (data: Uint8Array): string => `X${escapeString(toHex(data))}`;
 
   const arrayToList = (array: SqlValue[] | Set<SqlValue>, timezone?: Timezone): string => {
     // 如果是 Set，直接转换为数组而不包装括号
@@ -625,8 +634,8 @@ export const createEscaper = (type: DatabaseType): Escaper => {
         if (isTemporal(value)) return temporalToString(value, timezone);
         if (Array.isArray(value)) return arrayToList(value, timezone);
         if (value instanceof Set) return arrayToList(value, timezone);
-        if (Buffer.isBuffer(value)) return bufferToString(value);
-        if (value instanceof Uint8Array) return bufferToString(Buffer.from(value));
+        // Buffer 是 Uint8Array 的子类，instanceof 一并接住两种入参
+        if (value instanceof Uint8Array) return bufferToString(value);
         if (hasSqlString(value)) return String(value.toSqlString());
         if (!(stringifyObjects === undefined || stringifyObjects === null))
           return escapeString(String(value));

@@ -66,7 +66,7 @@ await tree.deleteNode(node)
 
 ## 事件机制
 
-`FlexTreeManager`内置事件机制，除写操作前后的`beforeWrite`/`afterWrite`外，还提供`node:added`、`node:deleted`、`node:moved`、`node:updated`、`node:cleared`等节点级事件，便于业务侧感知树的变更。
+`FlexTreeManager`内置事件机制，除写操作前后的`write:before`/`write:after`外，还提供`node:added`、`node:deleted`、`node:moved`、`node:updated`、`node:cleared`等节点级事件，便于业务侧感知树的变更；事务提交前还有`write:commit`事件，聚合呈现本次`write`的全部`SQL`。
 
 ## 局限性
 
