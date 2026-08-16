@@ -12,12 +12,13 @@ import '../../.vitepress/demos/styles.css'
 </script>
 
 :::tip Things to try
+
 - **Drag** nodes to reorganize the structure (drop onto the recycle bin = logical delete; drag out = restore)
 - Use the toolbar to **add/rename/delete** departments/employees and **move up/down** to reorder
 - Switch between the **tree view / table view** — the table shows the physical rows of the tree table, so you can watch how the Nested Set `leftValue/rightValue` change with every operation
 - The **event stream** below shows API events in real time; click the 🗄 icon to inspect **all SQL statements** executed by that transaction
 - The **verify** button runs an integrity check on the tree (left/right values, levels, uniqueness)
-:::
+  :::
 
 <demo
   react="../../.vitepress/demos/App.tsx"
@@ -28,21 +29,21 @@ import '../../.vitepress/demos/styles.css'
 
 ## What This Demo Does
 
-| Capability | FlexTree APIs used |
-| --- | --- |
-| Org chart (department/employee semantics) | `createRoot` / `addNodes` (nested input builds the tree in one shot) |
-| Add department/employee | `addNodes` |
-| Rename | `update` |
-| Logical delete (to recycle bin) / hard delete | `deleteNode(node, { recycle })` |
-| Empty the recycle bin | `clearRecycleBin` |
-| Restore from the bin (button/drag out) | `getChildren(bin, { includeRecyclebin: true })` + `moveNode` |
-| Drag to move/reorder | `moveNode` (with `includeRecyclebin` for cross-bin drags) |
-| Move up/down | `moveUpNode` / `moveDownNode` |
-| Single-tree ⇄ multi-root switching | `FlexTreeManager` / `MultiRootFlexTreeManager` |
-| Table view (left/right value visualization) | `getNodes({ includeRecyclebin: true })` |
-| Structure verification | `verify` |
-| Event stream panel | `on("node:added" | "node:moved" | ...)` |
-| localStorage persistence | sql.js adapter `onPersist` hook (auto-snapshot after each committed write) |
+| Capability                                    | FlexTree APIs used                                                         |
+| --------------------------------------------- | -------------------------------------------------------------------------- |
+| Org chart (department/employee semantics)     | `createRoot` / `addNodes` (nested input builds the tree in one shot)       |
+| Add department/employee                       | `addNodes`                                                                 |
+| Rename                                        | `update`                                                                   |
+| Logical delete (to recycle bin) / hard delete | `deleteNode(node, { recycle })`                                            |
+| Empty the recycle bin                         | `clearRecycleBin`                                                          |
+| Restore from the bin (button/drag out)        | `getChildren(bin, { includeRecyclebin: true })` + `moveNode`               |
+| Drag to move/reorder                          | `moveNode` (with `includeRecyclebin` for cross-bin drags)                  |
+| Move up/down                                  | `moveUpNode` / `moveDownNode`                                              |
+| Single-tree ⇄ multi-root switching            | `FlexTreeManager` / `MultiRootFlexTreeManager`                             |
+| Table view (left/right value visualization)   | `getNodes({ includeRecyclebin: true })`                                    |
+| Structure verification                        | `verify`                                                                   |
+| Event stream panel                            | `on("node:added"                                                           | "node:moved" | ...)` |
+| localStorage persistence                      | sql.js adapter `onPersist` hook (auto-snapshot after each committed write) |
 
 ## Source Code
 

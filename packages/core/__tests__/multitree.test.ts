@@ -44,6 +44,7 @@ async function createMultiTreeManager(treeId: number): Promise<FlexTreeManager<T
 }
 
 async function createMultiTreeFlexTree(treeId: number): Promise<FlexTree<TestFields>> {
+  FlexTreeManager.clearInstance(); // 测试间清理单例，避免 adapter 校验抛错
   const sqliteAdapter = new BunSqliteAdapter();
   await sqliteAdapter.open();
   await createMultiTreeTable(sqliteAdapter);

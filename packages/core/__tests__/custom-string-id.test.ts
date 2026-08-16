@@ -66,6 +66,7 @@ async function clearStringTreeIdTable(driver: BunSqliteAdapter) {
 }
 
 async function createStringTreeIdManager(treeId?: string): Promise<StringTreeIdManager> {
+  FlexTreeManager.clearInstance(); // 测试间清理单例，避免 adapter 校验抛错
   const sqliteAdapter = new BunSqliteAdapter();
   await sqliteAdapter.open();
 
@@ -92,6 +93,7 @@ async function createStringTreeIdManager(treeId?: string): Promise<StringTreeIdM
 }
 
 async function createStringTreeIdFlexTree(treeId?: string): Promise<StringTreeIdFlexTree> {
+  FlexTreeManager.clearInstance(); // 测试间清理单例，避免 adapter 校验抛错
   const sqliteAdapter = new BunSqliteAdapter();
   await sqliteAdapter.open();
 
@@ -155,6 +157,7 @@ async function clearNumericTreeIdTable(driver: BunSqliteAdapter) {
 }
 
 async function createNumericTreeIdManager(treeId?: number): Promise<NumericTreeIdManager> {
+  FlexTreeManager.clearInstance(); // 测试间清理单例，避免 adapter 校验抛错
   const sqliteAdapter = new BunSqliteAdapter();
   await sqliteAdapter.open();
   await createNumericTreeIdTable(sqliteAdapter);

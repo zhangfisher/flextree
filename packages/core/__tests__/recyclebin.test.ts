@@ -24,6 +24,7 @@ const BIN_NAME = "__recyclebin__";
 
 /** 创建启用回收站的 manager，预置树：root → A(A1, A2), B */
 async function createManager(): Promise<FlexTreeManager<TestFields>> {
+  FlexTreeManager.clearInstance(); // 测试间清理单例，避免 toJson/getTree 撞上残留实例
   driver = new BunSqliteAdapter();
   await driver.open();
   await driver.exec([

@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.1
+
+3.1 focuses on **reversible deletion, node copying, and multi-shape trees** — adding the recycle bin (logical deletion), `copyNode`, cross-tree operations, and multi-root trees.
+
+### New Features
+
+- **Recycle bin (logical deletion)**: Enabled via the `recyclebin` config. `deleteNode(node, { recycle: true })` moves the subtree into the recycle bin with its internal structure intact (reuses the move algorithm, atomic in a transaction); `clearRecycleBin()` empties it in one call. All read and write methods accept the `includeRecyclebin` view parameter — under the default view, nodes inside the bin logically do not exist; with `true` they behave as ordinary nodes (restore = read out in the bin view + `moveNode` out).
+- **Node copy `copyNode`**: The whole operation runs in a transaction with a fixed number of set-based SQL statements — database access count is independent of descendant count. Supports copying only the node itself (`includeDescendants: false`), field filtering (`fields`), and cross-tree copying (`options.treeId`).
+- **Cross-tree move**: `moveNode` accepts `options.treeId` to move a subtree across trees; when `toNode` is omitted, the node migrates out as the root of a new tree with that treeId; `canMoveTo` supports cross-tree checks as well.
+- **Multi-root tree `MultiRootFlexTreeManager`**: Delivers a user-facing tree with multiple top-level nodes via a hidden root, with automatic level normalization — all single-tree operations work as-is.
+- **`countField` descendant count**: All query methods and export methods (`toJson`/`toList`) support the `countField` parameter, computed directly by the database as `(rightValue - leftValue - 1) / 2` — unaffected by `level` truncation; visible scope when the recycle bin is enabled.
+- **New sql.js adapter** (`flextree-sqljs-adapter`): Based on sql.js, runs a full tree structure in the browser (wasm).
+
 ## 3.0
 
 3.0 is a major upgrade focused on **data safety, database compatibility, and developer experience**.

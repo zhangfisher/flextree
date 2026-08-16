@@ -44,6 +44,12 @@ _Avoid_: 新节点、副本节点
 由落点决定、不属于被复制业务数据的字段：treeId、level、leftValue、rightValue。复制时按 Destination 重新计算，不照抄源节点。
 _Avoid_: 结构字段
 
+### 读取与导出
+
+**Descendant Count（后代数）**:
+节点在**当前读取视角**下的后代节点总数（不含自身）。恒为全量：不受 `level` 截断影响；默认视角下与导出内容同口径——被回收的节点不计入，`includeRecyclebin=true` 时照常计入。
+_Avoid_: 子节点数（childrenCount，另有所指——直接孩子的数量）、物理后代数（指未扣减回收站的口径）
+
 ### 回收站
 
 **Recycle Bin（回收站）**:
@@ -75,6 +81,28 @@ _Avoid_: withTrash、includeDeleted
 **SQL Commit（SQL 提交）**:
 一次 `write` 事务内执行的全部 SQL，在事务 COMMIT 前的聚合呈现时刻。事件 `write:commit` 携带 `{ tree, sqls }` 在此时触发：只读通知（监听器异常不回滚事务）、空批不触发（未执行 SQL 的 write 不通知）、无操作归属字段（混合操作下无法明确定义，调用方意图由 node:* 事件族表达）。
 _Avoid_: beforeExecute（那是逐批执行前的语义，粒度与能力均不同）、SQL 审计钩子（暗示可改写/可中止）
+
+**Committed Write（已提交写）**:
+确认事务提交成功后的 `write:after` 时刻，payload 为 `{ committed: true }`；回滚则为 `{ committed: false }`。是内存树可以安全据此失效的唯一信号——COMMIT 前的任何事件（node:*、write:commit）都可能随回滚化为乌有。
+_Avoid_: 提交事件（与 write:commit 字面撞名）、成功事件
+
+**Structural Event（结构事件）**:
+改变树形状的节点事件族：`node:added`、`node:deleted`、`node:recycled`、`node:moved`、`node:cleared`。左右值算法下任何结构写都会大范围重编号既有节点（事件 payload 不含其新值），因此结构事件对内存树的含义恒为**整树失效**，不存在"只补一个节点"的增量语义。与 **Data Event（数据事件）**（仅 `node:updated`，只改节点自身字段）相对。
+_Avoid_: 增量事件、局部事件
+
+### 内存树
+
+**Live Tree（活树）**:
+`FlexTree` 与其 manager 共享同一 `FlexTreeManager` 实例（单例，键为表名+treeId）时的形态：已提交写触发的 `node:*` 事件被树捕获，内存树置脏并**自动启动全量重载**——"活"指自动感知本实例上的写并自我修复。重载期间的读操作抛 `FlexTreeDirtyError`（脏读防护）。自身发起的写（`FlexTree.update`）不触发重载：写路径已同步刷新内存。不改变一个边界：进程外/其他实例的写仍不可见，兜底手段是 `sync()`。
+_Avoid_: 实时树（暗示跨进程可见）、响应式树、双向绑定树
+
+**Dirty Flag（脏标记）**:
+`FlexTree.dirty`：整树级，已提交写确认树已变化且重载未完成（或已失败）时为 true——内存树不可信。树清空（clear）是合法终态：重载发现无树时清脏收场。不存在节点级脏（实现成本过高，已明确否决）。
+_Avoid_: 过期标记、缓存失效（实现语汇，非领域语汇）
+
+**Shared Manager Config（共享管理器配置）**:
+单例 manager 承载的是**连接与存储配置**（adapter、字段映射、treeId、回收站）；`lazy` 是 `FlexTree` 实例自己的读取行为，不进共享配置——同表同树可同时存在懒/非懒两棵树。
+_Avoid_: 树配置（与 FlexTreeOptions 混淆）
 
 ### 适配器
 

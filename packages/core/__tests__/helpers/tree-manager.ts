@@ -102,6 +102,8 @@ async function clearAllTables(driver: BunSqliteAdapter) {
  * 创建默认字段名的树管理器
  */
 export async function createTreeManager(treeId?: number): Promise<FlexTreeManager<TestFields>> {
+  // 清理单例注册：每次测试用全新 adapter，残留单例会因 adapter 不一致在 getInstance 校验中抛错
+  FlexTreeManager.clearInstance();
   const sqliteAdapter = new BunSqliteAdapter();
   await sqliteAdapter.open();
   if (treeId) {
@@ -126,6 +128,8 @@ export async function createFlexTree(
   treeId?: number,
   options?: { lazy?: boolean }
 ): Promise<FlexTree<TestFields>> {
+  // 清理单例注册：FlexTree 内部走 getInstance 单例，跨测试残留实例会命中 adapter 校验抛错
+  FlexTreeManager.clearInstance();
   const sqliteAdapter = new BunSqliteAdapter();
   await sqliteAdapter.open();
   if (treeId) {
@@ -148,6 +152,8 @@ export async function createFlexTree(
  * 创建自定义字段名的树管理器
  */
 export async function createCustomTreeManager(treeId?: any) {
+  // 清理单例注册：测试间残留实例会命中 getInstance 的 adapter 校验抛错
+  FlexTreeManager.clearInstance();
   const sqliteAdapter = new BunSqliteAdapter();
   await sqliteAdapter.open();
   if (treeId) {
@@ -184,6 +190,8 @@ export async function createCustomTreeManager(treeId?: any) {
  * 创建自定义字段名的 FlexTree
  */
 export async function createCustomFlexTree(treeId?: any) {
+  // 清理单例注册：FlexTree 内部走 getInstance 单例，跨测试残留实例会命中 adapter 校验抛错
+  FlexTreeManager.clearInstance();
   const sqliteDriver = new BunSqliteAdapter();
   await sqliteDriver.open();
   if (treeId) {

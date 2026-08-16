@@ -24,11 +24,12 @@ export class FindNodeMixin<
    * findNode({name:"A",level:1})  根据组合AND条件查找节点
    *
    * 启用回收站时默认排除 bin 及其后代（数据库端过滤），includeRecyclebin=true 时包含
+   * @param options.countField 指定后附加后代数量字段
    */
   async findNode(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     node: NodeId | Partial<TreeNode>,
-    options?: { includeRecyclebin?: boolean },
+    options?: { includeRecyclebin?: boolean; countField?: string },
   ): Promise<TreeNode | null> {
     let nodes: TreeNode[] = [];
     if (typeof node === "object") {
@@ -50,24 +51,27 @@ export class FindNodeMixin<
    * findNodes({name:"A",level:1})  根据组合AND条件查找节点
    *
    * 启用回收站时默认排除 bin 及其后代（数据库端过滤），includeRecyclebin=true 时包含
+   * @param options.countField 指定后每条节点数据附加该字段，值为后代节点数量（可见口径）
    */
   async findNodes(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     condition: Partial<TreeNode>,
-    options?: { includeRecyclebin?: boolean },
+    options?: { includeRecyclebin?: boolean; countField?: string },
   ): Promise<TreeNode[]> {
     const keys = Object.keys(condition);
     if (keys.length === 0) {
       throw new FlexTreeError("Invalid condition");
     }
     const binFilter = await this._buildBinFilter(!!options?.includeRecyclebin);
-    const sql = this._sql(`select * from ${this.tableName}
+    await this._assertCountField(options?.countField);
+    const countExpr = await this._countExpr(options?.countField, !!options?.includeRecyclebin);
+    const sql = this._sql(`select *${countExpr ? `,${countExpr}` : ""} from ${this.tableName}
             where  {__TREE_ID__} ${keys
               .map((key) => {
                 return `${this.escaper.escapeId(key)}=${this.escaper.escape(condition[key])}`;
               })
               .join(" AND ")}${binFilter}
         `);
-    return await this.getRows(sql);
+    return (await this.getRows(sql)) as TreeNode[];
   }
 }

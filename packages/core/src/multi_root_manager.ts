@@ -389,9 +389,11 @@ export class MultiRootFlexTreeManager<
    */
   async getSiblings(
     nodeId: NodeId | TreeNode,
-    options?: { includeSelf?: boolean; includeRecyclebin?: boolean },
+    options?: { includeSelf?: boolean; includeRecyclebin?: boolean; countField?: string },
   ) {
-    return this._normalizeNodes(await this._manager.getSiblings(nodeId, options));
+    return this._normalizeNodes(
+      (await this._manager.getSiblings(nodeId, options)) as TreeNode[],
+    );
   }
 
   /**
@@ -701,6 +703,9 @@ export class MultiRootFlexTreeManager<
   ): Promise<FlexTreeExportJsonFormat<Fields, KeyFields>[]> {
     const tree = this._buildExportTree();
     await tree.load();
+    // countField：预取 Bin 区间（可见口径），隐藏根不在导出结果中、Bin 恒为其子节点，
+    // 用户根子树永不含 Bin——各用户根的 count 无需扣减
+    await tree.prepareCountContext(options);
     const childrenField = options?.childrenField ?? "children";
     return (tree.root?.children ?? []).map((child) =>
       this._fixJsonLevel(child.toJson(options), childrenField),
@@ -715,6 +720,7 @@ export class MultiRootFlexTreeManager<
   ): Promise<FlexTreeExportListFormat<Fields, KeyFields>> {
     const tree = this._buildExportTree();
     await tree.load();
+    await tree.prepareCountContext(options);
     const pidField = options?.pidField ?? "pid";
     const results: any[] = [];
     for (const child of tree.root?.children ?? []) {

@@ -37,6 +37,7 @@ interface FlexTreeExportJsonOptions<
     level?: number // Limit the level to export
     fields?: (keyof IFlexTreeNode<Fields, KeyFields>)[]
     includeKeyFields?: boolean
+    countField?: string // Attach a descendant-count field
 }
 
 
@@ -51,6 +52,7 @@ interface FlexTreeExportJsonOptions<
 | `options.level`            | `number`                                     | None         | Limit the level to export   |
 | `options.fields`           | `(keyof IFlexTreeNode<Fields, KeyFields>)[]` | None         | Fields to export            |
 | `options.includeKeyFields` | `boolean`                                    | `false`      | Whether to export key fields |
+| `options.countField`       | `string`                                     | None         | Descendant-count field name |
 
 - **Return**
 
@@ -131,6 +133,23 @@ The output is as follows:
   - By default the `leftValue` and `rightValue` fields are not exported; use `options.includeKeyFields` to specify whether to export key fields.
   - You can specify the child field name via the `options.childrenField` parameter.
 
+### countField Descendant Count
+
+When `options.countField` is specified, each node gets an extra field holding its **descendant count** (`0` for leaves):
+
+```ts
+await manager.toJson({ countField: "count" })
+// { "id": 1, "name": "root", "count": 12, "children": [
+//    { "id": 2, "name": "A", "count": 3, "children": [...] },
+//    ...
+// ] }
+```
+
+- The count is computed as `(rightValue - leftValue - 1) / 2` and is always the **full descendant count** — unaffected by `level` truncation (with `level: 2`, the root's count still includes deeper descendants)
+- `countField` has the same standing as `id`: it is attached even when `fields` filtering is specified, independent of `includeKeyFields`
+- Conflicting with an existing node field throws a `FlexTreeError`
+- With the recycle bin enabled the count uses the **visible scope**: by default it excludes recycled nodes (consistent with the exported content); with `includeRecyclebin: true` it is the full physical count
+
 ## toList
 
 `FlexTreeManager`, `FlexTree`, and `FlexTreeNode` all support the `toList` method, which exports the tree to a `list` node array with a `pid` field.
@@ -147,6 +166,7 @@ interface FlexTreeExportListOptions<
     level?: number // Limit the level to export
     fields?: (keyof IFlexTreeNode<Fields, KeyFields>)[]
     includeKeyFields?: boolean
+    countField?: string // Attach a descendant-count field
 }
 ```
 
@@ -159,6 +179,7 @@ interface FlexTreeExportListOptions<
 | `options.level`            | `number`                                     | None    | Limit the level to export   |
 | `options.fields`           | `(keyof IFlexTreeNode<Fields, KeyFields>)[]` | None    | Fields to export            |
 | `options.includeKeyFields` | `boolean`                                    | `false` | Whether to export key fields |
+| `options.countField`       | `string`                                     | None    | Descendant-count field name |
 
 - **Return**
 
@@ -217,7 +238,7 @@ The output is as follows:
 ```
 
 :::warning Note
-Both `toList` and `toJson` support a `level` parameter to limit the exported level. They can be called on `FlexTree` and `FlexTreeNode`.
+Both `toList` and `toJson` support a `level` parameter to limit the exported level. They can be called on `FlexTree` and `FlexTreeNode`. The semantics of `countField` are described in [countField Descendant Count](#countfield-descendant-count) above.
 :::
 
 ## getTree

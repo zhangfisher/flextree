@@ -305,7 +305,7 @@ interface ForEachOptions {
     startFrom?: NodeId | TreeNode  // Start node, defaults to the root node
     maxLevel?: number              // Maximum traversal level, default unlimited
     includeStartNode?: boolean     // Whether to include the start node, default true
-    includeRecyclebin?: boolean    // Whether to enter the recycle bin, default false (effective when the recycle bin is enabled)
+    includeRecyclebin?: boolean    // false (default): in-bin nodes are treated as non-existent and skipped; true: they participate in traversal as ordinary nodes
 }
 ```
 
@@ -318,7 +318,7 @@ interface ForEachOptions {
 | `options.startFrom` | `NodeId \| TreeNode` | root node | Start node of the traversal |
 | `options.maxLevel` | `number` | `Infinity` | Maximum traversal level |
 | `options.includeStartNode` | `boolean` | `true` | Whether to include the start node |
-| `options.includeRecyclebin` | `boolean` | `false` | Whether to enter the recycle-bin subtree (see [Recycle Bin](./recyclebin)) |
+| `options.includeRecyclebin` | `boolean` | `false` | `false` (default): in-bin nodes are treated as non-existent and skipped; `true`: they participate in traversal as ordinary nodes (see [Recycle Bin](./recyclebin)) |
 
 - **Example**
 
@@ -367,3 +367,45 @@ async function expandNode(nodeId: NodeId): Promise<TreeNode[]> {
     - Returning `false` from the callback breaks the traversal; returning `true` or any other value continues.
     - `maxLevel` limits by `level`; nodes beyond the level will not be visited.
     - Do not perform write operations during traversal (writes must run inside `write()`, and interleaving them with traversal reads may observe intermediate states).
+
+## Query Parameters
+
+A summary of the `options` members of the query methods. Apart from the `forEach`-specific parameters (`mode`/`startFrom`/`maxLevel`/`includeStartNode`), the following parameters are shared across query methods:
+
+### countField
+
+When specified, each returned node gets an extra field holding its **descendant count** (`0` for leaves). Available on all query methods (`getNodes`/`getNode`/`getDescendants`/`getChildren`/`getNthChild`/`getAncestors`/`getParent`/`getSiblings`/`getNextSibling`/`getPreviousSibling`/`getRoot`/`findNodes`/`findNode`) and the export methods (`toJson`/`toList`, see [Export](./export)).
+
+```ts
+const nodes = await treeManager.getNodes({ countField: "count" })
+// [ {id:1,name:"ROOT",count:3,...}, {id:2,name:"A",count:0,...}, ... ]
+```
+
+- The count is computed as `(rightValue - leftValue - 1) / 2`, done directly in the database `SQL`
+- It is always the **full descendant count** — unaffected by truncation parameters such as `level`
+- It matches `getDescendantsCount(node)` (default scope)
+- Conflicting with an existing node field throws a `FlexTreeError`
+- With the recycle bin enabled the count uses the **visible scope**: by default it excludes recycled nodes; with `includeRecyclebin: true` it is the full physical count
+
+### level
+
+Limits the returned levels. `0` (default) means no limit; in `getNodes`, `level=N` returns levels `1-N`; in `getDescendants`, `level=N` returns descendants within `N` levels of the reference node. The `countField` computation is unaffected by it.
+
+### includeSelf
+
+Whether to include the reference node itself, default `false`. Available on `getDescendants`/`getAncestors`/`getSiblings`.
+
+### includeRecyclebin
+
+Whether to include recycle-bin nodes in queries, default `false` (effective once the recycle bin is enabled, see [Recycle Bin](./recyclebin)).
+
+- `false` (default): logically deleted (recycled) nodes are **treated as non-existent** — invisible to `getNodes`/`getDescendants`/`findNodes` etc., `getNode` throws `NotFound` by id, and traversal/export results exclude them
+- `true`: enters the recycle-bin view; **the bin and every node inside it can be operated on just like ordinary nodes**
+
+**When to set it to `true`: when managing the recycle bin itself.** Under the default view in-bin nodes are completely invisible — any operation on the bin's contents (listing them to render a "Trash" page, reading a node for restoration, permanently deleting from the bin) must first enter the bin view via `includeRecyclebin: true` to reach the target nodes.
+
+Available on all read methods. Combined with `countField` it controls its scope: visible count by default (excluding in-bin), full physical count when `true`.
+
+### fields
+
+Limits the returned field names; all fields are returned by default. Available on `getNodes`. When specified, the `id` and `countField` attached fields are still kept.

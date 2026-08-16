@@ -88,7 +88,10 @@ await tree.verify();                         // true — tree structure remains 
 
 ## includeRecyclebin: The Bin View
 
-All public APIs accept the `includeRecyclebin` option (default `false`). With `true`, the bin and its descendants become ordinary nodes:
+All public APIs accept the `includeRecyclebin` option (default `false`):
+
+- `false` (default): logically deleted nodes are **treated as non-existent** — invisible to queries, `NotFound` by id for reads/writes, skipped by traversal, excluded from exports. Regular business reads and writes never notice the recycle bin exists.
+- `true`: enters the bin view; **the bin node and every node inside it can be operated on just like ordinary nodes** — querying, updating, moving, copying, and deleting all work as usual. **This parameter is what you need when managing the recycle bin itself** — listing its contents (rendering a "Trash" page), reading a node for restoration, permanently deleting from the bin, reordering inside the bin. Under the default view in-bin nodes are invisible; without entering the bin view you cannot even reach the target nodes.
 
 ```ts
 // Queries: include bin contents
@@ -114,6 +117,7 @@ await tree.deleteNode(aId, { includeRecyclebin: true });
 - **Navigation** (`getNextSibling`/`getPreviousSibling`): skips the bin subtree by default, returns the next logically existing node
 - **Writes** (`deleteNode`/`moveNode`/`copyNode`/`addNodes`/`update`): id paths throw NotFound by default; object paths pass under the "object-as-credential" rule
 - **Traversal/export** (`forEach`/`toJson`/`toList`): skip/exclude the bin by default
+- **Descendant count (`countField`)**: under the default view the count uses the **visible scope** — recycled nodes are excluded (consistent with the exported content; computed and deducted directly in the database `SELECT` expression); with `includeRecyclebin: true` it is the full physical count (see [Export](./export#countfield-descendant-count))
 - **Internal mechanisms** (`verify`/`repair`/`clear`): unaffected (the bin is an ordinary tree member, participating in verification and repair)
 
 :::tip Object as credential

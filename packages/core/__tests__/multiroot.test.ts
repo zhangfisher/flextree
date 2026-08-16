@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import {
   MultiRootFlexTreeManager,
+  FlexTreeManager,
   HIDDEN_ROOT_NAME,
   FlexNodeRelPosition,
   FlexTreeNodeInvalidOperationError,
@@ -17,6 +18,7 @@ interface TestFields {
 let driver: BunSqliteAdapter;
 
 async function createMultiRootManager(): Promise<MultiRootFlexTreeManager<TestFields>> {
+  FlexTreeManager.clearInstance(); // 测试间清理单例，避免 getTree 撞上残留实例的 adapter 校验
   driver = new BunSqliteAdapter();
   await driver.open();
   await driver.exec([

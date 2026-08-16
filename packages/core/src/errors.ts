@@ -13,3 +13,6 @@ export class FlexTreeInvalidUpdateError extends FlexTreeError { }
 export class FlexTreeNodeError extends FlexTreeError { }
 export class FlexTreeNodeNotFoundError extends FlexTreeNodeError { }
 export class FlexTreeNodeInvalidOperationError extends FlexTreeNodeError { }
+
+// Live Tree：内存树脏重载进行中时被读取（详见 CONTEXT.md「Live Tree」）
+export class FlexTreeDirtyError extends FlexTreeError { }

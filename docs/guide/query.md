@@ -305,7 +305,7 @@ interface ForEachOptions {
     startFrom?: NodeId | TreeNode  // 起始节点，默认根节点
     maxLevel?: number              // 最大遍历层级，默认无限
     includeStartNode?: boolean     // 是否包含起始节点，默认 true
-    includeRecyclebin?: boolean    // 是否进入回收站，默认 false（启用回收站后生效）
+    includeRecyclebin?: boolean    // 是否遍历回收站内的节点：false（默认）回收站节点视为不存在、不进入；true 作为普通节点进入遍历
 }
 ```
 
@@ -318,7 +318,7 @@ interface ForEachOptions {
 | `options.startFrom` | `NodeId \| TreeNode` | 根节点 | 遍历的起始节点 |
 | `options.maxLevel` | `number` | `Infinity` | 最大遍历层级 |
 | `options.includeStartNode` | `boolean` | `true` | 是否包含起始节点 |
-| `options.includeRecyclebin` | `boolean` | `false` | 是否进入回收站子树（见[回收站](./recyclebin)） |
+| `options.includeRecyclebin` | `boolean` | `false` | `false`（默认）回收站内节点视为不存在、不进入遍历；`true` 时站内节点作为普通节点参与遍历（见[回收站](./recyclebin)） |
 
 - **示例**
 
@@ -367,4 +367,46 @@ async function expandNode(nodeId: NodeId): Promise<TreeNode[]> {
     - 回调返回`false`会中断遍历；返回`true`或其它值则继续。
     - `maxLevel`按层级（`level`）限制，超出层级的节点不会被访问。
     - 遍历过程中**不要执行写操作**（写需在 `write()` 内且与遍历的读交错可能读到中间态）。
+
+## 查询参数
+
+各查询方法的`options`成员项汇总介绍。除`forEach`的专属参数（`mode`/`startFrom`/`maxLevel`/`includeStartNode`）外，以下参数在多个查询方法间通用：
+
+### countField
+
+指定后，返回的每条节点数据会附加一个表示**后代节点数量**的字段（叶子节点为`0`）。适用于所有查询方法（`getNodes`/`getNode`/`getDescendants`/`getChildren`/`getNthChild`/`getAncestors`/`getParent`/`getSiblings`/`getNextSibling`/`getPreviousSibling`/`getRoot`/`findNodes`/`findNode`）与导出方法（`toJson`/`toList`，见[导出](./export)）。
+
+```ts
+const nodes = await treeManager.getNodes({ countField: "count" })
+// [ {id:1,name:"ROOT",count:3,...}, {id:2,name:"A",count:0,...}, ... ]
+```
+
+- 数量按`(rightValue - leftValue - 1) / 2`计算，由数据库在`SQL`中直接完成
+- 恒为**全量后代数**——不受`level`等截断参数影响
+- 与`getDescendantsCount(node)`（默认视角）结果一致
+- 与节点已有字段重名时会抛出`FlexTreeError`
+- 启用回收站时为**可见口径**：默认视角下数量不含已被回收的节点；`includeRecyclebin: true`时为物理全集数量
+
+### level
+
+限定返回的层级。`0`（默认）表示不限制；`getNodes`中`level=N`返回第`1-N`层节点；`getDescendants`中`level=N`返回参照节点下`N`层之内的后代。`countField`的数量计算不受其影响。
+
+### includeSelf
+
+是否包含参照节点自身，默认`false`。适用于`getDescendants`/`getAncestors`/`getSiblings`。
+
+### includeRecyclebin
+
+是否在查询中包含回收站内的节点，默认`false`（启用回收站后生效，见[回收站](./recyclebin)）。
+
+- `false`（默认）：被逻辑删除（已进回收站）的节点**视为不存在**——`getNodes`/`getDescendants`/`findNodes`等查不到它们，`getNode`按 id 读取抛`NotFound`，遍历与导出结果不含它们
+- `true`：进入回收站视角，**回收站（bin 节点）及其内部的所有节点均可以像普通节点一样进行一切操作**——查询、修改、移动、复制、删除照常
+
+**何时需要设为`true`：管理回收站本身时。** 默认视角下站内节点完全不可见，任何针对回收站内容的操作——列出回收站列表（渲染"回收站页面"）、读取站内节点用于恢复、从站内彻底删除、站内重排——都必须先以`includeRecyclebin: true`进入回收站视角才能读到、操作到目标节点。
+
+适用于所有读取方法。与`countField`组合时控制其口径：默认为可见数量（不含站内），`true`为物理全集数量。
+
+### fields
+
+限定返回的字段名称，默认返回全部字段。适用于`getNodes`。指定后`id`与`countField`附加字段仍然保留。
 

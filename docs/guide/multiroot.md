@@ -235,8 +235,9 @@ const list = await tree.toList();
 // ]
 ```
 
-- `toJson` 的所有选项（`childrenField`/`level`/`fields`/`includeKeyFields`）与 `FlexTreeManager` 一致，`level` 值已归一化。
+- `toJson` 的所有选项（`childrenField`/`level`/`fields`/`includeKeyFields`/`countField`）与 `FlexTreeManager` 一致，`level` 值已归一化。
 - `toList` 中用户根的 `pid` 为 `0`，不会泄漏隐藏根的 id。
+- `countField` 同样支持：为每个节点附加后代数量字段。由于 bin 恒挂隐藏根之下，各用户根的 count 不会被回收站内容污染（见[导出](./export#countfield-后代数量)）。
 
 ## 事件
 

@@ -123,21 +123,40 @@ export function TreeExplorer({ source, mode, onChanged }: TreeExplorerProps) {
       getChildren: (id) =>
         id === "root" ? dataRef.current.rootIds : dataRef.current.items[id]?.children ?? [],
     },
+    // 回收站行恒可作落点：空站时 bin 无孩子、snapshot 的栈重建不会把它的 kind 升为
+    // dept，headless-tree 默认 canDrop(isFolder) 会拒绝 MakeChild → 落点被降级成
+    // "根内排序"，拖进回收站就静默变成了普通移动。显式放行 bin 自身
+    canDrop: (dragged, target) => {
+      if (target.item.getId() === RECYCLEBIN_ID) return true;
+      // 站内节点只允许拖出站外恢复，站内落点一律拒绝
+      if (target.item.isDescendentOf(RECYCLEBIN_ID)) return false;
+      return target.item.isFolder() || dragged[0].isDescendentOf(RECYCLEBIN_ID);
+    },
     onDrop: async (dragged, target) => {
       const dragId = dragged[0].getId();
-      // 落到回收站 = 逻辑删除（core 的 deleteNode(recycle:true) 即 moveNode 进站，
-      // 直接走该 API 而非 moveNode——站内落点被回收站门控拒绝是设计使然）
+      // 落到回收站行 = 逻辑删除（core 的 deleteNode(recycle:true) 即 moveNode 进站，
+      // 直接走该 API 而非 moveNode——站内落点被回收站门控拒绝是设计使然）。
+      // bin 行整行命中：排序带（上下 30%）的 target.item 是 bin 的父级，插到 bin
+      // 前/后对用户都是"进回收站"语义，统一按进站处理
       const dropTargetId = target.item.getId();
-      if (dropTargetId === RECYCLEBIN_ID) {
+      const siblingIds =
+        dropTargetId === "root"
+          ? dataRef.current.rootIds
+          : (dataRef.current.items[dropTargetId]?.children ?? []);
+      // 排序带插到 bin 前后 = 整行命中回收站，同为进站语义。
+      // 落到 bin 后方时 insertionIndex 越界，以 bin 为插入序列末尾识别
+      if (
+        dropTargetId === RECYCLEBIN_ID ||
+        (isOrderedDragTarget(target) &&
+          (siblingIds[target.insertionIndex] === RECYCLEBIN_ID ||
+            (target.insertionIndex >= siblingIds.length &&
+              siblingIds[siblingIds.length - 1] === RECYCLEBIN_ID)))
+      ) {
         await applyChange(() => source.deleteNode(dragId, true));
         return;
       }
       if (isOrderedDragTarget(target)) {
         // 兄弟排序：target.item 即新父，insertionIndex 为新父内插入位
-        const siblingIds =
-          dropTargetId === "root"
-            ? dataRef.current.rootIds
-            : (dataRef.current.items[dropTargetId]?.children ?? []);
         await applyChange(() =>
           source.moveNode(dragId, {
             newParentId: dropTargetId === "root" ? null : dropTargetId,
@@ -146,11 +165,12 @@ export function TreeExplorer({ source, mode, onChanged }: TreeExplorerProps) {
           }),
         );
       } else {
-        // 放进目标内部：成为最后一个孩子
+        // 放进目标内部：成为最后一个孩子（siblingIds 过滤自身，
+        // 否则拖"父的最后一个孩子"回父行会以自身为参照报 Can not move to itself）
         await applyChange(() =>
           source.moveNode(dragId, {
             newParentId: dropTargetId,
-            siblingIds: dataRef.current.items[dropTargetId]?.children ?? [],
+            siblingIds: siblingIds.filter((id) => id !== dragId),
             insertionIndex: Number.MAX_SAFE_INTEGER,
           }),
         );

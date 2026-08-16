@@ -5,7 +5,7 @@
  * 读链路的隐藏根过滤 + level 归一化 + bin 闭区间过滤三者叠加。
  */
 import { describe, test, expect } from "bun:test";
-import { MultiRootFlexTreeManager, FlexNodeRelPosition } from "../src";
+import { MultiRootFlexTreeManager, FlexTreeManager, FlexNodeRelPosition } from "../src";
 import BunSqliteAdapter from "../../bun-sqlite/src";
 
 const BIN_ID = 999;
@@ -13,6 +13,7 @@ const BIN_ID = 999;
 let driver: BunSqliteAdapter;
 
 async function createManager(): Promise<MultiRootFlexTreeManager> {
+  FlexTreeManager.clearInstance(); // 测试间清理单例，避免 toJson/getTree 撞上残留实例
   driver = new BunSqliteAdapter();
   await driver.open();
   await driver.exec([

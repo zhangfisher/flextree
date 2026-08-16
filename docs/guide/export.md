@@ -37,6 +37,7 @@ interface FlexTreeExportJsonOptions<
     level?: number // 限定导出的级别
     fields?: (keyof IFlexTreeNode<Fields, KeyFields>)[]
     includeKeyFields?: boolean
+    countField?: string // 指定后附加后代数量字段
 }
 
 
@@ -51,6 +52,7 @@ interface FlexTreeExportJsonOptions<
 | `options.level`            | `number`                                     | 无           | 限定导出的级别   |
 | `options.fields`           | `(keyof IFlexTreeNode<Fields, KeyFields>)[]` | 无           | 导出的字段       |
 | `options.includeKeyFields` | `boolean`                                    | `false`      | 是否导出关键字段 |
+| `options.countField`       | `string`                                     | 无           | 后代数量字段名   |
 
 - **返回**
 
@@ -131,6 +133,23 @@ tree.toJson();
   - 默认情况下不会导出`leftValue`和`rightValue`字段,可以通过`options.includeKeyFields`参数指定是否导出关键字段
   - 可以通过`options.childrenField`参数指定子节点字段名
 
+### countField 后代数量
+
+指定`options.countField`后，每个节点会附加一个表示**后代节点数量**的字段（叶子节点为`0`）：
+
+```ts
+await manager.toJson({ countField: "count" })
+// { "id": 1, "name": "root", "count": 12, "children": [
+//    { "id": 2, "name": "A", "count": 3, "children": [...] },
+//    ...
+// ] }
+```
+
+- 数量按`(rightValue - leftValue - 1) / 2`计算，恒为**全量后代数**——不受`level`截断影响（`level: 2` 导出时根节点的数量仍包含深层后代）
+- `countField`与`id`同地位：指定`fields`过滤时照样附加，不受`includeKeyFields`控制
+- 与节点已有字段重名时会抛出`FlexTreeError`
+- 启用回收站时为**可见口径**：默认视角下数量不含已被回收的节点（与导出内容一致）；`includeRecyclebin: true`时为物理全集数量
+
 ## toList
 
 `FlexTreeManager`、`FlexTree`和`FlexTreeNode`均支持`toList`方法，用于将树导出为带`pid`字段的`list`节点数组格式。
@@ -147,6 +166,7 @@ interface FlexTreeExportListOptions<
     level?: number // 限定导出的级别
     fields?: (keyof IFlexTreeNode<Fields, KeyFields>)[]
     includeKeyFields?: boolean
+    countField?: string // 指定后附加后代数量字段
 }
 ```
 
@@ -159,6 +179,7 @@ interface FlexTreeExportListOptions<
 | `options.level`            | `number`                                     | 无      | 限定导出的级别   |
 | `options.fields`           | `(keyof IFlexTreeNode<Fields, KeyFields>)[]` | 无      | 导出的字段       |
 | `options.includeKeyFields` | `boolean`                                    | `false` | 是否导出关键字段 |
+| `options.countField`       | `string`                                     | 无      | 后代数量字段名   |
 
 - **返回**
 
@@ -217,7 +238,7 @@ tree.toList();
 ```
 
 :::warning 提示
-`toList`和`toJson`方法均支持`level`参数，用于限定导出的级别。可以在`FlexTree`和`FlexTreeNode`中调用。
+`toList`和`toJson`方法均支持`level`参数，用于限定导出的级别。可以在`FlexTree`和`FlexTreeNode`中调用。`countField`的语义见上文[ countField 后代数量](#countfield-后代数量)。
 :::
 
 ## getTree

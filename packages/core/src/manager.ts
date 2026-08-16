@@ -126,7 +126,7 @@ export class FlexTreeManager<
   NodeId = NonUndefined<KeyFields["id"]>[1],
   TreeId = NonUndefined<KeyFields["treeId"]>[1],
 > {
-  // 单例实例存储 Map<tableName, instance>
+  // 单例实例存储 Map<tableName+treeId, instance>
   private static _instances = new Map<string, FlexTreeManager>();
 
   private _options: RequiredDeep<FlexTreeManagerOptions<TreeId>>;
@@ -184,7 +184,12 @@ export class FlexTreeManager<
 
   /**
    * 获取 FlexTreeManager 单例实例
-   * 根据 singleton 选项决定是否使用单例模式
+   * 以 tableName+treeId 为键：多树表中同表不同树各自持有实例；
+   * 命中已存在实例时校验 adapter 一致性，避免静默错连数据库
+   *
+   * 注意：内部以 new this(...) 构造而非 new FlexTreeManager(...)——ts-mixer 的 @mix
+   * 装饰器返回新类并替换模块导出绑定，类体内对类名的词法引用仍是装饰前的原始类
+   * （其实例缺失 mixin 方法）；this 是实际被调用的类（即装饰后的类）
    * @param tableName 表名
    * @param options 配置选项
    * @returns FlexTreeManager 实例
@@ -193,21 +198,32 @@ export class FlexTreeManager<
     Fields extends Record<string, any> = object,
     KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
   >(tableName: string, options?: FlexTreeManagerOptions<any>): FlexTreeManager<Fields, KeyFields> {
-    // 单例模式处理：总是返回相同 tableName 的实例
-    const existingInstance = FlexTreeManager._instances.get(tableName);
+    const treeId = options?.treeId;
+    const key = treeId === undefined ? tableName : `${tableName}::${String(treeId)}`;
+    const existingInstance = FlexTreeManager._instances.get(key);
     if (existingInstance) {
+      if (options?.adapter && existingInstance.adapter !== options.adapter) {
+        throw new FlexTreeError(
+          `FlexTreeManager instance for ${key} already exists with a different adapter`,
+        );
+      }
       return existingInstance as FlexTreeManager<Fields, KeyFields>;
     }
-
     // 创建新实例并注册到单例Map（构造函数会处理 options 和 adapter 检查）
-    const newInstance = new FlexTreeManager<Fields, KeyFields>(tableName, options);
-    FlexTreeManager._instances.set(tableName, newInstance as any);
-    return newInstance;
+    const newInstance = new (this as any)(tableName, options);
+    FlexTreeManager._instances.set(key, newInstance);
+    return newInstance as FlexTreeManager<Fields, KeyFields>;
   }
 
-  static clearInstance(tableName: string) {
+  static clearInstance(tableName?: string) {
     if (tableName) {
+      // 同 getInstance 的键规则：tableName 可能已是复合键（历史遗留直接传入），也可能需要连带其多树实例
       FlexTreeManager._instances.delete(tableName);
+      for (const key of FlexTreeManager._instances.keys()) {
+        if (key.startsWith(`${tableName}::`)) {
+          FlexTreeManager._instances.delete(key);
+        }
+      }
     } else {
       FlexTreeManager._instances.clear();
     }
@@ -314,6 +330,8 @@ export class FlexTreeManager<
     this._txPromise = new Promise<void>((r) => {
       releaseTx = r;
     });
+    // write:after 的提交结果标记：adapter.transaction 正常返回视为已提交，异常则为回滚
+    let committed = false;
     try {
       // adapter.transaction 包住整个 fn：多个 onExecuteSql 共享一个事务，任一失败整体回滚（跨方法原子）。
       // _writeCtx.run 标记 write 调用链：fn 内的读（getStore 非空）直接放行看事务内状态；
@@ -341,6 +359,7 @@ export class FlexTreeManager<
           }
         });
       });
+      committed = true;
       this._lastUpdateAt = Date.now();
     } finally {
       releaseTx();
@@ -349,7 +368,7 @@ export class FlexTreeManager<
       this._pendingSqls = [];
       // 写事务结束（提交或回滚）：失效 bin 区间缓存，下次读重新加载
       this._invalidateBinRange();
-      this._emitter.emit("write:after");
+      this._emitter.emit("write:after", { committed });
     }
   }
 
@@ -384,10 +403,18 @@ export class FlexTreeManager<
   getTree(options?: FlexTreeOptions) {
     // 需要传递未转义的表名，避免 FlexTreeManager 构造函数重复转义
     const rawTableName = this.tableName.replace(/^\[|\]$/g, "");
+    // Live Tree：FlexTree 构造内部走 getInstance 单例。本 manager 若未注册单例
+    // （直接 new 或 MultiRoot 内部 manager），先以同键注册自身——保证 getTree 出来的
+    // 树与 this 事件互通；已注册时 getInstance 直接命中（键冲突即 adapter 冲突，校验兜底）
+    const treeId = this.treeId;
+    const key = treeId === undefined ? rawTableName : `${rawTableName}::${String(treeId)}`;
+    if (!FlexTreeManager._instances.has(key)) {
+      FlexTreeManager._instances.set(key, this as FlexTreeManager);
+    }
     return new FlexTree<Fields, KeyFields>(rawTableName, {
       lazy: false,
       ...options,
-      treeId: this.treeId as any,
+      treeId: treeId as any,
       adapter: this.adapter,
       fields: this._fields,
       // 回收站配置透传：内部 FlexTreeManager 须同样启用，
@@ -399,21 +426,65 @@ export class FlexTreeManager<
     options?: FlexTreeExportJsonOptions<Fields, KeyFields> & { includeRecyclebin?: boolean },
   ) {
     const tree = this.getTree();
-    // includeRecyclebin=true：导出回收站视角（内部 manager 禁用 bin 过滤）
-    if (options?.includeRecyclebin) {
-      (tree as any).manager.recycleBinDisableFilter = true;
-    }
+    // includeRecyclebin=true：导出回收站视角（内部 manager 禁用 bin 过滤）。
+    // 显式双向设置：getTree 走单例后树被复用，单向置 true 会泄漏到后续调用
+    (tree as any).manager.recycleBinDisableFilter = !!options?.includeRecyclebin;
     await tree.load();
+    await tree.prepareCountContext(options);
     return tree.toJson(options);
   }
   async toList(
     options?: FlexTreeExportListOptions<Fields, KeyFields> & { includeRecyclebin?: boolean },
   ) {
     const tree = this.getTree();
-    if (options?.includeRecyclebin) {
-      (tree as any).manager.recycleBinDisableFilter = true;
-    }
+    (tree as any).manager.recycleBinDisableFilter = !!options?.includeRecyclebin;
     await tree.load();
+    await tree.prepareCountContext(options);
     return tree.toList(options);
+  }
+
+  /**
+   * 生成 count 计算的 SQL SELECT 表达式（数据库端计算，ADR-0006）
+   *
+   * 公式 (rightValue - leftValue - 1) / 2（差值恒为偶数，五方言整数除法无截断歧义）；
+   * 可见口径：默认视角下 Bin 所在子树（left < binLeft AND right > binRight，即仅根/隐藏根）
+   * 扣减 Bin 自身及其后代。返回 " AS <countField>" 形式，前缀为空串表示不需要
+   *
+   * @param countField 附加字段名（空串表示未指定）
+   * @param includeRecyclebin true 时为物理口径（不扣减）
+   * @param alias 字段前缀（如 "Node."），空串表示无前缀
+   */
+  protected async _countExpr(
+    countField: string | undefined,
+    includeRecyclebin: boolean,
+    alias = "",
+  ): Promise<string> {
+    if (!countField) return "";
+    const left = `${alias}${this.escaper.escapeId(this.keyFields.leftValue)}`;
+    const right = `${alias}${this.escaper.escapeId(this.keyFields.rightValue)}`;
+    let expr = `((${right}-${left}-1)/2)`;
+    // 可见口径：Bin 子树整体落在该节点子树内时扣减其规模（Bin 自身 + 后代）
+    const binRange =
+      !includeRecyclebin && this.recycleBinEnabled ? await (this as any)._getBinRange() : undefined;
+    if (binRange) {
+      expr = `CASE WHEN ${left}<${binRange.left} AND ${right}>${binRange.right}
+        THEN ${expr}-((${binRange.right}-${binRange.left}-1)/2+1) ELSE ${expr} END`;
+    }
+    return `${expr} AS ${this.escaper.escapeId(countField)}`;
+  }
+
+  /**
+   * 校验 countField 不与节点已有字段重名（SQL 端重名会静默顶掉同名列，须 JS 端把关）
+   *
+   * 以一行全量数据为样本校验；空表时跳过（无冲突可言）
+   */
+  protected async _assertCountField(countField: string | undefined): Promise<void> {
+    if (!countField) return;
+    const sample = await this.getOneNode(
+      this._sql(`SELECT * FROM ${this.tableName} WHERE {__TREE_ID__} 1=1 LIMIT 1`),
+    );
+    if (sample && countField in sample) {
+      throw new FlexTreeError(`countField "${countField}" conflicts with an existing node field`);
+    }
   }
 }

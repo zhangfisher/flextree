@@ -48,7 +48,7 @@ describe("FlexTreeManager 单例模式测试", () => {
     expect(manager1).not.toBe(manager2);
   });
 
-  test("单例模式下首次调用设置会被保留", () => {
+  test("单例键含 treeId：同表不同树各自持有实例", () => {
     const adapter = createMockAdapter();
 
     const manager1 = FlexTreeManager.getInstance("test_table1", {
@@ -61,9 +61,13 @@ describe("FlexTreeManager 单例模式测试", () => {
       treeId: "tree2",
     });
 
-    // 相同 tableName 返回同一实例，保留首次设置的 treeId
-    expect(manager1).toBe(manager2);
-    expect(manager1.treeId).toBe("tree1"); // 首次设置的值被保留
+    // tableName+treeId 为键：多树表中同表不同树不共享实例（旧按表名键会静默错树）
+    expect(manager1).not.toBe(manager2);
+    expect(manager1.treeId).toBe("tree1");
+    expect(manager2.treeId).toBe("tree2");
+    // 同键重复获取命中同一实例，保留首次配置
+    const again = FlexTreeManager.getInstance("test_table1", { adapter, treeId: "tree1" });
+    expect(again).toBe(manager1);
   });
 
   test("单例模式下首次调用设置的 fields 会被保留", () => {

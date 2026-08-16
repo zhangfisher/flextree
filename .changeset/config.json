@@ -18,5 +18,8 @@
     "ignore": [
         "flextree-unit-tests",
         "flextree-sqljs-example"
-    ]
+    ],
+    "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
+        "onlyUpdatePeerDependentsWhenOutOfRange": true
+    }
 }

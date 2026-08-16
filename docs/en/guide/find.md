@@ -57,4 +57,6 @@ const node = await findNode(name: 'node1' });
 
 :::warning Note
 The `findNode` and `findNodes` methods only provide simple conditional queries. For more complex queries, use the database's own query methods.
+
+Both methods support the `options.countField` parameter, which attaches a descendant-count field to the returned node data. See [Query Parameters](./query#query-parameters).
 :::

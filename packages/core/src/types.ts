@@ -89,7 +89,8 @@ export type RemoveKeyFields<
 
 export type FlexTreeEvents = {
   "write:before": undefined; // 当执行写操作前触发
-  "write:after": undefined; // 当执行写操作后触发
+  // 当执行写操作后触发（提交或回滚均触发）；committed=true 表示事务已成功提交，false 表示已回滚
+  "write:after": { committed: boolean } | undefined;
   // 事务 COMMIT 前触发：聚合本次 write 收集到的全部 SQL（只读通知，监听器异常不回滚；空批不触发）
   "write:commit": { tree: any; sqls: string[] };
   "node:added": { tree: any; nodes: any[]; at: any; pos: FlexNodeRelPosition }; // 增加节点
@@ -116,6 +117,7 @@ export interface FlexTreeExportJsonOptions<
   level?: number; // 限定导出的级别
   fields?: (keyof IFlexTreeNodeFields<Fields, KeyFields>)[];
   includeKeyFields?: boolean;
+  countField?: string; // 指定后在每条节点数据上附加该字段，值为后代节点数量（可见口径，不受 level 截断影响）
 }
 
 export type FlexTreeExportJsonFormat<
@@ -126,7 +128,7 @@ export type FlexTreeExportJsonFormat<
   Children extends string = "children",
 > = TreeNode & {
   [K in Children]?: FlexTreeExportJsonFormat<Fields, KeyFields, TreeNode, NodeId, Children>[];
-};
+} & { count?: number };
 
 // 嵌套节点输入类型，支持递归结构
 // 注意：children字段仅用于输入格式，不会插入数据库
@@ -146,6 +148,7 @@ export interface FlexTreeExportListOptions<
   level?: number; // 限定导出的级别
   fields?: (keyof IFlexTreeNodeFields<Fields, KeyFields>)[];
   includeKeyFields?: boolean;
+  countField?: string; // 指定后在每条节点数据上附加该字段，值为后代节点数量（可见口径，不受 level 截断影响）
 }
 
 export type FlexTreeExportListFormat<
@@ -159,7 +162,7 @@ export type FlexTreeExportListFormat<
   >,
 > = ((OPTIONS["fields"] extends string[]
   ? Extract<TreeNode, OPTIONS["fields"][number]>
-  : TreeNode) & { [P in OPTIONS["pidField"] & string]: NodeId })[];
+  : TreeNode) & { [P in OPTIONS["pidField"] & string]: NodeId } & { count?: number })[];
 
 export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
 

@@ -62,6 +62,7 @@ Around the lifecycle of a tree, `FlexTree` provides a complete set of operations
 
 - **Traversal**: `forEach` supports both `Depth-First (DFS)` and `Breadth-First (BFS)` modes, with interruption and level limiting.
 - **Export**: `toJson` / `toList` export the tree as nested `JSON` or as a flat list with a `pid`.
+- **Descendant count**: All query and export methods support the `countField` parameter, which computes each node's descendant count directly in the database `SQL` and attaches it to the result (visible scope when the recycle bin is enabled).
 - **In-memory tree**: The `FlexTree` object loads the tree into memory and offers richer `API`s such as `getByPath` path access and lazy loading.
 
 ## Event Mechanism

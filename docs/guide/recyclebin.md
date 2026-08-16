@@ -88,7 +88,10 @@ await tree.verify();                         // true —— 树结构依然完�
 
 ## 回收站视角
 
-所有公共 API 均支持 `includeRecyclebin` 选项（默认 `false`）。`true` 时 bin 及其后代恢复为普通节点：
+所有公共 API 均支持 `includeRecyclebin` 选项（默认 `false`）：
+
+- `false`（默认）：被逻辑删除的节点**视为不存在**——查询查不到、按 id 读取/写入抛 `NotFound`、遍历不进入、导出不含。业务侧的常规读写完全感知不到回收站的存在。
+- `true`：进入回收站视角，**回收站（bin 节点）及其内部的所有节点均可以像普通节点一样进行一切操作**——查询、修改、移动、复制、删除照常。**当需要管理回收站本身时——列出回收站列表（渲染"回收站页面"）、读取站内节点用于恢复、从站内彻底删除、站内重排——就需要此参数**；默认视角下站内节点不可见，不进入回收站视角就找不到操作目标。
 
 ```ts
 // 查询：含回收站内容
@@ -114,6 +117,7 @@ await tree.deleteNode(aId, { includeRecyclebin: true });
 - **导航**（`getNextSibling`/`getPreviousSibling`）：默认跳过 bin 子树，返回下一个逻辑存在的节点
 - **写操作**（`deleteNode`/`moveNode`/`copyNode`/`addNodes`/`update`）：id 路径默认 NotFound；对象路径按"对象即凭证"放行
 - **遍历/导出**（`forEach`/`toJson`/`toList`）：默认不进入/不含回收站
+- **后代数量（`countField`）**：默认视角为**可见口径**——数量不含已被回收的节点（与导出内容一致，由数据库在 SELECT 表达式中直接计算并扣减）；`includeRecyclebin: true` 时为物理全集数量（见[导出](./export#countfield-后代数量)）
 - **内部机制**（`verify`/`repair`/`clear`）：不受影响（bin 是普通树成员，参与校验与修复）
 
 :::tip 对象即凭证

@@ -62,6 +62,7 @@ export class GetNodeMixin<
    * @param {number}  [options.files]            限定返回的字段名称
    * @param {string}  [options.where]            WHERE过滤条件，确保树的完整性：父节点被过滤时，其所有后代也被过滤
    * @param {boolean} [options.includeRecyclebin] 默认 false：回收站（bin 及其后代）在数据库端被排除；true 返回物理全集
+   * @param {string}  [options.countField]       指定后每条节点数据附加该字段，值为后代节点数量（可见口径，不受 level 截断影响）
    * @returns TreeNode[]
    */
   async getNodes(
@@ -71,10 +72,15 @@ export class GetNodeMixin<
       fields?: (keyof TreeNode)[];
       where?: string;
       includeRecyclebin?: boolean;
+      countField?: string;
     },
   ): Promise<TreeNode[]> {
     const { level, fields, where } = Object.assign({ level: 0, fields: [], where: "" }, options);
 
+    await this._assertCountField(options?.countField);
+    // 数据库端计算 count 表达式（无前缀分支）；fields 过滤与 count 附加在 SELECT 层天然共存
+    const countExpr = await this._countExpr(options?.countField, !!options?.includeRecyclebin);
+    const countCol = countExpr ? `,${countExpr}` : "";
     const fieldList = fields.length > 0 ? fields.map((f) => `${f}`).join(",") : "*";
 
     // 数据库端回收站过滤（数据库端过滤铁律：行数在 DB 端就已正确）
@@ -91,8 +97,14 @@ export class GetNodeMixin<
       // 带过滤条件的复杂查询
       const validatedWhere = checkSqlSafety(where);
       const levelCondition = level > 0 ? `AND Node.${levelField}<=${level}` : "";
+      const countExprNode = await this._countExpr(
+        options?.countField,
+        !!options?.includeRecyclebin,
+        "Node.",
+      );
+      const countColNode = countExprNode ? `,${countExprNode}` : "";
 
-      sql = this._sql(`SELECT Node.${fieldList} FROM ${this.tableName} Node
+      sql = this._sql(`SELECT Node.${fieldList}${countColNode} FROM ${this.tableName} Node
         WHERE {__TREE_ID__} Node.${leftValueField} > 0
           AND Node.${rightValueField} > 0
           ${levelCondition}
@@ -107,7 +119,7 @@ export class GetNodeMixin<
         ORDER BY Node.${leftValueField}`);
     } else {
       // 原有的简单查询（保持向后兼容）
-      sql = this._sql(`SELECT ${fieldList} FROM ${this.tableName}
+      sql = this._sql(`SELECT ${fieldList}${countCol} FROM ${this.tableName}
             WHERE {__TREE_ID__} ${leftValueField}>0
               AND ${rightValueField}>0
               ${level > 0 ? `AND ${levelField}<=${level}` : ""}
@@ -116,7 +128,7 @@ export class GetNodeMixin<
         `);
     }
 
-    return await this.getRows(sql);
+    return (await this.getRows(sql)) as TreeNode[];
   }
 
   /**
@@ -126,15 +138,18 @@ export class GetNodeMixin<
    * includeRecyclebin=true 时照常返回
    * @param nodeId
    * @param options.includeRecyclebin 默认 false
+   * @param options.countField 指定后附加后代数量字段
    */
   async getNode(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     nodeId: NodeId,
-    options?: { includeRecyclebin?: boolean },
+    options?: { includeRecyclebin?: boolean; countField?: string },
   ): Promise<TreeNode | undefined> {
     const idField = this.escaper.escapeId(this.keyFields.id);
     const binFilter = await this._buildBinFilter(!!options?.includeRecyclebin);
-    const sql = this._sql(`SELECT * FROM ${this.tableName}
+    await this._assertCountField(options?.countField);
+    const countExpr = await this._countExpr(options?.countField, !!options?.includeRecyclebin);
+    const sql = this._sql(`SELECT *${countExpr ? `,${countExpr}` : ""} FROM ${this.tableName}
             WHERE {__TREE_ID__} (${idField}=${this.escaper.escape(nodeId as any)})${binFilter}`);
     const result = await this.getRows(sql);
     if (result.length === 0) {
@@ -157,7 +172,7 @@ export class GetNodeMixin<
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     node: NodeId | TreeNode,
     index: number = 1,
-    options?: { includeRecyclebin?: boolean },
+    options?: { includeRecyclebin?: boolean; countField?: string },
   ): Promise<TreeNode | undefined> {
     const relNodeId = this.escaper.escape(
       isLikeNode(node, this.keyFields) ? (node as any)[this.keyFields.id] : node,
@@ -165,6 +180,12 @@ export class GetNodeMixin<
 
     // 数据库端回收站过滤（bin 及其后代不计入序号）
     const binFilter = await this._buildBinFilter(!!options?.includeRecyclebin, "Node.");
+    await this._assertCountField(options?.countField);
+    const countExpr = await this._countExpr(
+      options?.countField,
+      !!options?.includeRecyclebin,
+      "Node.",
+    );
 
     // 预计算转义后的字段名以提高性能和代码可读性
     const idField = this.escaper.escapeId(this.keyFields.id);
@@ -176,7 +197,7 @@ export class GetNodeMixin<
     if (this.treeId) {
       treeCondition = `Node.${this.escaper.escapeId(this.keyFields.treeId)}=${this.escaper.escape(this.treeId)} AND`;
     }
-    const sql = `SELECT Node.* FROM ${this.tableName}  Node
+    const sql = `SELECT Node.*${countExpr ? `,${countExpr}` : ""} FROM ${this.tableName}  Node
             JOIN ${this.tableName} RelNode ON RelNode.${idField} = ${relNodeId}
             WHERE ${treeCondition}
                 (
@@ -200,11 +221,17 @@ export class GetNodeMixin<
    * @param {number}  [options.level]           限制返回的级别
    * @param {boolean} [options.includeSelf]     返回结果是否包括自身
    * @param {boolean} [options.includeRecyclebin] 默认 false：回收站（bin 及其后代）在数据库端被排除
+   * @param {string}  [options.countField]      指定后每条节点数据附加该字段，值为后代节点数量（可见口径，不受 level 截断影响）
    */
   async getDescendants(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     nodeId?: NodeId | TreeNode,
-    options?: { level?: number; includeSelf?: boolean; includeRecyclebin?: boolean },
+    options?: {
+      level?: number;
+      includeSelf?: boolean;
+      includeRecyclebin?: boolean;
+      countField?: string;
+    },
   ): Promise<IFlexTreeNodeFields<Fields, KeyFields>[]> {
     if (isNull(nodeId)) {
       return await this.getNodes(options);
@@ -215,6 +242,13 @@ export class GetNodeMixin<
 
     // 数据库端回收站过滤
     const binFilter = await this._buildBinFilter(!!options?.includeRecyclebin, "Node.");
+    await this._assertCountField(options?.countField);
+    const countExpr = await this._countExpr(
+      options?.countField,
+      !!options?.includeRecyclebin,
+      "Node.",
+    );
+    const countCol = countExpr ? `,${countExpr}` : "";
 
     // 预计算转义后的字段名以提高性能和代码可读性
     const idField = this.escaper.escapeId(this.keyFields.id);
@@ -229,7 +263,7 @@ export class GetNodeMixin<
     let sql: string = "";
     if (level === 0) {
       // 不限定层级
-      sql = `SELECT Node.* FROM ${this.tableName} Node
+      sql = `SELECT Node.*${countCol} FROM ${this.tableName} Node
                 JOIN ${this.tableName} RelNode ON RelNode.${idField} = ${relNodeId}
                 WHERE
                   ${treeCondition}
@@ -240,7 +274,7 @@ export class GetNodeMixin<
                 `;
     } else {
       // 限定层级
-      sql = `SELECT Node.* FROM ${this.tableName} Node
+      sql = `SELECT Node.*${countCol} FROM ${this.tableName} Node
                 JOIN ${this.tableName} RelNode ON RelNode.${idField} = ${relNodeId}
                 WHERE
                 ${treeCondition}
@@ -253,7 +287,7 @@ export class GetNodeMixin<
             `;
     }
     // 得到的平面形式的节点列表
-    return await this.getRows(sql);
+    return (await this.getRows(sql)) as IFlexTreeNodeFields<Fields, KeyFields>[];
   }
 
   /**
@@ -298,16 +332,18 @@ export class GetNodeMixin<
    *
    * @param nodeId  节点ID或节点数据
    * @param options.includeRecyclebin 默认 false：回收站内容在数据库端被排除
+   * @param options.countField 指定后附加后代数量字段
    * @returns  返回子节点集合,不包括后代节点
    */
   async getChildren(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     nodeId: NodeId | TreeNode,
-    options?: { includeRecyclebin?: boolean },
+    options?: { includeRecyclebin?: boolean; countField?: string },
   ) {
     return await this.getDescendants(nodeId, {
       level: 1,
       includeRecyclebin: options?.includeRecyclebin,
+      countField: options?.countField,
     });
   }
 
@@ -316,17 +352,21 @@ export class GetNodeMixin<
    * @param nodeId
    * @param {object} options
    * @param {boolean} [options.includeSelf] 是否包括自身
+   * @param {string}  [options.countField] 指定后附加后代数量字段
    *
    */
   async getAncestors(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     nodeId: NodeId | TreeNode,
-    options?: { includeSelf?: boolean },
+    options?: { includeSelf?: boolean; countField?: string },
   ) {
     const { includeSelf } = Object.assign({ includeSelf: false }, options);
 
     const relNode = await this.getNodeData(nodeId);
     const relNodeId = this.escaper.escape(relNode[this.keyFields.id]);
+
+    await this._assertCountField(options?.countField);
+    const countExpr = await this._countExpr(options?.countField, false, "Node.");
 
     // 预计算转义后的字段名以提高性能和代码可读性
     const idField = this.escaper.escapeId(this.keyFields.id);
@@ -338,7 +378,7 @@ export class GetNodeMixin<
       treeCondition = `Node.${this.escaper.escapeId(this.keyFields.treeId)}=${this.escaper.escape(this.treeId)} AND`;
     }
 
-    const sql = `SELECT Node.* FROM ${this.tableName} Node
+    const sql = `SELECT Node.*${countExpr ? `,${countExpr}` : ""} FROM ${this.tableName} Node
             JOIN ${this.tableName} RelNode ON RelNode.${idField} = ${relNodeId}
             WHERE ${treeCondition}
             (
@@ -385,14 +425,19 @@ export class GetNodeMixin<
   /**
    * 获取父节点
    * @param nodeId
+   * @param options.countField 指定后附加后代数量字段
    * @returns
    */
   async getParent(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     nodeId: NodeId | TreeNode,
+    options?: { countField?: string },
   ): Promise<TreeNode> {
     const relNode = await this.getNodeData(nodeId);
     const relNodeId = this.escaper.escape(relNode[this.keyFields.id]);
+
+    await this._assertCountField(options?.countField);
+    const countExpr = await this._countExpr(options?.countField, false, "Node.");
 
     // 预计算转义后的字段名以提高性能和代码可读性
     const idField = this.escaper.escapeId(this.keyFields.id);
@@ -403,7 +448,7 @@ export class GetNodeMixin<
     if (this.treeId) {
       treeCondition = `Node.${this.escaper.escapeId(this.keyFields.treeId)}=${this.escaper.escape(this.treeId)} AND`;
     }
-    const sql = `SELECT Node.* FROM ${this.tableName} Node
+    const sql = `SELECT Node.*${countExpr ? `,${countExpr}` : ""} FROM ${this.tableName} Node
             JOIN ${this.tableName} RelNode ON RelNode.${idField} = ${relNodeId}
             WHERE ${treeCondition}
             (
@@ -440,11 +485,12 @@ export class GetNodeMixin<
 
      * @param node
      * @param options.includeRecyclebin 默认 false：bin 及其后代（作为兄弟时）在数据库端被排除
+     * @param options.countField 指定后附加后代数量字段
      */
   async getSiblings(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     nodeId: NodeId | TreeNode,
-    options?: { includeSelf?: boolean; includeRecyclebin?: boolean },
+    options?: { includeSelf?: boolean; includeRecyclebin?: boolean; countField?: string },
   ) {
     const { includeSelf } = Object.assign({ includeSelf: false }, options);
     const relNode = await this.getNodeData(nodeId);
@@ -452,6 +498,12 @@ export class GetNodeMixin<
 
     // 数据库端回收站过滤
     const binFilter = await this._buildBinFilter(!!options?.includeRecyclebin, "Node.");
+    await this._assertCountField(options?.countField);
+    const countExpr = await this._countExpr(
+      options?.countField,
+      !!options?.includeRecyclebin,
+      "Node.",
+    );
 
     // 预计算转义后的字段名以提高性能和代码可读性
     const idField = this.escaper.escapeId(this.keyFields.id);
@@ -463,7 +515,7 @@ export class GetNodeMixin<
     if (this.treeId) {
       treeCondition = `Node.${this.escaper.escapeId(this.keyFields.treeId)}=${this.escaper.escape(this.treeId)} AND`;
     }
-    const sql = `SELECT Node.* FROM ${this.tableName} Node
+    const sql = `SELECT Node.*${countExpr ? `,${countExpr}` : ""} FROM ${this.tableName} Node
             JOIN (
                 SELECT Node.* FROM ${this.tableName} Node
                 JOIN ${this.tableName} RelNode ON RelNode.${idField} = ${relNodeId}
@@ -502,17 +554,24 @@ export class GetNodeMixin<
    * 下一个兄弟 = 同层且 leftValue 越过当前子树右值的第一个**逻辑存在**节点
    *
    * @param options.includeRecyclebin 默认 false
+   * @param options.countField 指定后附加后代数量字段
    */
   async getNextSibling(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     nodeId: NodeId | TreeNode,
-    options?: { includeRecyclebin?: boolean },
+    options?: { includeRecyclebin?: boolean; countField?: string },
   ) {
     const relNode = await this.getNodeData(nodeId);
     const relNodeId = this.escaper.escape(relNode[this.keyFields.id]);
 
     // 数据库端回收站过滤
     const binFilter = await this._buildBinFilter(!!options?.includeRecyclebin, "Node.");
+    await this._assertCountField(options?.countField);
+    const countExpr = await this._countExpr(
+      options?.countField,
+      !!options?.includeRecyclebin,
+      "Node.",
+    );
 
     // 预计算转义后的字段名以提高性能和代码可读性
     const idField = this.escaper.escapeId(this.keyFields.id);
@@ -525,7 +584,7 @@ export class GetNodeMixin<
       treeCondition = `Node.${this.escaper.escapeId(this.keyFields.treeId)}=${this.escaper.escape(this.treeId)} AND`;
     }
 
-    const sql = `SELECT Node.* FROM ${this.tableName} Node
+    const sql = `SELECT Node.*${countExpr ? `,${countExpr}` : ""} FROM ${this.tableName} Node
             JOIN ${this.tableName} RelNode ON RelNode.${idField} = ${relNodeId}
             WHERE ${treeCondition}
                 (
@@ -541,17 +600,24 @@ export class GetNodeMixin<
    * 获取上一个兄弟节点
    * @param nodeId
    * @param options.includeRecyclebin 默认 false：默认视角下跳过 bin 及其后代（数据库端过滤）
+   * @param options.countField 指定后附加后代数量字段
    */
   async getPreviousSibling(
     this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
     nodeId: NodeId | TreeNode,
-    options?: { includeRecyclebin?: boolean },
+    options?: { includeRecyclebin?: boolean; countField?: string },
   ) {
     const relNode = await this.getNodeData(nodeId);
     const relNodeId = this.escaper.escape(relNode[this.keyFields.id]);
 
     // 数据库端回收站过滤
     const binFilter = await this._buildBinFilter(!!options?.includeRecyclebin, "Node.");
+    await this._assertCountField(options?.countField);
+    const countExpr = await this._countExpr(
+      options?.countField,
+      !!options?.includeRecyclebin,
+      "Node.",
+    );
 
     // 预计算转义后的字段名以提高性能和代码可读性
     const idField = this.escaper.escapeId(this.keyFields.id);
@@ -563,7 +629,7 @@ export class GetNodeMixin<
       treeCondition = `Node.${this.escaper.escapeId(this.keyFields.treeId)}=${this.escaper.escape(this.treeId)} AND`;
     }
 
-    const sql = `SELECT Node.* FROM ${this.tableName} Node
+    const sql = `SELECT Node.*${countExpr ? `,${countExpr}` : ""} FROM ${this.tableName} Node
             JOIN ${this.tableName} RelNode ON RelNode.${idField} = ${relNodeId}
             WHERE ${treeCondition}
                 (
@@ -579,10 +645,16 @@ export class GetNodeMixin<
    *
    * 一棵树仅有一个根节点,所以只需要获取leftValue=1的节点即可
    *
+   * @param options.countField 指定后附加后代数量字段
    */
-  async getRoot(this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>) {
+  async getRoot(
+    this: FlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>,
+    options?: { countField?: string },
+  ) {
     const leftValueField = this.escaper.escapeId(this.keyFields.leftValue);
-    const sql = this._sql(`SELECT * FROM ${this.tableName}
+    await this._assertCountField(options?.countField);
+    const countExpr = await this._countExpr(options?.countField, false);
+    const sql = this._sql(`SELECT *${countExpr ? `,${countExpr}` : ""} FROM ${this.tableName}
                         WHERE {__TREE_ID__} ${leftValueField}=1`);
     return (await this.getOneNode(sql))!;
   }

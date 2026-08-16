@@ -56,4 +56,6 @@ const node = await findNode(name: 'node1' });
 
 :::warning 提示
 `findNode`和`findNodes`方法只提供简单的条件查询，如果需要更复杂的查询，可以使用数据库的查询方法。
+
+两个方法均支持`options.countField`参数，为返回的节点数据附加后代数量字段，详见[查询参数](./query#查询参数)。
 :::

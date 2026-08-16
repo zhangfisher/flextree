@@ -86,6 +86,8 @@ async function createCustomTreeManager(treeId?: number): Promise<CustomFlexTreeM
 }
 
 async function createCustomFlexTree(treeId?: number): Promise<CustomFlexTree> {
+  // 清理单例注册：FlexTree 内部走 getInstance 单例，跨测试残留实例会命中 adapter 校验抛错
+  FlexTreeManager.clearInstance();
   const sqliteAdapter = new BunSqliteAdapter();
   await sqliteAdapter.open();
 

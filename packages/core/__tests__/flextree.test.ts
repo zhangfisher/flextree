@@ -120,6 +120,24 @@ describe("FlexTree 功能测试", () => {
       const nodes = tree.findAll((n) => n.name?.startsWith("A"));
       expect(nodes.length).toBe(3); // A, A1, A2
     });
+
+    test("通过条件函数获取节点", async () => {
+      await tree.load();
+      // FlexTree.get(condition)
+      const node = tree.get((n) => n.name === "A1");
+      expect(node).toBeDefined();
+      expect(node?.name).toBe("A1");
+      // FlexTreeNode.get(condition)：自身及后代中查找
+      const a = tree.getByPath("A")!;
+      const child = a.get((n) => n.name === "A2");
+      expect(child).toBeDefined();
+      expect(child?.name).toBe("A2");
+      // 自身满足条件时直接返回
+      const self = a.get((n) => n.name === "A");
+      expect(self?.id).toBe(a.id);
+      // 无匹配返回 undefined
+      expect(tree.get((n) => n.name === "not-exist")).toBeUndefined();
+    });
   });
 
   describe("树节点操作", () => {

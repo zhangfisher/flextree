@@ -235,8 +235,9 @@ const list = await tree.toList();
 // ]
 ```
 
-- All `toJson` options (`childrenField`/`level`/`fields`/`includeKeyFields`) are the same as `FlexTreeManager`; `level` values are normalized.
+- All `toJson` options (`childrenField`/`level`/`fields`/`includeKeyFields`/`countField`) are the same as `FlexTreeManager`; `level` values are normalized.
 - In `toList`, user roots have `pid` set to `0` — the hidden root's id never leaks.
+- `countField` is also supported: it attaches a descendant-count field to every node. Since the bin always hangs under the hidden root, each user root's count is never polluted by recycled content (see [Export](./export#countfield-descendant-count)).
 
 ## Events
 

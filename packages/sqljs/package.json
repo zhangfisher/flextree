@@ -1,7 +1,7 @@
 {
     "name": "flextree-sqljs-adapter",
     "type": "module",
-    "version": "1.0.0",
+    "version": "3.1.0",
     "description": "sql.js driver for flextree, run tree in browser via wasm sqlite",
     "author": "zhangfisher",
     "homepage": "https://zhangfisher.github.io/flextree/",
@@ -34,7 +34,7 @@
     },
     "devDependencies": {
         "@types/bun": "^1.1.6",
-        "flextree": "^3",
+        "flextree": "^3.1.0",
         "sql.js": "^1.13.0",
         "tsup": "^8.1.0",
         "typescript": "^5.8.3"

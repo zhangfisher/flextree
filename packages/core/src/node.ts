@@ -21,6 +21,7 @@ import {
 import { filterObject } from "./utils/filterObject";
 import { getRelNodePath } from "./utils/getRelNodePath";
 import { isNull } from "./utils/isNull";
+import { assertCountField, calcDescendantCount } from "./utils/countField";
 
 /**
  * 节点状态
@@ -156,7 +157,7 @@ export class FlexTreeNode<
     }
     this._node = node as Expand<NodeFields>;
     if (this._children && includeDescendants) {
-      Promise.all(this._children.map((n) => n.sync(includeDescendants)));
+      await Promise.all(this._children.map((n) => n.sync(includeDescendants)));
     }
   }
 
@@ -258,11 +259,15 @@ export class FlexTreeNode<
       }
     } else {
       if (condition(this)) return this;
+      // forEach 回调的 return 无法中断遍历，借用 FlexTreeAbortError 机制实现短路查找
+      let matched: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined;
       this.forEach((node) => {
         if (condition(node)) {
-          return node;
+          matched = node;
+          throw new FlexTreeAbortError();
         }
       });
+      return matched;
     }
   }
   _getNode() {
@@ -400,7 +405,12 @@ export class FlexTreeNode<
     }
   }
 
-  private toNodeData(data: any, fields: string[], includeKeyFields: boolean = false) {
+  private toNodeData(
+    data: any,
+    fields: string[],
+    includeKeyFields: boolean = false,
+    countField?: string,
+  ) {
     let result: Record<string, any> = {};
     if (fields.length > 0) {
       result = pick(data, fields as string[]) as any;
@@ -425,6 +435,20 @@ export class FlexTreeNode<
     }
     // @ts-ignore
     result[this._tree.manager.keyFields.id] = data[this._tree.manager.keyFields.id];
+    // 附加后代数（可见口径：Bin 区间已由 tree 层预取，经 _tree 传入）
+    if (countField) {
+      // 校验对象是原始节点数据（fields 过滤/键字段剔除发生在 result 上，会漏判）
+      assertCountField(countField, data);
+      let count = calcDescendantCount(
+        data[this._keyFields.leftValue],
+        data[this._keyFields.rightValue],
+      );
+      const binRange = (this._tree as any)._binRangeForCount;
+      if (binRange && data[this._keyFields.leftValue] < binRange.left && data[this._keyFields.rightValue] > binRange.right) {
+        count -= calcDescendantCount(binRange.left, binRange.right) + 1; // Bin 自身 + 其后代
+      }
+      result[countField] = count;
+    }
     return result;
   }
 
@@ -443,7 +467,7 @@ export class FlexTreeNode<
       },
       options,
     ) as Required<FlexTreeExportJsonOptions<Fields, KeyFields>>;
-    const { childrenField, includeKeyFields, level, fields } = opts;
+    const { childrenField, includeKeyFields, level, fields, countField } = opts;
     // 当指字了fields时,确保包含id字段,不包括treeId字段
     if (fields.length > 0) {
       const index = fields.findIndex((name) => name === this._tree.manager.keyFields.treeId); // 移除treeId字段
@@ -452,7 +476,12 @@ export class FlexTreeNode<
       }
     }
 
-    const results = this.toNodeData(this._node, fields as string[], includeKeyFields) as any;
+    const results = this.toNodeData(
+      this._node,
+      fields as string[],
+      includeKeyFields,
+      countField,
+    ) as any;
     if (this._children && (level === 0 || level > 1)) {
       if (level > 1) {
         opts.level = opts.level - 1;
@@ -481,10 +510,15 @@ export class FlexTreeNode<
       },
       options,
     ) as Required<FlexTreeExportListOptions<Fields, KeyFields>>;
-    const { includeKeyFields, pidField, level, fields } = opts;
+    const { includeKeyFields, pidField, level, fields, countField } = opts;
     // @ts-ignore
     const results: FlexTreeExportListFormat<Fields, KeyFields> = [];
-    const curNodedata = this.toNodeData(this._node, fields as string[], includeKeyFields);
+    const curNodedata = this.toNodeData(
+      this._node,
+      fields as string[],
+      includeKeyFields,
+      countField,
+    );
     // @ts-ignore
     curNodedata[pidField] = this.parent ? this.parent.id : 0;
     // @ts-ignore
