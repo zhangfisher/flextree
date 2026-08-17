@@ -1,7 +1,7 @@
 {
     "name": "flextree-rest",
     "type": "module",
-    "version": "3.1.0",
+    "version": "3.2.0",
     "description": "RESTful API provider for flextree, framework-agnostic (hono/express/elysia/nextjs bindings)",
     "author": "zhangfisher",
     "homepage": "https://zhangfisher.github.io/flextree/",
@@ -86,7 +86,7 @@
         "@types/express": "^4.17.21",
         "elysia": "^1.1.0",
         "express": "^4.21.0",
-        "flextree": "^3.1.0",
+        "flextree": "^3.1.1",
         "hono": "^4.6.0",
         "tsup": "^8.1.0",
         "typescript": "^5.8.3"
