@@ -36,6 +36,8 @@ export class FlexTree<
   private _treeId: TreeId;
   private _manager: FlexTreeManager<Fields, KeyFields, NodeFields, NodeId, TreeId>;
   private _root?: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>;
+  // countField 可见口径的 Bin 区间（回收站启用时预取，节点 toNodeData 读取）——见 prepareCountContext
+  _binRangeForCount?: { left: number; right: number } | null;
 
   // Live Tree 状态：_dirty=脏（含重载失败后的持续脏），_reloading=重载进行中
   private _dirty = false;
@@ -247,7 +249,7 @@ export class FlexTree<
     this._root = new FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>(
       undefined,
       undefined,
-      this,
+      this as any,
     );
     try {
       await this._root.load();

@@ -7,9 +7,12 @@
     "homepage": "https://zhangfisher.github.io/flextree/",
     "repository": {
         "type": "git",
-        "url": "git@github.com:zhangfisher/flextree.git"
+        "url": "git+ssh://git@github.com/zhangfisher/flextree.git"
     },
     "license": "MIT",
+    "files": [
+        "dist"
+    ],
     "publishConfig": {
         "access": "public",
         "main": "dist/index.js",

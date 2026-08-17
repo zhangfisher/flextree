@@ -1,0 +1,23 @@
+{
+  "name": "flextree-rest-nextjs-example",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3102",
+    "seed": "bun run scripts/seed.ts"
+  },
+  "dependencies": {
+    "flextree": "workspace:*",
+    "flextree-bun-sqlite-adapter": "workspace:*",
+    "flextree-rest": "workspace:*",
+    "next": "^14.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "5.8.3"
+  }
+}

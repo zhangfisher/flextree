@@ -9,6 +9,9 @@
         "type": "git",
         "url": "git+ssh://git@github.com/zhangfisher/flextree.git"
     },
+    "files": [
+        "dist"
+    ],
     "keywords": [
         "flextree",
         "tree storage"

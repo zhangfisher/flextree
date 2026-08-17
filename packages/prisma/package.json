@@ -5,6 +5,9 @@
     "description": "prisma adapter for flextree",
     "author": "wxzhang@126.com",
     "license": "ISC",
+    "files": [
+        "dist"
+    ],
     "keywords": [
         "flextree"
     ],

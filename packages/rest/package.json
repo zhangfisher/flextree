@@ -1,0 +1,111 @@
+{
+    "name": "flextree-rest",
+    "type": "module",
+    "version": "3.1.0",
+    "description": "RESTful API provider for flextree, framework-agnostic (hono/express/elysia/nextjs bindings)",
+    "author": "zhangfisher",
+    "homepage": "https://zhangfisher.github.io/flextree/",
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:zhangfisher/flextree.git"
+    },
+    "license": "MIT",
+    "publishConfig": {
+        "access": "public",
+        "main": "dist/index.js",
+        "module": "dist/index.js",
+        "types": "dist/index.d.ts",
+        "exports": {
+            ".": {
+                "types": "./dist/index.d.ts",
+                "import": "./dist/index.js",
+                "require": "./dist/index.cjs"
+            },
+            "./hono": {
+                "types": "./dist/hono.d.ts",
+                "import": "./dist/hono.js",
+                "require": "./dist/hono.cjs"
+            },
+            "./express": {
+                "types": "./dist/express.d.ts",
+                "import": "./dist/express.js",
+                "require": "./dist/express.cjs"
+            },
+            "./elysia": {
+                "types": "./dist/elysia.d.ts",
+                "import": "./dist/elysia.js",
+                "require": "./dist/elysia.cjs"
+            },
+            "./nextjs": {
+                "types": "./dist/nextjs.d.ts",
+                "import": "./dist/nextjs.js",
+                "require": "./dist/nextjs.cjs"
+            }
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "keywords": [
+        "flextree",
+        "rest",
+        "restful",
+        "http",
+        "api",
+        "tree storage"
+    ],
+    "main": "src/index.ts",
+    "exports": {
+        ".": {
+            "types": "./src/index.ts",
+            "default": "./src/index.ts"
+        },
+        "./hono": {
+            "types": "./src/bindings/hono.ts",
+            "default": "./src/bindings/hono.ts"
+        },
+        "./express": {
+            "types": "./src/bindings/express.ts",
+            "default": "./src/bindings/express.ts"
+        },
+        "./elysia": {
+            "types": "./src/bindings/elysia.ts",
+            "default": "./src/bindings/elysia.ts"
+        },
+        "./nextjs": {
+            "types": "./src/bindings/nextjs.ts",
+            "default": "./src/bindings/nextjs.ts"
+        }
+    },
+    "scripts": {
+        "build": "tsup",
+        "test": "bun test"
+    },
+    "devDependencies": {
+        "@types/bun": "^1.1.6",
+        "@types/express": "^4.17.21",
+        "elysia": "^1.1.0",
+        "express": "^4.21.0",
+        "flextree": "^3.1.0",
+        "hono": "^4.6.0",
+        "tsup": "^8.1.0",
+        "typescript": "^5.8.3"
+    },
+    "peerDependencies": {
+        "elysia": ">=1.0.0",
+        "express": ">=4.0.0",
+        "flextree": "^3",
+        "hono": ">=4.0.0"
+    },
+    "peerDependenciesMeta": {
+        "elysia": {
+            "optional": true
+        },
+        "express": {
+            "optional": true
+        },
+        "hono": {
+            "optional": true
+        }
+    }
+}

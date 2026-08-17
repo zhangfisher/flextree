@@ -1,0 +1,15 @@
+{
+  "name": "flextree-rest-express-example",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "flextree": "workspace:*",
+    "flextree-bun-sqlite-adapter": "workspace:*",
+    "flextree-rest": "workspace:*"
+  }
+}

@@ -64,6 +64,7 @@ export default defineConfig({
               { text: "自定义", link: "/guide/custom" },
               { text: "多树表", link: "/guide/multitree" },
               { text: "多根树", link: "/guide/multiroot" },
+              { text: "多根内存树", link: "/guide/multiroottree" },
               { text: "回收站", link: "/guide/recyclebin" },
               { text: "数据库适配", link: "/guide/adapters" },
             ],
@@ -75,6 +76,26 @@ export default defineConfig({
               { text: "Prisma", link: "/adapters/prisma" },
               { text: "Bun Sqlite", link: "/adapters/bun-sqlite" },
               { text: "Sql.js", link: "/adapters/sqljs" },
+            ],
+          },
+          {
+            text: "Restful API",
+            items: [
+              { text: "安装", link: "/guide/rest" },
+              {
+                text: "快速入门",
+                link: "/guide/rest-getting-started",
+              },
+              { text: "API", link: "/guide/rest-api" },
+              {
+                text: "集成",
+                items: [
+                  { text: "Express", link: "/guide/rest-integrations#express" },
+                  { text: "Next.js", link: "/guide/rest-integrations#nextjs" },
+                  { text: "Hono", link: "/guide/rest-integrations#hono" },
+                  { text: "Elysia", link: "/guide/rest-integrations#elysia" },
+                ],
+              },
             ],
           },
         ],
@@ -130,6 +151,7 @@ export default defineConfig({
               { text: "Customization", link: "/en/guide/custom" },
               { text: "Multi-Tree Table", link: "/en/guide/multitree" },
               { text: "Multi-Root Tree", link: "/en/guide/multiroot" },
+              { text: "Multi-Root Memory Tree", link: "/en/guide/multiroottree" },
               { text: "Recycle Bin", link: "/en/guide/recyclebin" },
               { text: "Database Adapters", link: "/en/guide/adapters" },
             ],
@@ -141,6 +163,23 @@ export default defineConfig({
               { text: "Prisma", link: "/en/adapters/prisma" },
               { text: "Bun Sqlite", link: "/en/adapters/bun-sqlite" },
               { text: "Sql.js", link: "/en/adapters/sqljs" },
+            ],
+          },
+          {
+            text: "Restful API",
+            items: [
+              { text: "Install", link: "/en/guide/rest" },
+              { text: "Getting Started", link: "/en/guide/rest-getting-started" },
+              { text: "API", link: "/en/guide/rest-api" },
+              {
+                text: "Integrations",
+                items: [
+                  { text: "Express", link: "/en/guide/rest-integrations#express" },
+                  { text: "Next.js", link: "/en/guide/rest-integrations#nextjs" },
+                  { text: "Hono", link: "/en/guide/rest-integrations#hono" },
+                  { text: "Elysia", link: "/en/guide/rest-integrations#elysia" },
+                ],
+              },
             ],
           },
         ],

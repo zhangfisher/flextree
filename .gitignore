@@ -69,3 +69,4 @@ packages/core/__tests__/*.db
 
 packages/tests/**/*.db
 packages/core/examples/tree_example.db
+examples/rest-nextjs/.next

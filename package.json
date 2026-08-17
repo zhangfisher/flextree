@@ -22,9 +22,9 @@
         "docs:preview": "vitepress preview docs",
         "changeset": "changeset",
         "release": "pnpm build && changeset version && changeset publish",
-        "sync": "cnpm sync flextree flextree-prisma-adapter flextree-sqlite-adapter",
-        "publish-packages": "bun run build && changeset version && bun run scripts/update-workspace-deps.js && changeset publish && git checkout -- package.json packages/*/package.json",
-        "only-publish-packages": "bun run build  && bun run scripts/update-workspace-deps.js && npm publish --workspaces && git checkout -- package.json packages/*/package.json"
+        "sync": "cnpm sync flextree flextree-prisma-adapter flextree-bun-sqlite-adapter flextree-sqljs-adapter flextree-sqlite-adapter",
+        "publish-packages": "bun run build && changeset version && bun run scripts/update-workspace-deps.js && bun run scripts/promote-publish-config.js && changeset publish && git checkout -- package.json packages/*/package.json",
+        "only-publish-packages": "bun run build  && bun run scripts/update-workspace-deps.js && bun run scripts/promote-publish-config.js && npm publish --workspaces && git checkout -- package.json packages/*/package.json"
     },
     "dependencies": {
         "@lite-tree/vue": "^1.1.6"

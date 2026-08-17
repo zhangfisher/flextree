@@ -104,11 +104,61 @@ _Avoid_: 过期标记、缓存失效（实现语汇，非领域语汇）
 单例 manager 承载的是**连接与存储配置**（adapter、字段映射、treeId、回收站）；`lazy` 是 `FlexTree` 实例自己的读取行为，不进共享配置——同表同树可同时存在懒/非懒两棵树。
 _Avoid_: 树配置（与 FlexTreeOptions 混淆）
 
+**Multi-Root Memory Tree（多根内存树）**:
+`MultiRootFlexTree`：多根树的内存查询形态，与 `FlexTree` 同构（Live Tree、lazy、脏读防护全套继承）。`.nodes` 返回用户根的节点实例列表——与 `MultiRootFlexTreeManager.nodes`（纯数据快照）同名不同物。用户根节点 `parent=undefined`、`root=自身`、`siblings=其余用户根`；隐藏根在内存树中不存在。
+_Avoid_: 多根 FlexTree（口语可，正式命名避免）、MultiTree（指向多物理树模型）
+
 ### 适配器
 
 **Adapter（适配器）**:
 实现 `IFlexTreeAdapter` 契约的数据库驱动封装，负责 exec/getRows/getScalar/transaction 的方言落地。核心库只面向契约编程，不感知具体驱动。
-_Avoid_: driver、connector
+_Avoid_: driver、connector、binding（另有所指——框架集成层）
+
+### HTTP API
+
+**API Provider（API 提供者）**:
+将 FlexTreeManager 的能力映射为 HTTP RESTful 资源的核心服务对象：持有树注册表、定义资源路径与操作语义、完成参数校验与错误映射。本身不监听端口、不感知任何 web 搆架，通过 Binding 挂载到宿主框架。
+_Avoid_: HTTP 服务、API 服务器（暗示自带监听）、HTTP adapter（与数据库 Adapter 冲突）
+
+**Binding（框架绑定层）**:
+把宿主 web 框架（express/hono/elysiajs 等）的请求/响应转写为标准 Fetch API（WinterCG `Request => Response`）的薄集成层，每框架一个 routes 工厂函数（如 `createExpressRoutes`、`createHonoRoutes`）。只做转写与挂载，不含业务逻辑。
+_Avoid_: adapter（保留给数据库适配器）、integration、bridge
+
+**Tree Registry（树注册表）**:
+API Provider 持有的 `名称 → FlexTreeManager` 映射。用户显式注册（`register(treeName, manager)`），请求经 `/:treeName` 段路由到对应 manager。treeName 是 HTTP 层命名，与表内 treeId 字段解耦。
+_Avoid_: 树池、manager 集合
+
+**Standard Handler（标准处理器）**:
+基于 WinterCG Fetch API 的纯函数路由处理器 `(Request) => Promise<Response>`，配套声明式路由表。是 API Provider 的唯一业务出口，各框架 Binding 绁一委托给它。
+_Avoid_: controller、框架 handler
+
+**API Service（API 服务）**:
+API Provider 的实现主体（`FlexTreeApiService`）：持有 Tree Registry 与 per-manager 写队列，接收 Standard Handler 解析出的普通对象参数，调用 FlexTreeManager/MultiRootFlexTreeManager 完成操作。Binding 与 Standard Handler 均不含业务逻辑，业务只存在于此层。
+_Avoid_: controller 层、FlexTreeApiProvider（类名）
+
+**Binding Product（绑定产物）**:
+Routes 工厂返回的框架原生路由形态：hono 子应用、express Router、elysia 插件、nextjs handler 映射。**不是**可监听的服务实例——挂载路径、挂载方式、生命周期全由宿主决定。
+_Avoid_: 服务器实例、app（暗示库创建框架 app）
+
+**Write Queue（写队列）**:
+per-manager 的 promise 链：每个 HTTP 写请求包成一个 `manager.write()`（一请求一原子事务），同树写请求串行执行，对客户端透明。跨树原子写在 v1 不支持。
+_Avoid_: 写锁（是排队不是锁）、事务池
+
+**Where Filter（等值过滤）**:
+读端点的平铺等值 query 参数（`?name=xx&level=1`），key 必须命中树注册时声明的字段白名单，否则 400。只支持 AND 等值，不支持运算符——LIKE/IN/比较留给后续版本。
+_Avoid_: where 透传（暗示任意对象直传 DB）、查询语言
+
+**Offset Pagination（偏移分页）**:
+仅 `GET /{tree}/nodes` 支持的 `?limit/&offset` 分页。执行层为内存切片（getNodes 全量查询后切窗）——省传输不省查询，total 即结果集长度。带任一分页参数时响应变为 envelope `{items,total,limit,offset}`；不带则保持裸数组（向后兼容）。
+_Avoid_: cursor 分页、页码分页（page/pageSize）
+
+**OpenAPI Document（OpenAPI 文档）**:
+由声明式路由表 + 参数 spec 生成的 OpenAPI 3.1 文档。默认经内置 `GET /openapi.json` 路由直接可下载（binding 挂载点之下；`openapi.enabled:false` 可关）；`generateOpenApiDocument(service, opts)` 纯函数另供写文件/CI 校验等进阶用法。servers 缺省按 binding basePath 推导，宿主可显式覆盖。
+_Avoid_: Swagger（是生态工具名，非文档标准名）、swagger.json（旧版 2.0 文件名）
+
+**Node Schema（节点模式）**:
+注册时可选的 `nodeSchema`（JSON Schema），注入 OpenAPI 文档精确描述业务字段；未提供时文档使用宽 schema（additionalProperties: true + 按 keyFields 列出关键字段）。
+_Avoid_: 字段白名单（另有所指——Where Filter 的 fields）
 
 **Injected Instance（注入实例）**:
 适配器构造契约：调用方自行完成驱动的初始化（含异步部分）后传入现成实例，适配器不负责创建与生命周期。sqlite、sqljs 适配器均属此类。

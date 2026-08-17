@@ -21,6 +21,9 @@
         "url": "git@github.com:zhangfisher/flextree.git"
     },
     "license": "MIT",
+    "files": [
+        "dist"
+    ],
     "scripts": {
         "build": "tsup"
     },

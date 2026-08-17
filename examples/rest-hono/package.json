@@ -1,0 +1,15 @@
+{
+  "name": "flextree-rest-hono-example",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "flextree": "workspace:*",
+    "flextree-bun-sqlite-adapter": "workspace:*",
+    "flextree-rest": "workspace:*",
+    "hono": "^4.6.0"
+  }
+}

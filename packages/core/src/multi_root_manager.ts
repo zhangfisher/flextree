@@ -177,6 +177,17 @@ export class MultiRootFlexTreeManager<
   get isLoaded() {
     return this._loaded;
   }
+  /** 是否启用回收站（透传子 manager） */
+  get recycleBinEnabled(): boolean {
+    return (this._manager as any).recycleBinEnabled;
+  }
+  /** 回收站过滤禁用标记（manager.toJson/toList 的 includeRecyclebin 视角，透传子 manager） */
+  get recycleBinDisableFilter(): boolean {
+    return !!(this._manager as any).recycleBinDisableFilter;
+  }
+  set recycleBinDisableFilter(value: boolean) {
+    (this._manager as any).recycleBinDisableFilter = value;
+  }
 
   /**
    * 用户根节点列表（同步）
@@ -198,6 +209,15 @@ export class MultiRootFlexTreeManager<
   }
 
   // ============================== 内部工具 ==============================
+
+  /**
+   * 读取（或从缓存取）回收站节点的左右值区间（转发子 manager）
+   *
+   * 树层 prepareCountContext 据此预取可见口径的 Bin 区间（countField 计算用）
+   */
+  async _getBinRange(): Promise<{ left: number; right: number } | undefined> {
+    return await (this._manager as any)._getBinRange();
+  }
 
   /**
    * 判定节点是否为隐藏根（单树表中 leftValue=1 全表唯一，结构判定不受改名影响）
@@ -227,7 +247,14 @@ export class MultiRootFlexTreeManager<
    * write:before/write:after 不转发，由本管理器的 write 自行发出
    */
   private _forwardEvents() {
-    const events = ["node:added", "node:deleted", "node:cleared", "node:updated", "node:moved"];
+    const events = [
+      "node:added",
+      "node:deleted",
+      "node:recycled",
+      "node:cleared",
+      "node:updated",
+      "node:moved",
+    ];
     for (const evt of events as (keyof FlexTreeEvents)[]) {
       this._manager.on(evt, (payload: any) => {
         this._emitter.emit(evt, payload);
@@ -537,16 +564,20 @@ export class MultiRootFlexTreeManager<
    *
    * 与 FlexTreeManager.write 语义一致：写锁、事务、读守卫均由内部单树管理器承载，
    * 回调参数为本管理器实例。每次 write 结束后自动刷新 .nodes 缓存。
+   * write:after 携带 { committed }：内部 write 正常返回视为已提交，异常（回滚）为 false
+   * ——Live Tree 据此区分提交/回滚（回滚不置脏）。
    */
   async write(fn: (tree: MultiRootFlexTreeManager<Fields, KeyFields, TreeNode, NodeId, TreeId>) => Promise<void>) {
     this._emitter.emit("write:before");
+    let committed = false;
     try {
       await this._manager.write(async () => {
         await fn(this);
       });
+      committed = true;
     } finally {
       await this._refreshNodes();
-      this._emitter.emit("write:after");
+      this._emitter.emit("write:after", { committed });
     }
   }
 

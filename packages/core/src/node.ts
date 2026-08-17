@@ -12,6 +12,8 @@ import type {
   Expand,
 } from "./types";
 import type { FlexTree } from "./tree";
+// 仅类型引用：宿主树联合类型的 MultiRootFlexTree 分支（运行时无依赖，避免循环引用）
+import type { MultiRootFlexTree } from "./multi_root_tree_types";
 import {
   FlexTreeAbortError,
   FlexTreeInvalidError,
@@ -35,6 +37,63 @@ import { assertCountField, calcDescendantCount } from "./utils/countField";
  *
  */
 export type FlexTreeNodeStatus = "idle" | "loading" | "loaded" | "error";
+
+/**
+ * 宿主树的最小结构接口：FlexTreeNode 对所属树的全部依赖（ADR-0007）
+ *
+ * FlexTree 与 MultiRootFlexTree 均实现此接口，节点组栈/导出/计数逻辑
+ * 对两种宿主通用，无须感知差异（root 语义差异由树各自表达）。
+ */
+export interface FlexTreeNodeHost<
+  Fields extends Record<string, any> = object,
+  KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
+  NodeFields extends IFlexTreeNodeFields<Fields, KeyFields> = IFlexTreeNodeFields<
+    Fields,
+    KeyFields
+  >,
+  NodeId = NonUndefined<NodeFields["id"]>,
+  TreeId = NonUndefined<NodeFields["treeId"]>,
+> {
+  /** 归属管理器（节点经其读写数据库） */
+  readonly manager: any;
+  /** 读取行为选项（节点 load 读取 lazy 配置） */
+  readonly options: { lazy?: boolean };
+  /** 单根树的根节点（多根树恒为 undefined） */
+  readonly root?: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>;
+  /** 多根树的用户根列表（单根树恒为空数组） */
+  readonly nodes: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>[];
+  /** countField 可见口径的 Bin 区间（回收站启用时由树层预取） */
+  _binRangeForCount?: { left: number; right: number } | null;
+}
+
+/** FlexTreeNode 的宿主树：单根 FlexTree 或多根 MultiRootFlexTree（接口形状，运行时是二者之一） */
+export type FlexTreeNodeHostTree<
+  Fields extends Record<string, any> = object,
+  KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
+  NodeFields extends IFlexTreeNodeFields<Fields, KeyFields> = IFlexTreeNodeFields<
+    Fields,
+    KeyFields
+  >,
+  NodeId = NonUndefined<NodeFields["id"]>,
+  TreeId = NonUndefined<NodeFields["treeId"]>,
+> = FlexTreeNodeHost<Fields, KeyFields, NodeFields, NodeId, TreeId> & Record<string, any>;
+
+/** 任意宿主树上的节点实例（公开 API 的节点返回类型：不区分单根/多根） */
+export type AnyFlexTreeNode<
+  Fields extends Record<string, any> = object,
+  KeyFields extends CustomTreeKeyFields = DefaultTreeKeyFields,
+  NodeFields extends IFlexTreeNodeFields<Fields, KeyFields> = IFlexTreeNodeFields<
+    Fields,
+    KeyFields
+  >,
+> = FlexTreeNode<
+  Fields,
+  KeyFields,
+  NodeFields,
+  NonUndefined<NodeFields["id"]>,
+  NonUndefined<NodeFields["treeId"]>,
+  FlexTreeNodeHostTree<Fields, KeyFields, NodeFields>
+>;
 
 export type TypedNode<
   Fields extends Record<string, any> = object,
@@ -61,18 +120,32 @@ export class FlexTreeNode<
   >,
   NodeId = NonUndefined<NodeFields["id"]>,
   TreeId = NonUndefined<NodeFields["treeId"]>,
+  // 宿主树：单根 FlexTree 或多根 MultiRootFlexTree（默认保持单根，既有调用点零改动）
+  TTree extends FlexTreeNodeHostTree<
+    Fields,
+    KeyFields,
+    NodeFields,
+    NodeId,
+    TreeId
+  > = FlexTreeNodeHostTree<Fields, KeyFields, NodeFields, NodeId, TreeId>,
 > {
-  private _tree: FlexTree<Fields, KeyFields, NodeFields, NodeId, TreeId>;
+  private _tree: TTree;
   private _node: Expand<NodeFields> | undefined;
-  private _children?: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>[];
-  private _parent: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined;
+  private _children?:
+    | FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId, TTree>[]
+    | undefined;
+  private _parent:
+    | FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId, TTree>
+    | undefined;
   private _keyFields;
   private _status: FlexTreeNodeStatus = "idle";
 
   constructor(
     node: NodeFields | undefined,
-    parent: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> | undefined,
-    tree: FlexTree<Fields, KeyFields, NodeFields, NodeId, TreeId>,
+    parent:
+      | FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId, TTree>
+      | undefined,
+    tree: TTree,
   ) {
     this._tree = tree;
     this._parent = parent;
@@ -101,15 +174,23 @@ export class FlexTreeNode<
   get treeId() {
     return (this._node as any)?.[this._keyFields.treeId] as TreeId;
   }
-  get tree() {
-    return this._tree;
+  get tree(): FlexTree<Fields, KeyFields, NodeFields, NodeId, TreeId> | MultiRootFlexTree {
+    return this._tree as any;
   }
   get fields() {
     return this._node!;
   }
 
+  /**
+   * 所在树的根节点：沿 parent 链上溯（单根/多根统一——根即无父节点者）
+   * 多根树上返回所在用户根，用户根自身返回自身
+   */
   get root() {
-    return this._tree.root;
+    let node: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId, TTree> = this;
+    while (node.parent) {
+      node = node.parent;
+    }
+    return node;
   }
   get parent() {
     return this._parent;
@@ -119,10 +200,15 @@ export class FlexTreeNode<
     return this._children;
   }
 
+  /**
+   * 兄弟节点（不包括自身）
+   * 用户根无父节点：返回其余用户根（多根树经宿主 nodes 特判）
+   */
   get siblings() {
     if (this._parent) {
       return this._parent.children?.filter((n) => n.id !== this.id);
     }
+    return this._tree.nodes?.filter((n) => n.id !== this.id);
   }
 
   get descendants() {
@@ -342,8 +428,8 @@ export class FlexTreeNode<
       // 2. 加载自身节点数据
       this.updateSelf(nodes[0]);
 
-      const pnodes: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>[] = [this];
-      let preNode: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId> = this as any;
+      const pnodes: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId, TTree>[] = [this];
+      let preNode: FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId, TTree> = this;
       // 3. 加载所有后代节点 ，懒加载时只会加载子节点
       for (const node of nodes) {
         if (node[this._keyFields.id] === this.id) {
@@ -355,7 +441,7 @@ export class FlexTreeNode<
 
         if (nodeLevel === preNode.level) {
           const parent = pnodes[pnodes.length - 1];
-          const nodeObj = new FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId>(
+          const nodeObj = new FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId, TTree>(
             node,
             parent,
             this._tree,
@@ -364,7 +450,11 @@ export class FlexTreeNode<
           preNode = nodeObj;
         } else if (nodeLevel > preNode.level) {
           if (nodeLevel === preNode.level + 1) {
-            const nodeObj = new FlexTreeNode(node, preNode, this._tree);
+            const nodeObj = new FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId, TTree>(
+              node,
+              preNode,
+              this._tree,
+            );
             preNode.children!.push(nodeObj);
             preNode = nodeObj;
             if (
@@ -380,7 +470,11 @@ export class FlexTreeNode<
           while (true) {
             const parent = pnodes[pnodes.length - 1];
             if (parent && nodeLevel === parent.level + 1) {
-              const nodeObj = new FlexTreeNode(node, parent, this._tree);
+              const nodeObj = new FlexTreeNode<Fields, KeyFields, NodeFields, NodeId, TreeId, TTree>(
+                node,
+                parent,
+                this._tree,
+              );
               parent.children!.push(nodeObj);
               preNode = nodeObj;
               if (

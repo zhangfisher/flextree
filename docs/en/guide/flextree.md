@@ -2,6 +2,10 @@
 
 Before this section, we have been using `FlexTreeManager` for the examples. From this section on, we introduce `FlexTree`, an object focused on querying.
 
+:::tip
+`FlexTree` supports a single root only. For [multi-root trees](./multiroot.md), use the analogous [MultiRootFlexTree](./multiroottree.md) — its API is essentially identical, differing only in being multi-root.
+:::
+
 Since `FlexTree` is based on the `Left-Right Value algorithm`, which is a read-optimized storage structure, it has high query efficiency but lower update efficiency.
 So in principle it is especially suited for scenarios where reads outnumber updates. To make it easier to work with the tree, the `FlexTree` object and the node object `FlexTreeNode` are introduced.
 

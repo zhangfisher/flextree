@@ -6,6 +6,7 @@ export * from "./types";
 export * from "./manager";
 export { RecycleMixin } from "./mixins/recycle.mixin";
 export * from "./multi_root_manager";
+export * from "./multi_root_tree";
 export * from "./errors";
 export * from "./adapter";
 export * from "./consts";
