@@ -1,5 +1,11 @@
 # flextree-rest
 
+## 3.2.1
+
+### Patch Changes
+
+-   修复 npm 发布配置问题。v3.2.0 为本地发布，未经过 GitHub Actions 流程处理，导致 publishConfig 中的入口字段未提升到顶层。本次通过 GitHub Actions 发布 v3.2.1，promote-publish-config.js 脚本会自动处理字段提升，确保 npm 包配置正确。
+
 ## 3.2.0
 
 ### Minor Changes
