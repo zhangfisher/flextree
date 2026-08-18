@@ -33,6 +33,7 @@ export default defineConfig({
               { text: "工作原理", link: "/intro/principle" },
               { text: "功能优势", link: "/intro/features" },
               { text: "读写成本", link: "/intro/cost" },
+              { text: "Skill", link: "/intro/skill" },
               { text: "常见问题", link: "/intro/question" },
               { text: "更新历史", link: "/intro/history" },
               { text: "完整示例", link: "/intro/example" },
