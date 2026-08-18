@@ -14,6 +14,11 @@
  */
 export { FlexTreeApiService, type FlexTreeApiServiceOptions } from "./service";
 export { createHandler, type HandlerOptions } from "./handler";
+export {
+    generateOpenApiDocument,
+    type OpenApiDocument,
+    type OpenApiDocumentOptions,
+} from "./openapi";
 export { TreeRegistry, type RegistryEntry } from "./registry";
 export { WriteQueue } from "./write-queue";
 export {

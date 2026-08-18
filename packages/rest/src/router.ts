@@ -54,6 +54,8 @@ export interface RouteContext {
     service?: unknown;
     /** 路由表 wrap 时注入的声明元数据（spec 一处声明、运行时与文档两处消费） */
     route?: RouteMeta;
+    /** handler 注入的 basePath（openapi 路由推导 servers 用） */
+    basePath?: string;
 }
 
 interface RouteEntry {

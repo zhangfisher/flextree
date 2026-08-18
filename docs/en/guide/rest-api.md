@@ -16,11 +16,31 @@ Paths start with `/{tree}` (the registered name). Query parameters are camelCase
 
 | Method | Path | Query / Body |
 |---|---|---|
-| GET | `/{tree}/nodes` | `level` (exact level, `?level=0`≡root list) · `fields` · `countField` · `includeRecyclebin` + flat equality where (whitelisted fields) |
+| GET | `/{tree}/nodes` | `level` (exact level, `?level=0`≡root list) · `fields` · `countField` · `includeRecyclebin` · `limit`/`offset` ([pagination](#pagination)) + flat equality where (whitelisted fields) |
 | POST | `/{tree}/nodes` | body `{nodes, at?, pos?, includeRecyclebin?}` → **201 + Location** (`at` omitted = top-level insertion) |
 | GET | `/{tree}/nodes/{id}` | `includeChildren` (+1 level) / `includeDescendants` (whole subtree), mutually exclusive; `format=json\|list` only valid when expanding |
 | PATCH | `/{tree}/nodes/{id}` | body with node fields (non-key fields) |
 | DELETE | `/{tree}/nodes/{id}` | `recycle=true\|false` · `includeRecyclebin` (allow deleting in-bin nodes) |
+
+### Pagination
+
+Only `GET /{tree}/nodes` supports it (other list endpoints do not):
+
+```bash
+curl "http://localhost:3000/api/trees/menu/nodes?limit=20&offset=0"
+# {
+#   "items": [ {...}, {...} ],
+#   "total": 57,
+#   "limit": 20,
+#   "offset": 0
+# }
+```
+
+- With either pagination parameter the response becomes the envelope `{items, total, limit, offset}`; **without them it stays a bare array** (backward compatible)
+- `total` is the full count after filtering (where/level), before slicing
+- Validation: `limit` ≥1 integer, `offset` ≥0 integer; `offset` without `limit` → 400
+
+> **Boundary**: implemented as an in-memory slice after a full query — it saves response transfer, **not database work**. For deep pagination on very large trees, narrow the result set with `where`/`level` instead.
 
 `pos` values: `lastChild` (default) / `firstChild` / `nextSibling` / `previousSibling`.
 
@@ -90,4 +110,4 @@ Custom mapping: `new FlexTreeApiService({ onError: (err) => ({ ... }) })` — re
 
 ## v1 boundaries
 
-No pagination (narrow scope with `level` / where), no OpenAPI generation, no event streaming (SSE/Webhook), DELETE does not expose `detach`. Write requests are serialized per tree — high-frequency write throughput on a single large tree is bounded by the serial queue (an inherent cost of the Nested Set Model; reads are unaffected).
+Pagination only on `GET /{tree}/nodes` (other list endpoints narrow scope with `level` / where); no event streaming (SSE/Webhook); DELETE does not expose `detach`. For the OpenAPI document see [OpenAPI](/en/guide/rest-openapi). Write requests are serialized per tree — high-frequency write throughput on a single large tree is bounded by the serial queue (an inherent cost of the Nested Set Model; reads are unaffected).

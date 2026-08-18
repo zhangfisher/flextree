@@ -1,7 +1,7 @@
 {
     "name": "flextree-bun-sqlite-adapter",
     "type": "module",
-    "version": "3.1.1",
+    "version": "3.2.0",
     "access": "public",
     "author": "zhangfisher",
     "description": "bun-sqlite driver for flextree",

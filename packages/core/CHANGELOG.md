@@ -1,5 +1,11 @@
 # flextree
 
+## 3.2.0
+
+### Patch Changes
+
+-   版本同步升级至 3.2.0，与 flextree-rest 保持一致
+
 ## 3.1.1
 
 ### Patch Changes

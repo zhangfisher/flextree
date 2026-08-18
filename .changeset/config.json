@@ -8,7 +8,8 @@
             "flextree-sqlite-adapter",
             "flextree-prisma-adapter",
             "flextree-bun-sqlite-adapter",
-            "flextree-sqljs-adapter"
+            "flextree-sqljs-adapter",
+            "flextree-rest"
         ]
     ],
     "linked": [],
@@ -20,7 +21,8 @@
         "flextree-sqljs-example",
         "flextree-rest-hono-example",
         "flextree-rest-express-example",
-        "flextree-rest-nextjs-example"
+        "flextree-rest-nextjs-example",
+        "flextree-rest-express-example"
     ],
     "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
         "onlyUpdatePeerDependentsWhenOutOfRange": true

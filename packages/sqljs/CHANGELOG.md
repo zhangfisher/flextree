@@ -1,5 +1,12 @@
 # flextree-sqljs-adapter
 
+## 3.2.0
+
+### Patch Changes
+
+-   Updated dependencies
+    -   flextree@3.2.0
+
 ## 3.1.1
 
 ### Patch Changes

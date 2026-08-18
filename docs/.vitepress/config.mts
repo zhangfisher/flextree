@@ -87,6 +87,7 @@ export default defineConfig({
                 link: "/guide/rest-getting-started",
               },
               { text: "API", link: "/guide/rest-api" },
+              { text: "OpenAPI", link: "/guide/rest-openapi" },
               {
                 text: "集成",
                 items: [
@@ -171,6 +172,7 @@ export default defineConfig({
               { text: "Install", link: "/en/guide/rest" },
               { text: "Getting Started", link: "/en/guide/rest-getting-started" },
               { text: "API", link: "/en/guide/rest-api" },
+              { text: "OpenAPI", link: "/en/guide/rest-openapi" },
               {
                 text: "Integrations",
                 items: [

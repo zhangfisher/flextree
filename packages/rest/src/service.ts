@@ -12,12 +12,20 @@ import { WriteQueue } from "./write-queue";
 export interface FlexTreeApiServiceOptions {
     /** 自定义错误映射扩展点：返回 ProblemDetail 覆盖默认，返回 undefined 走默认 */
     onError?: ErrorNormalizer;
+    /** OpenAPI 文档配置（enabled:false 关闭内置 GET /openapi.json 路由） */
+    openapi?: {
+        enabled?: boolean;
+        info?: { title?: string; version?: string; description?: string };
+        servers?: Array<{ url: string; description?: string }>;
+    };
 }
 
 export class FlexTreeApiService {
     private _registry = new TreeRegistry();
     private _queue = new WriteQueue();
     private _options: FlexTreeApiServiceOptions;
+    /** 内置 openapi.json 路由的文档缓存：registry 变更时失效 */
+    private _openapiCache?: unknown;
 
     constructor(options?: FlexTreeApiServiceOptions) {
         this._options = options ?? {};
@@ -25,12 +33,16 @@ export class FlexTreeApiService {
 
     /** 注册树（详见 TreeRegistry.register），返回注册条目 */
     register(name: string, manager: TreeManagerLike, options?: RegisterOptions): RegistryEntry {
-        return this._registry.register(name, manager, options);
+        const entry = this._registry.register(name, manager, options);
+        this._openapiCache = undefined;
+        return entry;
     }
 
     /** 注销树 */
     unregister(name: string): boolean {
-        return this._registry.unregister(name);
+        const removed = this._registry.unregister(name);
+        if (removed) this._openapiCache = undefined;
+        return removed;
     }
 
     /** 取注册条目（未注册抛 404 语义错误） */
@@ -45,6 +57,19 @@ export class FlexTreeApiService {
 
     get onError(): ErrorNormalizer | undefined {
         return this._options.onError;
+    }
+
+    get openapiOptions(): FlexTreeApiServiceOptions["openapi"] {
+        return this._options.openapi;
+    }
+
+    /** 内置 openapi.json 路由的缓存访问器（首访生成，registry 变更后失效） */
+    getOpenapiCache(): unknown | undefined {
+        return this._openapiCache;
+    }
+
+    setOpenapiCache(doc: unknown): void {
+        this._openapiCache = doc;
     }
 
     /**

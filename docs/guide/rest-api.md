@@ -16,11 +16,31 @@
 
 | Method | Path | Query / Body |
 |---|---|---|
-| GET | `/{tree}/nodes` | `level`（精确层级，`?level=0`≡根列表）· `fields` · `countField` · `includeRecyclebin` + where 平铺等值（白名单字段） |
+| GET | `/{tree}/nodes` | `level`（精确层级，`?level=0`≡根列表）· `fields` · `countField` · `includeRecyclebin` · `limit`/`offset`（[分页](#分页)）+ where 平铺等值（白名单字段） |
 | POST | `/{tree}/nodes` | body `{nodes, at?, pos?, includeRecyclebin?}` → **201 + Location**（`at` 缺省=顶层添加） |
 | GET | `/{tree}/nodes/{id}` | `includeChildren`（+1 级）/ `includeDescendants`（全子树）互斥；`format=json\|list` 仅展开时有效 |
 | PATCH | `/{tree}/nodes/{id}` | body 节点字段（非关键字段） |
 | DELETE | `/{tree}/nodes/{id}` | `recycle=true\|false` · `includeRecyclebin`（允许删除站内节点） |
+
+### 分页
+
+仅 `GET /{tree}/nodes` 支持（其他列表端点不支持）：
+
+```bash
+curl "http://localhost:3000/api/trees/menu/nodes?limit=20&offset=0"
+# {
+#   "items": [ {...}, {...} ],
+#   "total": 57,
+#   "limit": 20,
+#   "offset": 0
+# }
+```
+
+- 带任一分页参数 → 响应为 envelope `{items, total, limit, offset}`；**不带则保持裸数组**（向后兼容）
+- `total` 是过滤（where/level）之后、切片之前的全量数
+- 校验：`limit` ≥1 整数、`offset` ≥0 整数；只带 `offset` 不带 `limit` → 400
+
+> **边界**：实现为全量查询后内存切片——节省响应传输，**不减少数据库查询量**。超大树深分页建议改用 `where`/`level` 收窄结果集。
 
 `pos` 取值：`lastChild`（默认）/ `firstChild` / `nextSibling` / `previousSibling`。
 
@@ -90,4 +110,4 @@ URL 中的 `{id}`：纯数字无前导零按 number 匹配（`"0"` 是 number，
 
 ## v1 边界
 
-无分页（用 `level` / where 缩小范围）、无 OpenAPI 生成、无事件透传（SSE/Webhook）、DELETE 不暴露 `detach`。写请求在单棵树上串行——大树高频写吞吐受限于串行队列（Nested Set Model 的固有代价，读不受影响）。
+分页仅 `GET /{tree}/nodes`（其余列表端点用 `level` / where 缩小范围）；无事件透传（SSE/Webhook）；DELETE 不暴露 `detach`。写请求在单棵树上串行——大树高频写吞吐受限于串行队列（Nested Set Model 的固有代价，读不受影响）。OpenAPI 文档见 [OpenAPI](/guide/rest-openapi)。

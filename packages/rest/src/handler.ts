@@ -39,6 +39,7 @@ export function createHandler(service: FlexTreeApiService, options?: HandlerOpti
                 params,
                 query: url.searchParams,
                 service,
+                basePath,
             });
         } catch (e) {
             // router 的 404/405 与业务错误统一走 problem+json

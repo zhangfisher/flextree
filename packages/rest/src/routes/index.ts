@@ -84,8 +84,20 @@ const CAN_MOVE_QUERY: QueryParamSpec[] = [
     { name: "includeRecyclebin", type: "boolean", optional: true },
 ];
 
-/** 全部路由声明（25 条） */
+/** 全部路由声明（26 条） */
 export const ROUTES: RouteDecl[] = [
+    // OpenAPI 文档：必须排在 /:tree 之前——router 首匹配优先，否则 openapi.json 被 :tree 参数段吃掉
+    {
+        method: "GET",
+        pattern: "/openapi.json",
+        handler: openapiDocument,
+        meta: {
+            tag: "OpenAPI",
+            summary: "OpenAPI 文档（3.1）",
+            response: "openapi-document",
+        },
+    },
+
     // 树级
     {
         method: "GET",
@@ -311,6 +323,30 @@ export const ROUTES: RouteDecl[] = [
         meta: { tag: "Recyclebin", summary: "永久清空回收站", response: "no-content" },
     },
 ];
+
+/** GET /openapi.json：内置文档端点（enabled:false → 404；servers 按 basePath 推导，宿主显式配置优先） */
+async function openapiDocument(
+    ctx: RouteContext,
+    service: FlexTreeApiService,
+): Promise<Response> {
+    const openapiOptions = service.openapiOptions;
+    if (openapiOptions?.enabled === false) {
+        const { RestError } = await import("../errors");
+        throw new RestError(404, "ROUTE_NOT_FOUND", "OpenAPI endpoint is disabled");
+    }
+    // 缓存：registry 变更（register/unregister）时由 service 清空
+    let doc = service.getOpenapiCache() as Record<string, unknown> | undefined;
+    if (!doc) {
+        const { generateOpenApiDocument } = await import("../openapi");
+        const basePath = ctx.basePath;
+        doc = generateOpenApiDocument(service, {
+            info: openapiOptions?.info,
+            servers: openapiOptions?.servers ?? [{ url: basePath || "/" }],
+        }) as Record<string, unknown>;
+        service.setOpenapiCache(doc);
+    }
+    return Response.json(doc);
+}
 
 /** 组装路由表（每 service 一份） */
 export function createRouter(): Router {
