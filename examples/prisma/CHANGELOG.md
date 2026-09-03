@@ -1,5 +1,13 @@
 # flextree-prisma-example
 
+## 1.0.7
+
+### Patch Changes
+
+-   Updated dependencies [5ebc890]
+    -   flextree@3.2.2
+    -   flextree-prisma-adapter@3.2.2
+
 ## 1.0.6
 
 ### Patch Changes
