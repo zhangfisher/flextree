@@ -22,7 +22,8 @@
         "flextree-rest-hono-example",
         "flextree-rest-express-example",
         "flextree-rest-nextjs-example",
-        "flextree-rest-express-example"
+        "flextree-rest-express-example",
+        "flextree-prisma-example"
     ],
     "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
         "onlyUpdatePeerDependentsWhenOutOfRange": true
