@@ -1,13 +1,14 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import type { FlexTreeManager } from "../../src";
 import {
   FlexNodeRelPosition,
   FlexTreeNodeError,
+  FlexTreeManager,
   NextSibling,
   PreviousSibling,
 } from "../../src";
 import type { DemoFlexTreeManager } from "../helpers";
 import { createTreeManager } from "../helpers";
+import BunSqliteAdapter from "../../../bun-sqlite/src";
 
 describe("添加树节点", () => {
   describe("创建根节点", () => {
@@ -522,6 +523,120 @@ describe("添加树节点", () => {
       });
     });
   });
+  describe("使用数据库扩展字段创建树", () => {
+    let tree: FlexTreeManager<{ created_at: string; updated_at: string }>;
+
+    beforeEach(async () => {
+      FlexTreeManager.clearInstance();
+      const sqliteAdapter = new BunSqliteAdapter();
+      await sqliteAdapter.open();
+      // 建表：flextree 用属性名拼 SQL，故扩展列需直接使用数据库列名（蛇形命名）
+      await sqliteAdapter.exec([
+        `
+        CREATE TABLE IF NOT EXISTS tree (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name VARCHAR(60),
+            treeId INTEGER,
+            level INTEGER,
+            leftValue INTEGER,
+            rightValue INTEGER,
+            title VARCHAR(60),
+            type INTEGER,
+            created_at VARCHAR(30),
+            updated_at VARCHAR(30)
+        );
+        `,
+      ]);
+      await sqliteAdapter.exec([`DELETE FROM tree`]);
+
+      tree = new FlexTreeManager("tree", {
+        adapter: sqliteAdapter,
+      });
+    });
+
+    afterEach(async () => {});
+
+    test("创建带扩展字段的根节点和子节点集后树结构完整", async () => {
+      const now = new Date().toISOString();
+
+      await tree.write(async () => {
+        // 创建根节点（flextree 用属性名拼 SQL，需用数据库列名）
+        await tree.createRoot({
+          name: "all",
+          title: "所有内容",
+          type: 0,
+          created_at: now,
+          updated_at: now,
+        } as never);
+
+        // 添加子节点
+        await tree.addNodes([
+          {
+            name: "products",
+            title: "产品",
+            type: 0,
+            created_at: now,
+            updated_at: now,
+          },
+          {
+            name: "solutions",
+            title: "解决方案",
+            type: 0,
+            created_at: now,
+            updated_at: now,
+          },
+          {
+            name: "services",
+            title: "服务",
+            type: 0,
+            created_at: now,
+            updated_at: now,
+          },
+          {
+            name: "news",
+            title: "新闻",
+            type: 0,
+            created_at: now,
+            updated_at: now,
+          },
+        ] as never);
+      });
+
+      // 结构完整性验证（左右值成对、层级关系、无重叠）
+      expect(await tree.verify()).toBe(true);
+
+      // 逐一核实每个节点的左右值
+      const nodes = await tree.getNodes();
+      expect(nodes).toHaveLength(5);
+      expect(nodes[0].name).toBe("all");
+      expect(nodes[1].name).toBe("products");
+      expect(nodes[2].name).toBe("solutions");
+      expect(nodes[3].name).toBe("services");
+      expect(nodes[4].name).toBe("news");
+
+      // all（根节点）
+      expect(nodes[0].leftValue).toBe(1);
+      expect(nodes[0].rightValue).toBe(10);
+      expect(nodes[0].level).toBe(0);
+      // products
+      expect(nodes[1].leftValue).toBe(2);
+      expect(nodes[1].rightValue).toBe(3);
+      expect(nodes[1].level).toBe(1);
+      // solutions
+      expect(nodes[2].leftValue).toBe(4);
+      expect(nodes[2].rightValue).toBe(5);
+      expect(nodes[2].level).toBe(1);
+      // services
+      expect(nodes[3].leftValue).toBe(6);
+      expect(nodes[3].rightValue).toBe(7);
+      expect(nodes[3].level).toBe(1);
+      // news
+      expect(nodes[4].leftValue).toBe(8);
+      expect(nodes[4].rightValue).toBe(9);
+      expect(nodes[4].level).toBe(1);
+    });
+  });
+
   describe("添加节点为目标节点的上一个兄弟节点", () => {
     let tree: FlexTreeManager;
     beforeEach(async () => {
