@@ -38,7 +38,7 @@ import sqliteAdapter from "flextree-sqlite-adapter";
 const tree = new FlexTreeManager("files", {
     adapter: new sqliteAdapter(),
     recyclebin: {
-        id: 9999,          // the bin node's id
+        id: 2,             // the bin node's id (a small value to avoid disturbing auto-increment keys)
         name: "__trash__", // the bin node's name
     },
 });
@@ -49,12 +49,19 @@ const tree = new FlexTreeManager("files", {
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `options.recyclebin` | object | none | Providing it enables the recycle bin |
-| `options.recyclebin.id` | NodeId \| `(treeId) => NodeId` | none | Bin node id; on multi-tree tables, a function may be used to derive it per tree |
+| `options.recyclebin.id` | NodeId \| `(treeId) => NodeId` | none | Bin node id (**numeric ids must be greater than 1**, see the warning below); on multi-tree tables, a function may be used to derive it per tree |
 | `options.recyclebin.name` | string | none | Bin node name |
+
+:::warning id must be greater than 1
+A numeric `recyclebin.id` must be greater than 1 (validated at construction; violations throw):
+- **No negative values**: internal algorithms such as subtree moves (`moveNode`, cross-tree moves) temporarily **negate** the left/right values — detaching the subtree from its original position (negating) before flipping it back at the destination — so a negative id may collide with this negative-value semantics and be accidentally affected.
+- **No 0 or 1**: `1` collides with the auto-increment id of the first root node.
+- Also prefer a **small positive value** (e.g. `2`): on auto-increment primary key tables, explicitly inserting a large id pushes the auto-increment sequence past it, so subsequent node ids start from a larger value (e.g. with `999999`, new nodes jump straight to `1000000`); a small id stays below the current sequence and causes no jumps.
+:::
 
 **Bin node lifecycle:**
 
-- **Lazy creation**: automatically created on the first `write()` (appended as the root's last child), in the same transaction as your business write.
+- **Automatic creation**: the bin is created right after `createRoot()` (typically becoming the first node at the root's child level); for existing trees (root present but bin missing), it is created on the first `write()` (appended as the root's last child), in the same transaction as your business write.
 - **Position check**: if a row with the same id already exists but is not at the root's child level (level≠1), the first `write()` throws a configuration error — the bin must sit under the root. This is the position invariant.
 - When not enabled, the `recycle` parameter is ignored and `clearRecycleBin()` silently returns.
 

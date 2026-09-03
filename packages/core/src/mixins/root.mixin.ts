@@ -73,5 +73,8 @@ export class RootNodeMixin<
 
     const sql = `INSERT INTO ${this.tableName} (${keys}) VALUES (${values})`;
     await this.onExecuteSql([sql]);
+    // 2. 配置了回收站时立即创建 bin 节点（幂等）：保证根节点的 rightValue
+    //    从创建起就包含 bin 区间；失败随本次事务整体回滚
+    await this._ensureBinNode();
   }
 }

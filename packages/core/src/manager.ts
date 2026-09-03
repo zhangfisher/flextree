@@ -173,6 +173,16 @@ export class FlexTreeManager<
       throw new FlexTreeError("not found database adapter");
     }
 
+    // 回收站 id 校验：数字且不大于 1 时拒绝——负数 id 会与移动子树算法的
+    // 临时取负语义冲突；id<=1 会与首个根节点的自增 id（1）冲突
+    // （见 docs/guide/recyclebin.md）
+    const binId = this._options.recyclebin?.id;
+    if (typeof binId === "number" && binId <= 1) {
+      throw new FlexTreeError(
+        `Invalid recyclebin id ${binId}: numeric recyclebin id must be greater than 1`,
+      );
+    }
+
     // 初始化实例属性
     this._fields = this._options.fields;
     this._treeId = this.options.treeId;
@@ -366,7 +376,9 @@ export class FlexTreeManager<
       this._txPromise = undefined;
       this._isWriting = false;
       this._pendingSqls = [];
-      // 写事务结束（提交或回滚）：失效 bin 区间缓存，下次读重新加载
+      // 写事务结束（提交或回滚）：失效 bin 区间缓存，下次读重新加载；
+      // 回滚时同步重置懒创建标记，避免"bin 已建"脏标记导致 bin 永远无法重建
+      if (!committed) this._binEnsured = false;
       this._invalidateBinRange();
       this._emitter.emit("write:after", { committed });
     }

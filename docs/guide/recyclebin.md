@@ -38,7 +38,7 @@ import sqliteAdapter from "flextree-sqlite-adapter";
 const tree = new FlexTreeManager("files", {
     adapter: new sqliteAdapter(),
     recyclebin: {
-        id: 9999,          // 回收站节点的 id
+        id: 2,             // 回收站节点的 id（小数值，避免干扰自增主键）
         name: "__trash__", // 回收站节点的名称
     },
 });
@@ -49,12 +49,19 @@ const tree = new FlexTreeManager("files", {
 | 参数 | 类型 | 默认 | 描述 |
 | --- | --- | --- | --- |
 | `options.recyclebin` | object | 无 | 提供即启用回收站功能 |
-| `options.recyclebin.id` | NodeId \| `(treeId) => NodeId` | 无 | 回收站节点 id；多树表下可传函数按树取值 |
+| `options.recyclebin.id` | NodeId \| `(treeId) => NodeId` | 无 | 回收站节点 id（**数字时必须大于 1**，见下方警告）；多树表下可传函数按树取值 |
 | `options.recyclebin.name` | string | 无 | 回收站节点名称 |
+
+:::warning id 必须大于 1
+数字类型的 `recyclebin.id` 必须大于 1（构造时校验，违反即抛错）：
+- **禁止负数**：移动子树（`moveNode`、跨树移动）等内部算法会对节点的左右值做**临时取负**处理——先将子树脱离原位置（取负）、再翻正到新位置，负数 id 可能与这类负值语义冲突而被误伤。
+- **禁止 0 和 1**：`1` 与首个根节点的自增 id 冲突。
+- 另请选用**较小的正数**（如 `2`）：自增主键表下，显式插入大数值 id 会把自增序列推到该值之后，后续节点的 id 会从更大值开始（如配置 `999999` 后新节点 id 直接跳到 `1000000`）；小数值 id 低于当前序列，不会产生跳跃。
+:::
 
 **Bin 节点的生命周期：**
 
-- **懒创建**：启用后首次 `write()` 时自动创建（挂到根的最后一个子节点位置），与业务写在同一事务中。
+- **自动创建**：`createRoot()` 创建根节点后立即创建 bin（此时通常是根孩子层的第一个节点）；存量树（根已存在但 bin 缺失）在首次 `write()` 时补建（挂到根的最后一个子节点位置），与业务写在同一事务中。
 - **位置校验**：若表中已存在同 id 的行但不在根孩子层（level≠1），首次 `write()` 抛出配置错误——回收站必须位于根下，这是位置不变量。
 - 未启用时 `recycle` 参数被忽略，`clearRecycleBin()` 静默返回。
 

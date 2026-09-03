@@ -31,9 +31,9 @@ describe("添加树节点", () => {
 
     test("单树表中创建根节点时如果已存在则触发错误", async () => {
       await tree.write(async () => await tree.createRoot({ name: "root" }));
-      expect(
-        tree.write(async () => await tree.createRoot({ name: "root2" }))
-      ).rejects.toThrow(FlexTreeNodeError);
+      expect(tree.write(async () => await tree.createRoot({ name: "root2" }))).rejects.toThrow(
+        FlexTreeNodeError,
+      );
     });
     test("判定是否存在根节点", async () => {
       await tree.write(async () => await tree.createRoot({ name: "root" }));
@@ -54,11 +54,7 @@ describe("添加树节点", () => {
     });
     test("在根节点下创建最后的子节点", async () => {
       await tree.write(async () => {
-        await tree.addNodes([
-          { name: "A" },
-          { name: "B" },
-          { name: "C" },
-        ]);
+        await tree.addNodes([{ name: "A" }, { name: "B" }, { name: "C" }]);
       });
       const nodes = await tree.getNodes();
       expect(nodes).toHaveLength(4);
@@ -237,7 +233,7 @@ describe("添加树节点", () => {
         await tree.addNodes(
           [{ name: "A" }, { name: "B" }, { name: "C" }],
           null,
-          FlexNodeRelPosition.FirstChild
+          FlexNodeRelPosition.FirstChild,
         );
       });
       const nodes = await tree.getNodes();
@@ -270,17 +266,17 @@ describe("添加树节点", () => {
         await tree.addNodes(
           [{ name: "A1" }, { name: "A2" }, { name: "A3" }],
           2,
-          FlexNodeRelPosition.FirstChild
+          FlexNodeRelPosition.FirstChild,
         );
         await tree.addNodes(
           [{ name: "B1" }, { name: "B2" }, { name: "B3" }],
           3,
-          FlexNodeRelPosition.FirstChild
+          FlexNodeRelPosition.FirstChild,
         );
         await tree.addNodes(
           [{ name: "C1" }, { name: "C2" }, { name: "C3" }],
           4,
-          FlexNodeRelPosition.FirstChild
+          FlexNodeRelPosition.FirstChild,
         );
       });
       const nodes = await tree.getNodes();
@@ -369,11 +365,7 @@ describe("添加树节点", () => {
     });
     test("一性能添加多个兄弟节点", async () => {
       await tree.write(async () => {
-        await tree.addNodes(
-          [{ name: "A" }, { name: "B" }, { name: "C" }],
-          2,
-          NextSibling
-        );
+        await tree.addNodes([{ name: "A" }, { name: "B" }, { name: "C" }], 2, NextSibling);
       });
       const nodes = await tree.getNodes();
       expect(nodes).toHaveLength(5);
@@ -551,6 +543,7 @@ describe("添加树节点", () => {
 
       tree = new FlexTreeManager("tree", {
         adapter: sqliteAdapter,
+        recyclebin: { id: 2, name: "回收站" },
       });
     });
 
@@ -605,6 +598,13 @@ describe("添加树节点", () => {
       // 结构完整性验证（左右值成对、层级关系、无重叠）
       expect(await tree.verify()).toBe(true);
 
+      // 启用回收站：createRoot 自动创建 bin 节点（root 的 LastChild），
+      // 物理树为 root + 回收站 + 4 个子节点；默认视角过滤 bin，左右值为物理口径
+      const bin = await tree.getNode(2, { includeRecyclebin: true });
+      expect(bin).toBeDefined();
+      expect((bin as any).name).toBe("回收站");
+      expect((bin as any).level).toBe(1);
+
       // 逐一核实每个节点的左右值
       const nodes = await tree.getNodes();
       expect(nodes).toHaveLength(5);
@@ -614,25 +614,28 @@ describe("添加树节点", () => {
       expect(nodes[3].name).toBe("services");
       expect(nodes[4].name).toBe("news");
 
-      // all（根节点）
+      // all（根节点，rightValue 含回收站区间）
       expect(nodes[0].leftValue).toBe(1);
-      expect(nodes[0].rightValue).toBe(10);
+      expect(nodes[0].rightValue).toBe(12);
       expect(nodes[0].level).toBe(0);
+      // 回收站（root 建立后立即创建，占 [2,3]）
+      expect((bin as any).leftValue).toBe(2);
+      expect((bin as any).rightValue).toBe(3);
       // products
-      expect(nodes[1].leftValue).toBe(2);
-      expect(nodes[1].rightValue).toBe(3);
+      expect(nodes[1].leftValue).toBe(4);
+      expect(nodes[1].rightValue).toBe(5);
       expect(nodes[1].level).toBe(1);
       // solutions
-      expect(nodes[2].leftValue).toBe(4);
-      expect(nodes[2].rightValue).toBe(5);
+      expect(nodes[2].leftValue).toBe(6);
+      expect(nodes[2].rightValue).toBe(7);
       expect(nodes[2].level).toBe(1);
       // services
-      expect(nodes[3].leftValue).toBe(6);
-      expect(nodes[3].rightValue).toBe(7);
+      expect(nodes[3].leftValue).toBe(8);
+      expect(nodes[3].rightValue).toBe(9);
       expect(nodes[3].level).toBe(1);
       // news
-      expect(nodes[4].leftValue).toBe(8);
-      expect(nodes[4].rightValue).toBe(9);
+      expect(nodes[4].leftValue).toBe(10);
+      expect(nodes[4].rightValue).toBe(11);
       expect(nodes[4].level).toBe(1);
     });
   });
@@ -651,11 +654,7 @@ describe("添加树节点", () => {
     });
     test("一性次添加多个节点到X节点前", async () => {
       await tree.write(async () => {
-        await tree.addNodes(
-          [{ name: "A" }, { name: "B" }, { name: "C" }],
-          2,
-          PreviousSibling
-        );
+        await tree.addNodes([{ name: "A" }, { name: "B" }, { name: "C" }], 2, PreviousSibling);
       });
       const nodes = await tree.getNodes();
       expect(nodes).toHaveLength(5);

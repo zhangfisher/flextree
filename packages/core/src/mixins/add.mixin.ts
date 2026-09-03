@@ -388,14 +388,14 @@ export class AddNodeMixin<
     // 检测是否为嵌套结构
     const isNested = this.detectNestedStructure(nodes, childrenField);
     if (isNested) {
-      this.addNodesNested(
+      await this.addNodesNested(
         nodes as FlexTreeNodeInput<Fields, KeyFields>[],
         relNode,
         actualPos,
         childrenField,
       );
     } else {
-      this.addNodesFlat(nodes as Partial<TreeNode>[], relNode, actualPos);
+      await this.addNodesFlat(nodes as Partial<TreeNode>[], relNode, actualPos);
     }
     this.emit("node:added", {
       tree: this.treeId,

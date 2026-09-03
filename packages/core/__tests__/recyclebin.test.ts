@@ -10,6 +10,7 @@
  */
 import { describe, test, expect, beforeEach } from "bun:test";
 import { FlexTreeManager, FlexNodeRelPosition, FlexTreeNodeNotFoundError, FlexTreeError } from "../src";
+
 import BunSqliteAdapter from "../../bun-sqlite/src";
 
 interface TestFields {
@@ -121,6 +122,25 @@ describe("回收站：配置与生命周期", () => {
       }),
     ).rejects.toThrow();
   });
+
+  test("recyclebin.id 为数字且不大于 1 → 构造时抛配置错误", () => {
+    for (const invalidId of [-1, 0, 1]) {
+      expect(
+        () =>
+          new FlexTreeManager<TestFields>("tree", {
+            adapter: driver,
+            recyclebin: { id: invalidId, name: BIN_NAME },
+          }),
+      ).toThrow(FlexTreeError);
+    }
+    expect(
+      () =>
+        new FlexTreeManager<TestFields>("tree", {
+          adapter: driver,
+          recyclebin: { id: 2, name: BIN_NAME },
+        }),
+    ).not.toThrow();
+  });
 });
 
 describe("回收站：deleteNode(recycle)", () => {
@@ -146,7 +166,7 @@ describe("回收站：deleteNode(recycle)", () => {
     expect(all.length).toBe(6);
     // 结构保持：A 仍是 A1/A2 的父节点
     const a = await manager.getNode(aId, { includeRecyclebin: true });
-    const children = await manager.getChildren(a, { includeRecyclebin: true });
+    const children = await manager.getChildren(a!, { includeRecyclebin: true });
     expect(children.length).toBe(2);
   });
 
@@ -273,16 +293,16 @@ describe("回收站：读接口过滤（Logical Invisibility）", () => {
     expect((await manager.getNodes()).length).toBe(1); // 只有 R
   });
 
-  test("导航：bin 物理前兄弟的 getNextSibling 默认跳过 bin；=true 返回 bin", async () => {
+  test("导航：bin 物理后兄弟的 getNextSibling 默认跳过 bin；=true 返回 bin", async () => {
     const bId = await idOf(manager, "B");
-    // B 是 bin 的物理前兄弟（buildTree 后 bin 加在最后）
+    // B 是 bin 的物理后兄弟（bin 随 createRoot 创建，位于根孩子层最前）
     const next = await manager.getNextSibling(bId);
     expect(next ?? undefined).toBeUndefined(); // 默认视角：bin 后无节点（getOneNode 空结果返回 null）
-    const nextWithBin = await manager.getNextSibling(bId, { includeRecyclebin: true });
-    expect((nextWithBin as any)?.name).toBe(BIN_NAME);
-    // 反向：bin 的前一个兄弟是 B
-    const prev = await manager.getPreviousSibling(BIN_ID, { includeRecyclebin: true });
-    expect((prev as any)?.name).toBe("B");
+    const prevWithBin = await manager.getPreviousSibling(bId, { includeRecyclebin: true });
+    expect((prevWithBin as any)?.name).toBe(BIN_NAME);
+    // 反向：bin 的后一个兄弟是 B
+    const nextWithBin = await manager.getNextSibling(BIN_ID, { includeRecyclebin: true });
+    expect((nextWithBin as any)?.name).toBe("B");
   });
 
   test("where 组合：默认仍排除 bin 及子孙（AND 叠加）", async () => {
@@ -329,16 +349,19 @@ describe("回收站：读接口过滤（Logical Invisibility）", () => {
   test("getParent(binChild, 站内视角) 返回 bin（祖先链不过滤）", async () => {
     const aId = await idOf(manager, "A");
     const aNode = await manager.getNode(aId, { includeRecyclebin: true });
-    const parent = await manager.getParent(aNode);
+    const parent = await manager.getParent(aNode!);
     expect((parent as any).name).toBe(BIN_NAME);
   });
 
   test("getNthChild 默认视角 bin 内孩子不计入序号", async () => {
     const root = await manager.getRoot();
+    // 默认视角 bin 不存在 → 第 1 个孩子是 B；物理视角 bin 随 createRoot 创建，在第 1 位
     const first = await manager.getNthChild(root, 1);
     expect((first as any)?.name).toBe("B");
     const firstAll = await manager.getNthChild(root, 1, { includeRecyclebin: true });
-    expect((firstAll as any)?.name).toBe("B"); // B 在 bin 前
+    expect((firstAll as any)?.name).toBe(BIN_NAME);
+    const secondAll = await manager.getNthChild(root, 2, { includeRecyclebin: true });
+    expect((secondAll as any)?.name).toBe("B");
   });
 });
 
@@ -495,7 +518,9 @@ describe("回收站：bin 位置不变量", () => {
   test("bin 内 addNodes/copyNode/updateNode（站内视角）：照常", async () => {
     const bin = await manager.getNode(BIN_ID, { includeRecyclebin: true });
     await manager.write(async () => {
-      await manager.addNodes([{ name: "MANUAL" }] as any, bin, {
+      // options 对象模式：at 指定落点为 bin（对象即凭证），includeRecyclebin 进入站内视角
+      await manager.addNodes([{ name: "MANUAL" }] as any, {
+        at: bin,
         pos: FlexNodeRelPosition.LastChild,
         includeRecyclebin: true,
       });
